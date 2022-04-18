@@ -1,8 +1,9 @@
 --[[
 	Name: Knit Initialization [V1]
 	Creator: Real_KingBob
-	Made in: 12/16/21
-	Description: Handles all the knit server initialization
+	Made in: 9/19/21 (Updated: 4/18/22)
+	Description: ProfileTemplate table is what empty profiles will default to.
+    Updating the template will not include missing template values in existing player profiles!
 ]]
 
 ----- Services -----
@@ -22,15 +23,11 @@ local Promise = require(Knit.Util.Promise);
 
 ----- Knit -----
 Knit.Shared = ReplicatedStorage.Common;
-Knit.ReplicatedModules = Knit.Shared.Modules;
-Knit.ReplicatedAssets = Knit.Shared.Assets;
-Knit.ReplicatedMaps = Knit.Shared.Maps;
 
 Knit.ReplicatedDuckSkins = require(Knit.ReplicatedAssets.DuckSkins)
 Knit.ReplicatedDuckEmotes = require(Knit.ReplicatedAssets.DuckEmotes)
 Knit.ReplicatedDuckEffects = require(Knit.ReplicatedAssets.DeathEffects)
 Knit.ReplicatedRarities = require(Knit.ReplicatedAssets.Rarities)
-
 
 Knit.ServerComponents = ServerScriptService.Components;
 Knit.ServerModules = ServerScriptService.Modules;
@@ -39,25 +36,8 @@ Knit.Services = ServerScriptService.Services;
 Knit.Config = require(Knit.ReplicatedModules.Config);
 
 ----- Loaded Services -----
-Knit.AudioService = require(Knit.Services.AudioService);
-Knit.LeaderboardService = require(Knit.Services.LeaderboardService)
-Knit.DataService = require(Knit.Services.DataService);
-Knit.PartyService = require(Knit.Services.PartyService);
-Knit.MatchmakingService = require(Knit.Services.MatchmakingService).GetSingleton();
-Knit.TournamentService = require(Knit.Services.TournamentService);
-Knit.BadgeService = require(Knit.Services.BadgeService);
-Knit.TeleportService = require(Knit.Services.TeleportService);
-Knit.AntiExploitService = require(Knit.Services.AntiExploitService);
-Knit.StatTrackService = require(Knit.Services.StatTrackService);
-Knit.GameService = require(Knit.Services.GameService);
 Knit.AvatarService = require(Knit.Services.AvatarService);
-Knit.HunterService = require(Knit.Services.HunterService);
-Knit.LikeCounterService = require(Knit.Services.LikeCounterService);
-Knit.InventoryService = require(Knit.Services.InventoryService);
-Knit.DeathEffectService = require(Knit.Services.DeathEffectService);
-Knit.CutsceneService = require(Knit.Services.CutsceneService);
-Knit.MapService = require(Knit.Services.MapService);
-Knit.CrateService = require(Knit.Services.CrateService);
+
 Knit.ComponentsLoaded = false;
 ----- Initialize -----
 
@@ -89,7 +69,6 @@ end
 Knit.Start():andThen(function()
     Component.Auto(Knit.ServerComponents);
 	Knit.ComponentsLoaded = true;
-	Knit.AntiExploitService:Start()
 	print("Server Initialized");
 end):catch(function(err)
     warn(err);
@@ -108,123 +87,22 @@ local playerProfiles = {}; -- [player] = profile
 local deathCooldown = {};
 
 local ChatTags = {
-	[2510232695] = {TagText = "KARL", TagColor = Color3.fromRGB(160, 58, 255)}, -- Karl
 	[21831137] = {TagText = "DEV", TagColor = Color3.fromRGB(255, 0, 0)}, -- Real_KingBob
 	[1464956079] = {TagText = "DEV", TagColor = Color3.fromRGB(255, 0, 0)}, -- Sencives
-	[52624453] = {TagText = "DEV", TagColor = Color3.fromRGB(255, 0, 0)}, -- Longnose
 	[131997771] = {TagText = "MANAGER", TagColor = Color3.fromRGB(6, 207, 16)}, -- Emerald
 }
 
 local PurchasedChatTags = {
-	[26228902] = {TagText = "VIP", TagColor = Color3.fromRGB(255, 204, 0)}, -- Longnose
+	[26228902] = {TagText = "VIP", TagColor = Color3.fromRGB(255, 204, 0)}, -- VIP
 }
-
-
-local TEST_VOICE_CHAT_PLACE_ID = 8792750286;
-local TEST_BIG_SERVER_PLACE_ID = 8793381822;
-local TEST_SERVER_PLACE_ID = 8303278706;
 
 local VIP_GAMEPASS = 26228902;
 
 ----- Private Functions -----
 
-local function setCollisionGroup(object)
-	if object then
-		if object:IsA("BasePart") then
-			previousCollisionGroups[object] = object.CollisionGroupId;
-			PhysicsService:SetPartCollisionGroup(object, playerCollisionGroupName);
-		end
-	end
-end
-
-local function setCollisionGroupRecursive(object)
-	if object then
-		setCollisionGroup(object);
-
-		for _, child in ipairs(object:GetChildren()) do
-			setCollisionGroupRecursive(child);
-		end
-	end
-end
-
-local function resetCollisionGroup(object)
-	if object then
-		local previousCollisionGroupId = previousCollisionGroups[object];
-		if not previousCollisionGroupId then return end 
-
-		local previousCollisionGroupName = PhysicsService:GetCollisionGroupName(previousCollisionGroupId);
-		if not previousCollisionGroupName then return end
-
-		PhysicsService:SetPartCollisionGroup(object, previousCollisionGroupName);
-		previousCollisionGroups[object] = nil;
-	end
-end
-
-local function initializeWeaponsSystemAssets()
-	if not weaponsSystemInitialized then
-		-- Enable/make visible all necessary assets
-		local effectsFolder = weaponsSystemFolder.Assets.Effects;
-		local partNonZeroTransparencyValues = {
-			["BulletHole"] = 1, ["Explosion"] = 1, ["Pellet"] = 1, ["Scorch"] = 1,
-			["Bullet"] = 1, ["Plasma"] = 1, ["Railgun"] = 1,
-		};
-		local decalNonZeroTransparencyValues = { ["ScorchMark"] = 0.25 };
-		local particleEmittersToDisable = { ["Smoke"] = true };
-		local imageLabelNonZeroTransparencyValues = { ["Impact"] = 0.25 };
-		for _, descendant in pairs(effectsFolder:GetDescendants()) do
-			if descendant:IsA("BasePart") then
-				if partNonZeroTransparencyValues[descendant.Name] ~= nil then
-					descendant.Transparency = partNonZeroTransparencyValues[descendant.Name];
-				else
-					descendant.Transparency = 0;
-				end
-			elseif descendant:IsA("Decal") then
-				descendant.Transparency = 0
-				if decalNonZeroTransparencyValues[descendant.Name] ~= nil then
-					descendant.Transparency = decalNonZeroTransparencyValues[descendant.Name];
-				else
-					descendant.Transparency = 0;
-				end
-			elseif descendant:IsA("ParticleEmitter") then
-				descendant.Enabled = true;
-				if particleEmittersToDisable[descendant.Name] ~= nil then
-					descendant.Enabled = false;
-				else
-					descendant.Enabled = true;
-				end
-			elseif descendant:IsA("ImageLabel") then
-				if imageLabelNonZeroTransparencyValues[descendant.Name] ~= nil then
-					descendant.ImageTransparency = imageLabelNonZeroTransparencyValues[descendant.Name];
-				else
-					descendant.ImageTransparency = 0;
-				end
-			end
-		end
-		
-		weaponsSystemInitialized = true;
-	end
-end
-
-initializeWeaponsSystemAssets();
-local WeaponsSystem = require(weaponsSystemFolder.WeaponsSystem);
-if not WeaponsSystem.doingSetup and not WeaponsSystem.didSetup then
-	WeaponsSystem.setup();
-end
-
-local function setupClientWeaponsScript(player)
-	local clientWeaponsScript = player.PlayerGui:FindFirstChild("ClientWeaponsScript");
-	if clientWeaponsScript == nil then
-		weaponsSystemFolder.ClientWeaponsScript:Clone().Parent = player.PlayerGui;
-	end
-end
-
 ----- Connections -----
 
 local function onCharacterAdded(character)
-    setCollisionGroupRecursive(character);
-    character.DescendantAdded:Connect(setCollisionGroup);
-    character.DescendantRemoving:Connect(resetCollisionGroup);
-
 	local player = Players:GetPlayerFromCharacter(character);
 
 	if player then
@@ -275,19 +153,6 @@ local function onPlayerRemoving(player)
 end
 
 local function onPlayerAdded(player)
-	if game.PlaceId == TEST_VOICE_CHAT_PLACE_ID or 
-	game.PlaceId == TEST_BIG_SERVER_PLACE_ID or 
-	game.PlaceId == TEST_SERVER_PLACE_ID then
-		if Knit.Config.WHITELIST == true then
-			if not player:IsInGroup(13585944) then
-				if player.UserId > 0 then
-					player:Kick("Not Whitelisted")
-				end
-			end
-		end
-	end
-	CollectionService:AddTag(player, Knit.Config.AFK_TAG)
-	setupClientWeaponsScript(player);
 	local DataHasLoaded = Knit.DataService:CheckIfDataLoaded(player);
 	while DataHasLoaded == false do
 		DataHasLoaded = Knit.DataService:CheckIfDataLoaded(player);
@@ -298,36 +163,24 @@ local function onPlayerAdded(player)
 	end
 
     local profile = Knit.DataService:GetProfile(player);
-    if Knit.GameService:GetGameState() == 0 then
-        Knit.GameService.Client.NotEnoughPlayersSignal:Fire(player);
-    end
-
-	player.Idled:Connect(function(time)
-		if CollectionService:HasTag(player, Knit.Config.ALIVE_TAG) == true and CollectionService:HasTag(player, Knit.Config.IDLE_TAG) == false then
-			CollectionService:AddTag(player, Knit.Config.IDLE_TAG)
-		end
-   	end)
 
     if profile ~= nil then
         if player:IsDescendantOf(Players) == true then
 			playerProfiles[player] = profile;
-		   	task.spawn(function()
-				player.RespawnLocation = workspace.Lobby.Spawns.Locations.Spawn
-		   	end)
 			task.spawn(function()
                 --// @todo: Add Missions
 				--MissionService:Initialize(player,profile)
 				Knit.StatTrackService:StartTracking(player);
 			end)
 
-			local leaderstats = Instance.new("Folder")
+			--[[local leaderstats = Instance.new("Folder")
 			leaderstats.Name = "leaderstats"
 			leaderstats.Parent = player
 		
 			local wins = Instance.new("IntValue")
 			wins.Name = "Wins"
 			wins.Value = playerProfiles[player].Data.PlayerInfo.TotalWins;
-			wins.Parent = leaderstats
+			wins.Parent = leaderstats]]
 
 			local char = player.Character or player.CharacterAdded:Wait()
             player.CharacterAdded:Connect(onCharacterAdded);
