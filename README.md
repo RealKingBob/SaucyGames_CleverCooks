@@ -1,2 +1,7 @@
 # SaucyGames_CleverCooks
-Clever Cooks by Saucy Games
+## Welcome to [Saucy Games] Clever Cooks! 
+
+### Game Description:
+    
+### 🔔 Update Logs: 🔔 
+    
