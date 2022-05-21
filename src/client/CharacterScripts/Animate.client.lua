@@ -1,7 +1,11 @@
+--Newer Version
+
 local Figure = script.Parent
-local Torso = Figure:WaitForChild("Sphere")
+local Torso = Figure:WaitForChild("Mouse.001")
 local Humanoid = Figure:WaitForChild("Humanoid")
 local pose = "Standing"
+Figure:WaitForChild("Humanoid").HipHeight = 0.55
+Figure:WaitForChild("Humanoid").WalkSpeed = 16
 
 local currentAnim = ""
 local currentAnimInstance = nil
@@ -11,26 +15,32 @@ local currentAnimSpeed = 1.0
 local animTable = {}
 local animNames = { 
 	idle = 	{	
-				{ id = "http://www.roblox.com/asset/?id=180435571", weight = 9 },
-				{ id = "http://www.roblox.com/asset/?id=180435792", weight = 1 }
+		{ id = "http://www.roblox.com/asset/?id=8028990292", weight = 9 },
+		{ id = "http://www.roblox.com/asset/?id=8028990292", weight = 9 }
 			},
 	walk = 	{ 	
-				{ id = "http://www.roblox.com/asset/?id=180426354", weight = 10 } 
+				{ id = "http://www.roblox.com/asset/?id=8028984908", weight = 10 } 
 			}, 
 	run = 	{
 				{ id = "run.xml", weight = 10 } 
 			}, 
+	swim = 	{
+				{ id = "http://www.roblox.com/asset/?id=3162093100", weight = 10 } 
+			},
+	swimidle = 	{
+				{ id = "http://www.roblox.com/asset/?id=3162093100", weight = 10 } 
+			},
 	jump = 	{
-				{ id = "http://www.roblox.com/asset/?id=125750702", weight = 10 } 
+		{ id = "http://www.roblox.com/asset/?id=8028993547", weight = 10 } 
 			}, 
 	fall = 	{
 				{ id = "http://www.roblox.com/asset/?id=180436148", weight = 10 } 
 			}, 
 	climb = {
-				{ id = "http://www.roblox.com/asset/?id=180436334", weight = 10 } 
+				{ id = "http://www.roblox.com/asset/?id=4302087216", weight = 10 } 
 			}, 
 	sit = 	{
-				{ id = "http://www.roblox.com/asset/?id=178130996", weight = 10 } 
+				{ id = "http://www.roblox.com/asset/?id=3205992711", weight = 10 } 
 			},	
 	toolnone = {
 				{ id = "http://www.roblox.com/asset/?id=182393478", weight = 10 } 
@@ -321,7 +331,7 @@ end
 function onRunning(speed)
 	if speed > 0.01 then
 		playAnimation("walk", 0.1, Humanoid)
-		if currentAnimInstance and currentAnimInstance.AnimationId == "http://www.roblox.com/asset/?id=180426354" then
+		if currentAnimInstance and currentAnimInstance.AnimationId == "http://www.roblox.com/asset/?id=3087884863" then
 			setAnimationSpeed(speed / 14.5)
 		end
 		pose = "Running"
@@ -373,12 +383,24 @@ function onPlatformStanding()
 end
 
 function onSwimming(speed)
+	if speed > 1.00 then
+		local scale = 10.0
+		playAnimation("swim", 0.4, Humanoid)
+		setAnimationSpeed(speed / scale)
+		Figure:WaitForChild("Humanoid").WalkSpeed = 16
+		pose = "Swimming"
+	else
+		playAnimation("walk", 0.4, Humanoid)
+		pose = "Standing"
+	end
+end
+--[[function onSwimming(speed)
 	if speed > 0 then
 		pose = "Running"
 	else
 		pose = "Standing"
 	end
-end
+end]]--
 
 function getTool()	
 	for _, kid in ipairs(Figure:GetChildren()) do
@@ -413,6 +435,7 @@ function animateTool()
 		return
 	end
 end
+
 
 local lastTick = 0
 
@@ -484,7 +507,7 @@ Humanoid.PlatformStanding:connect(onPlatformStanding)
 Humanoid.Swimming:connect(onSwimming)
 
 -- setup emote chat hook
-game:GetService("Players").LocalPlayer.Chatted:connect(function(msg)
+game:GetService("Players").LocalPlayer.Chatted:Connect(function(msg)
 	local emote = ""
 	if msg == "/e dance" then
 		emote = dances[math.random(1, #dances)]
@@ -508,8 +531,7 @@ playAnimation("idle", 0.1, Humanoid)
 pose = "Standing"
 
 while Figure.Parent ~= nil do
-	local _, time = wait(0.1)
+	local _, time = task.wait(0.1)
 	move(time)
 end
-
 

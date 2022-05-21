@@ -13,35 +13,25 @@ local giftHistoryStore = DataStoreService:GetDataStore("GiftHistory")
 local SETTINGS = {
     StatsTemplate = {	
 		PlayerInfo = {
-			Coins = 0, -- User current coins
+			Currency = 0, -- User current currency
 			Level = 0, -- User current level
 			EXP = 0, -- User experience to level up
-
-            PlayerRank = 0,
-			TournamentWins = 0, -- Amount of wins in a tournament
-            TournamentLosses = 0, -- Amount of losses in a tournament
 
 			TotalWins = 0, -- Num of wins a user has
             TotalLosses = 0, -- Num of losses a user has
             TotalKills = 0, -- Total kills that the hunter has killed
 
             DailyItemsBought = 0, -- Num of daily items bought in daily store
-			CoinsBought = 0, -- Coin amount a user has bought
-            LifeTimeCoins = 0, -- counts how many coins a user has had overall
+			CurrencyBought = 0, -- Coin amount a user has bought
+            LifeTimeCurrency = 0, -- counts how many coins a user has had overall
 
-            RecentCharacter = false, -- User was either a duck or a hunter
-
-            MostKills = 0, -- Most kills by the hunter per round
-            KillStreak = 0, -- Highest kill streak by hunter without missing
+            MostDays = 0, -- Most days the user survived for
+            LatestDays = 0, -- Most recent days the user survived for
 
 			DuckWins = 0, -- Num of wins a user has a duck
 			HunterWins = 0, -- Num of wins a user has a hunter
 			WinStreak = 0, -- Win streak a user has
 
-			HunterChance = 0, -- % chance of becoming a hunter
-			HunterNum = 0, -- Num of times player has been hunter
-
-			DuckNum = 0, -- Num of times player has been duck
 			CratesOpened = 0, -- Num of crates a user has opened
 
 			LogInTimes = 0, -- Num of times a player has logged on this game
@@ -58,22 +48,22 @@ local SETTINGS = {
         Battlepasses = {}, -- Battlepasses the user participated / completed
 		Inventory = {
 			CurrentDeathEffect = "Default",
-			CurrentDuckSkin = "Default Duck",
-			CurrentDuckEmote = "Default",
+			CurrentSkin = "Default",
+			CurrentEmote = "Default",
 			Boosters = {},
-			DuckSkins = {
-                ["Default Duck"] = {
-                    Quantity = 1;
-                    Rarity = 1
-                }
-            },
-			DuckEmotes = {
+			Skins = {
                 Default = {
                     Quantity = 1;
                     Rarity = 1
                 }
             },
-			DuckEffects = {
+			Emotes = {
+                Default = {
+                    Quantity = 1;
+                    Rarity = 1
+                }
+            },
+			Effects = {
                 Default = {
                     Quantity = 1;
                     Rarity = 1

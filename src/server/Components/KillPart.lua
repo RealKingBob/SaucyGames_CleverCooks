@@ -15,8 +15,8 @@ function KillPart.new(instance)
     self._maid = Maid.new();
 
     self.Object = instance
-    self.Trap = instance:GetAttribute("Trap");
-    self.Map = instance:GetAttribute("Map");
+    --self.Trap = instance:GetAttribute("Trap");
+    --self.Map = instance:GetAttribute("Map");
 
     --self.Object.CanCollide = false;
 
