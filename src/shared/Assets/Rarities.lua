@@ -135,34 +135,13 @@ function Rarities.getRarityDataFromRarityName(Name)
 	return nil;
 end
 
-function Rarities.getRarityDataFromDuckName(Name)
-    local DucksSkins = require(ReplicatedStorage.Common.Assets.DuckSkins)
+function Rarities.getRarityDataFromItemName(Name)
+    --[[local DucksSkins = require(ReplicatedStorage.Common.Assets.DuckSkins)
     for duckTitle,duckData in next, DucksSkins.SkinsTable do
         if duckTitle == Name then
             return Rarities.getRarityDataFromId(duckData.Rarity);
         end
-    end
-	return nil;
-end
-
-function Rarities.getRarityDataFromEmotesName(Name)
-    --[[local DucksEmotes = Knit.ReplicatedDuckEmotes
-    
-    for duckTitle,duckData in next, DucksEmotes.SkinsTable do
-        if duckTitle == Name then
-            return Rarities.getRarityDataFromId(duckData.Rarity);
-        end
-    end
-	return nil;]]
-end
-
-function Rarities.getRarityDataFromEffectsName(Name)
-    local DucksEffects = require(ReplicatedStorage.Common.Assets.DeathEffects)
-    for effectTitle,effectData in next, DucksEffects.EffectsTable do
-        if effectTitle == Name then
-            return Rarities.getRarityDataFromId(effectData.Rarity);
-        end
-    end
+    end]]
 	return nil;
 end
 

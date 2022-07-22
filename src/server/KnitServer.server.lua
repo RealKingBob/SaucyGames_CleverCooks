@@ -23,23 +23,29 @@ local Promise = require(Knit.Util.Promise);
 
 ----- Knit -----
 Knit.Shared = ReplicatedStorage.Common;
-
-Knit.ReplicatedDuckSkins = require(Knit.ReplicatedAssets.DuckSkins)
-Knit.ReplicatedDuckEmotes = require(Knit.ReplicatedAssets.DuckEmotes)
-Knit.ReplicatedDuckEffects = require(Knit.ReplicatedAssets.DeathEffects)
-Knit.ReplicatedRarities = require(Knit.ReplicatedAssets.Rarities)
-
-Knit.ServerComponents = ServerScriptService.Components;
-Knit.ServerModules = ServerScriptService.Modules;
-Knit.APIs = ServerScriptService.APIs;
+Knit.GameLibrary = ReplicatedStorage.Common;
 Knit.Services = ServerScriptService.Services;
-Knit.Config = require(Knit.ReplicatedModules.Config);
+Knit.Modules = ServerScriptService.Modules;
+Knit.Settings = ServerScriptService.Settings;
+Knit.Config = require(Knit.Shared.Modules.Config);
+
+Knit.Components = ServerScriptService.Components;
 
 ----- Loaded Services -----
 Knit.AvatarService = require(Knit.Services.AvatarService);
+Knit.ProximityService = require(Knit.Services.ProximityService);
+Knit.CookingService = require(Knit.Services.CookingService);
+Knit.DataService = require(Knit.Services.DataService);
 
 Knit.ComponentsLoaded = false;
 ----- Initialize -----
+
+local RemoteFunctions = Knit.GameLibrary:FindFirstChild("RemoteFunctions");
+
+local Whitelist = true; -- if true then only whitelisted players can play
+local Profiles = {}; -- [player] = profile
+local WhitelistedPlayers = {52624453, 21831137, 1464956079, 51714312, 131997771, 47330208, 1154275938, 2283059942, 475945078, 418172096, 259288924, 933996022, 121998890, 76172952};
+
 
 --// Ensures that all components are loaded
 function Knit.OnComponentsLoaded()
@@ -67,7 +73,7 @@ function Knit.OnComponentsLoaded()
 end
 
 Knit.Start():andThen(function()
-    Component.Auto(Knit.ServerComponents);
+    Component.Auto(Knit.Components);
 	Knit.ComponentsLoaded = true;
 	print("Server Initialized");
 end):catch(function(err)
@@ -78,9 +84,6 @@ end)
 local playerCollisionGroupName = "Players";
 PhysicsService:CreateCollisionGroup(playerCollisionGroupName);
 PhysicsService:CollisionGroupSetCollidable(playerCollisionGroupName, playerCollisionGroupName, false);
-
-local weaponsSystemFolder = Knit.Shared:FindFirstChild("WeaponsSystem");
-local weaponsSystemInitialized = false;
 
 local previousCollisionGroups = {};
 local playerProfiles = {}; -- [player] = profile
@@ -103,61 +106,63 @@ local VIP_GAMEPASS = 26228902;
 ----- Connections -----
 
 local function onCharacterAdded(character)
+
+	local E = Instance.new("ObjectValue")
+	E.Name = "Ingredient"
+	E.Parent = character
+
 	local player = Players:GetPlayerFromCharacter(character);
 
 	if player then
         local humanoid = character:FindFirstChildWhichIsA("Humanoid");
-        if CollectionService:HasTag(player, Knit.Config.HUNTER_TAG) and tostring(player.RespawnLocation.Parent) ~= "Locations" then
-            Knit.AvatarService:SetHunterSkin(player);
-            --GameService:SetHunterCamera(true, player)
+        if CollectionService:HasTag(player, Knit.Config.CHEF_TAG) then
+            --// NOTE: This is if player bought chef gamepass
+			--Knit.AvatarService:SetHunterSkin(player);
         else
-			--print('Character added')
-            Knit.GameService:SetHunterCamera(false, player);
-			--Knit.AvatarService:SetRandomDeathEffect(player)
-			--Knit.AvatarService:SetRandomAvatarSkin(player)
-			Knit.AvatarService:SetDeathEffect(player, Knit.AvatarService:GetDeathEffect(player))
-			Knit.AvatarService:SetAvatarSkin(player, Knit.AvatarService:GetAvatarSkin(player))
+			local userId = player.UserId;
+
+			local AvatarService = Knit.AvatarService
+
+			local playerAccessories = AvatarService:GetAvatarAccessories(userId);
+			local playerColor = AvatarService:GetAvatarColor(userId);
+			local playerFace = AvatarService:GetAvatarFace(userId);
+			local hasHeadless = AvatarService:CheckForHeadless(userId);
 			
-			if CollectionService:HasTag(player, Knit.Config.BREAD_TAG) then
-				task.wait(0.3)
-				Knit.AvatarService.Client.CreateB:FireAll(player)
-			end
-			--[[task.spawn(function()
-			end)]]
+			for _, assetId in pairs(playerAccessories) do
+				AvatarService:SetAvatarAccessory(userId,character.Humanoid,assetId);
+			end;
+			
+			AvatarService:SetAvatarColor(userId,character, playerColor);
+			AvatarService:SetAvatarFace(userId,character,playerFace, true);
+			
+			if hasHeadless == true then
+				AvatarService:SetHeadless(userId,character);
+			end;
 		end
-        
-        humanoid.Died:Connect(function()
-			if deathCooldown[player.UserId] == nil then
-				deathCooldown[player.UserId] = true
-				if CollectionService:HasTag(player, Knit.Config.HUNTER_TAG) == false or character:FindFirstChild("Sphere") ~= nil then
-					--// Initiliaze Death Effect
-					--print("death!")
-					Knit.DeathEffectService:Init(player, character);
-					task.wait(1)
-					deathCooldown[player.UserId] = nil
-				end
-			end
-		end)
     end
 end
 
 local function onPlayerRemoving(player)
-	local PLAYER_UI = workspace.Lobby.NameTags:FindFirstChild(player.UserId)
-	if PLAYER_UI then
-		PLAYER_UI:Destroy()
-	end
-
 	for _, tag in ipairs(CollectionService:GetTags(player)) do
 		CollectionService:RemoveTag(player, tag)
 	end
 end
 
 local function onPlayerAdded(player)
+	if game.PlaceId == 0000000 then
+		if Knit.Config.WHITELIST == true then
+			if not player:IsInGroup(13585944) then
+				if player.UserId > 0 then
+					player:Kick("Not Whitelisted")
+				end
+			end
+		end
+	end
 	local DataHasLoaded = Knit.DataService:CheckIfDataLoaded(player);
 	while DataHasLoaded == false do
 		DataHasLoaded = Knit.DataService:CheckIfDataLoaded(player);
 		if DataHasLoaded then
-			--// print(player.UserId,"| DataLoaded:", DataHasLoaded);
+			print(player.UserId,"| DataLoaded:", DataHasLoaded);
 		end
 		task.wait(.125);
 	end
@@ -167,20 +172,68 @@ local function onPlayerAdded(player)
     if profile ~= nil then
         if player:IsDescendantOf(Players) == true then
 			playerProfiles[player] = profile;
+
 			task.spawn(function()
                 --// @todo: Add Missions
 				--MissionService:Initialize(player,profile)
-				Knit.StatTrackService:StartTracking(player);
+				--Knit.StatTrackService:StartTracking(player);
 			end)
 
-			--[[local leaderstats = Instance.new("Folder")
+			local leaderstats = Instance.new("Folder")
 			leaderstats.Name = "leaderstats"
 			leaderstats.Parent = player
 		
 			local wins = Instance.new("IntValue")
 			wins.Name = "Wins"
 			wins.Value = playerProfiles[player].Data.PlayerInfo.TotalWins;
-			wins.Parent = leaderstats]]
+			wins.Parent = leaderstats
+
+				--// Main Data folder
+			local DataFolder = Instance.new("Folder")
+			DataFolder.Name = "Data"
+			DataFolder.Parent = player
+			
+			--// Checkpoint | 1
+			local GameValues = Instance.new("Folder")
+			GameValues.Name = "GameValues"
+			GameValues.Parent = DataFolder
+	
+			local IngredientLocation = Instance.new("ObjectValue")
+			IngredientLocation.Name = "Ingredient"
+			IngredientLocation.Parent = GameValues
+			local FoodLocation = Instance.new("ObjectValue")
+			FoodLocation.Name = "Food"
+			FoodLocation.Parent = GameValues
+		
+			--// Stars | 2
+			local CookingFolder = Instance.new("Folder")
+			CookingFolder.Name = "Cooking"
+			CookingFolder.Parent = DataFolder
+			
+			local FoodMade = Instance.new("IntValue")
+			FoodMade.Name = "FoodMade"
+			FoodMade.Parent = CookingFolder
+			FoodMade.Value = 0
+		
+			--// Quests | 3
+			local QuestFolder = Instance.new("Folder")
+			QuestFolder.Name = "Quests"
+			QuestFolder.Parent = DataFolder
+			
+			local JohnQuest = Instance.new("BoolValue")
+			JohnQuest.Name = "John"
+			JohnQuest.Parent = QuestFolder
+			JohnQuest.Value = false
+		
+			--// Bosses | 4
+			local Bosses = Instance.new("Folder")
+			Bosses.Name = "Bosses"
+			Bosses.Parent = DataFolder
+			
+			local ChefBoss = Instance.new("BoolValue")
+			ChefBoss.Name = "Rdite"
+			ChefBoss.Parent = Bosses
+			ChefBoss.Value = false
 
 			local char = player.Character or player.CharacterAdded:Wait()
             player.CharacterAdded:Connect(onCharacterAdded);
@@ -200,18 +253,6 @@ end
 for _, player in ipairs(Players:GetPlayers()) do
     coroutine.wrap(onPlayerAdded)(player);
 end
-
-ChatService.SpeakerAdded:Connect(function(playerName)
-	local Speaker = ChatService:GetSpeaker(playerName)
-	local Player = game.Players[playerName]
-	
-	if ChatTags[Player.UserId] then
-		Speaker:SetExtraData("Tags",{ChatTags[Player.UserId]})
-		Speaker:SetExtraData("ChatColor",Color3.fromRGB(255, 230, 7))
-	elseif MarketplaceService:UserOwnsGamePassAsync(Player.UserId, VIP_GAMEPASS) then
-		Speaker:SetExtraData("Tags",{PurchasedChatTags[VIP_GAMEPASS]})
-	end
-end)
 
 Players.PlayerAdded:Connect(onPlayerAdded);
 Players.PlayerRemoving:Connect(onPlayerRemoving);

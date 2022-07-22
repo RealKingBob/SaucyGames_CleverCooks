@@ -28,11 +28,18 @@ local SETTINGS = {
             MostDays = 0, -- Most days the user survived for
             LatestDays = 0, -- Most recent days the user survived for
 
-			DuckWins = 0, -- Num of wins a user has a duck
-			HunterWins = 0, -- Num of wins a user has a hunter
+			Wins = 0, -- Num of wins a user has a duck
 			WinStreak = 0, -- Win streak a user has
 
 			CratesOpened = 0, -- Num of crates a user has opened
+
+            FoodCooked = 0,
+            FoodsPickedUp = 0,
+            IngredientsPickedUp = 0,
+
+            RecentFoodMade = false,
+            RecentFoodPickUp = false,
+            RecentIngredientPickUp = false,
 
 			LogInTimes = 0, -- Num of times a player has logged on this game
 			SecondsPlayed = 0, -- Num of seconds a user has played the game
@@ -74,69 +81,18 @@ local SETTINGS = {
 
     Products = { -- developer_product_id = function(profile)
 		-- COIN PURCHASES --
-		[1229503030] = function(ownerprofile, profile) -- 95
+		[00000000000] = function(ownerprofile, profile) -- 95
             profile.Data.PlayerInfo.Coins += 1000
             if ownerprofile.Data.PlayerInfo.CoinsBought == nil then ownerprofile.Data.PlayerInfo.CoinsBought = 0 end
             ownerprofile.Data.PlayerInfo.CoinsBought += 1000
             updateClientCoins(profile, 1000)
             updateClientDonations(ownerprofile)
-        end,
-		[1229503040] = function(ownerprofile, profile) -- 295
-            profile.Data.PlayerInfo.Coins += 3000
-            if ownerprofile.Data.PlayerInfo.CoinsBought == nil then ownerprofile.Data.PlayerInfo.CoinsBought = 0 end
-            ownerprofile.Data.PlayerInfo.CoinsBought += 3000
-            updateClientCoins(profile, 3000)
-            updateClientDonations(ownerprofile)
-        end,
-		[1229502993] = function(ownerprofile, profile) -- 495
-            profile.Data.PlayerInfo.Coins += 5000
-            if ownerprofile.Data.PlayerInfo.CoinsBought == nil then ownerprofile.Data.PlayerInfo.CoinsBought = 0 end
-            ownerprofile.Data.PlayerInfo.CoinsBought += 5000
-            updateClientCoins(profile, 5000)
-            updateClientDonations(ownerprofile)
-        end,
-		[1229503096] = function(ownerprofile, profile) -- 895
-            profile.Data.PlayerInfo.Coins += 10000
-            if ownerprofile.Data.PlayerInfo.CoinsBought == nil then ownerprofile.Data.PlayerInfo.CoinsBought = 0 end
-            ownerprofile.Data.PlayerInfo.CoinsBought += 10000
-            updateClientCoins(profile, 10000)
-            updateClientDonations(ownerprofile)
-        end,
-		[1229503007] = function(ownerprofile, profile) -- 1695
-            profile.Data.PlayerInfo.Coins += 20000
-            if ownerprofile.Data.PlayerInfo.CoinsBought == nil then ownerprofile.Data.PlayerInfo.CoinsBought = 0 end
-            ownerprofile.Data.PlayerInfo.CoinsBought += 20000
-            updateClientCoins(profile, 20000)
-            updateClientDonations(ownerprofile)
-        end,
-
-        [1245274024] = function(ownerprofile, profile) -- Karl Bundle Gift
-            if profile.Data.GamepassOwned == nil then profile.Data.GamepassOwned = {} end
-            profile.Data.GamepassOwned["Karl"] = true;
-            updateClientGamepasses(profile)
-
-            if profile.Data.Inventory.DuckSkins["Karl"] == nil then
-                AddItem(profile, "Karl", "Skins")
-                profile.Data.PlayerInfo.Coins += 1200
-                updateClientCoins(profile, 1200)
-            end
-        end,
-        [1245274104] = function(ownerprofile, profile) -- VIP Bundle Gift
-            if profile.Data.GamepassOwned == nil then profile.Data.GamepassOwned = {} end
-            profile.Data.GamepassOwned["VIP"] = true;
-            updateClientGamepasses(profile)
-
-            if profile.Data.Inventory.DuckSkins["VIP Duck"] == nil then
-                AddItem(profile, "VIP Duck", "Skins")
-                profile.Data.PlayerInfo.Coins += 1000
-                updateClientCoins(profile, 1000)
-            end
-        end,
+        end
     },
 
     Gamepasses = { -- developer_product_id = function(profile)
 		-- VIP --
-        [26228902] = function(ownerprofile, profile)
+        [00000000] = function(ownerprofile, profile)
             if profile.Data.GamepassOwned == nil then profile.Data.GamepassOwned = {} end
             profile.Data.GamepassOwned["VIP"] = true;
             updateClientGamepasses(profile)
@@ -145,19 +101,6 @@ local SETTINGS = {
                 AddItem(profile, "VIP Duck", "Skins")
                 profile.Data.PlayerInfo.Coins += 1000
                 updateClientCoins(profile, 1000)
-            end
-        end,
-		
-        -- KARL --
-        [27310378] = function(ownerprofile, profile)
-            if profile.Data.GamepassOwned == nil then profile.Data.GamepassOwned = {} end
-            profile.Data.GamepassOwned["Karl"] = true;
-            updateClientGamepasses(profile)
-
-            if profile.Data.Inventory.DuckSkins["Karl"] == nil then
-                AddItem(profile, "Karl", "Skins")
-                profile.Data.PlayerInfo.Coins += 1200
-                updateClientCoins(profile, 1200)
             end
         end,
     },
@@ -236,7 +179,7 @@ function AddItemPlayer(Player, itemName, crateType)
 end
 
 local function PreloadData(Player, Profile, ProfileData)
-	DataService.RequestDailyShop:Fire(Player)
+	--DataService.RequestDailyShop:Fire(Player)
     local TEST_VOICE_CHAT_PLACE_ID = 8792750286;
     local TEST_BIG_SERVER_PLACE_ID = 8793381822;
     local TEST_SERVER_PLACE_ID = 8303278706;
@@ -273,7 +216,7 @@ local function PreloadData(Player, Profile, ProfileData)
  
 	-- Check if the player already owns the game pass
 	local success, message = pcall(function()
-		hasVIPPass = MarketplaceService:UserOwnsGamePassAsync(Player.UserId, VIP_Gamepass)
+		--hasVIPPass = MarketplaceService:UserOwnsGamePassAsync(Player.UserId, VIP_Gamepass)
     end)
 
     if not success then
@@ -281,7 +224,7 @@ local function PreloadData(Player, Profile, ProfileData)
 	end
 
     local success, message = pcall(function()
-		hasKarlPass = MarketplaceService:UserOwnsGamePassAsync(Player.UserId, Karl_Gamepass)
+		--hasKarlPass = MarketplaceService:UserOwnsGamePassAsync(Player.UserId, Karl_Gamepass)
     end)
  
 	-- If there's an error, issue a warning and exit the function
@@ -289,7 +232,7 @@ local function PreloadData(Player, Profile, ProfileData)
 		warn("Error while checking if player has pass: " .. tostring(message))
 	end
  
-	if hasVIPPass == true then
+	--[[if hasVIPPass == true then
 		--print(Player.Name .. " owns the game pass with ID " .. VIP_Gamepass)
 		if ProfileData.Inventory.DuckSkins["VIP Duck"] == nil then
             AddItemPlayer(Player, "VIP Duck", "Skins")
@@ -305,7 +248,7 @@ local function PreloadData(Player, Profile, ProfileData)
             ProfileData.PlayerInfo.Coins += 1200
             updateClientCoins(Profile, 1200)
         end
-	end
+	end]]
 end
 
 local function OnPlayerAdded(Player)
@@ -618,20 +561,12 @@ function DataService:KnitInit()
 	Players.PlayerAdded:Connect(OnPlayerAdded);
     Players.PlayerRemoving:Connect(function(Player)
         local PlayerProfile = StatsProfiles[Player];
-        local CrateService = Knit.GetService("CrateService")
 
         if PlayerProfile ~= nil then
-            if PlayerProfile.Data then
-                local PlayerDailyProfiles = CrateService:GetDailyProfile(Player)  
-                if PlayerProfile.Data.PlayerInfo then
-                    PlayerProfile.Data.PlayerInfo.DailyShopInfo = PlayerDailyProfiles.PlayerInfo.DailyShopInfo
-                end
-                PlayerProfile.Data.DailyShopItems = HttpService:JSONEncode(PlayerDailyProfiles.DailyShopItems)
-            end
             PlayerProfile:Release();
             print(Player.Name .. "'s profile has been released!")
         end;
-        Knit.StatTrackService:StopTracking(Player);
+        --Knit.StatTrackService:StopTracking(Player);
         
         if PlayerServerGifts[Player.UserId] then
             print(PlayerServerGifts[Player.UserId])
@@ -643,8 +578,6 @@ function DataService:KnitInit()
             end
             PlayerServerGifts[Player.UserId] = nil
         end
-
-        CrateService:CleanUp(Player);
     end);
 end
 

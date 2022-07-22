@@ -7,6 +7,8 @@ local TweenService = game:GetService("TweenService")
 local CollectionService = game:GetService("CollectionService")
 
 --//Imports
+local TweenModule;
+local NumberUtil;
 local Maid = require(Knit.Util.Maid);
 
 --//Const
@@ -32,23 +34,52 @@ function ButtonStyle:StyleButton(Container)
     Styles[Container] = ButtonMaid;
 
     ButtonMaid:GiveTask(Button.MouseButton1Down:Connect(function()
-        TweenService:Create(Container, ClickInfo, { Size = UDim2.fromScale(.9, .9) }):Play();
-        MouseDownSound:Play();
+        if Button:FindFirstChildWhichIsA("UIScale") then
+            local ButtonTween = TweenModule.new(ClickInfo, function(Alpha)
+                Button:FindFirstChildWhichIsA("UIScale").Scale = NumberUtil.LerpClamp(1, 0.9, Alpha); 
+            end)
+            ButtonTween:Play()
+            MouseDownSound:Play();
+        else
+            TweenService:Create(Container, ClickInfo, { Size = UDim2.fromScale(.9, .9) }):Play();
+            MouseDownSound:Play();
+        end
     end))
     
     ButtonMaid:GiveTask(Button.MouseButton1Up:Connect(function()
-        TweenService:Create(Container, ClickInfo, { Size = UDim2.fromScale(1.15, 1.15) }):Play();
-        MouseUpSound:Play();
+        if Button:FindFirstChildWhichIsA("UIScale") then
+            local ButtonTween = TweenModule.new(ClickInfo, function(Alpha)
+                Button:FindFirstChildWhichIsA("UIScale").Scale = NumberUtil.LerpClamp(1, 1.15, Alpha); 
+            end)
+            ButtonTween:Play()
+            MouseUpSound:Play();
+        else
+            TweenService:Create(Container, ClickInfo, { Size = UDim2.fromScale(1.15, 1.15) }):Play();
+            MouseUpSound:Play();
+        end
     end))
     
     ButtonMaid:GiveTask(Button.MouseEnter:Connect(function()
-        TweenService:Create(Container, HoverInfo, { Size = UDim2.fromScale(1.15, 1.15) }):Play();
+        if Button:FindFirstChildWhichIsA("UIScale") then
+            local ButtonTween = TweenModule.new(ClickInfo, function(Alpha)
+                Button:FindFirstChildWhichIsA("UIScale").Scale = NumberUtil.LerpClamp(1, 1.15, Alpha); 
+            end)
+            ButtonTween:Play()
+        else
+            TweenService:Create(Container, HoverInfo, { Size = UDim2.fromScale(1.15, 1.15) }):Play();
+        end
     end))
     
     ButtonMaid:GiveTask(Button.MouseLeave:Connect(function()
-        TweenService:Create(Container, HoverInfo, { Size = UDim2.fromScale(1, 1) }):Play();
+        if Button:FindFirstChildWhichIsA("UIScale") then
+            local ButtonTween = TweenModule.new(ClickInfo, function(Alpha)
+                Button:FindFirstChildWhichIsA("UIScale").Scale = NumberUtil.LerpClamp(1.15, 1, Alpha); 
+            end)
+            ButtonTween:Play()
+        else
+            TweenService:Create(Container, HoverInfo, { Size = UDim2.fromScale(1, 1) }):Play();
+        end
     end))
-
 end
 
 function ButtonStyle:RemoveStyle(Container)
@@ -62,6 +93,10 @@ function ButtonStyle:RemoveStyle(Container)
 end
 
 function ButtonStyle:KnitStart()
+
+    TweenModule = require(Knit.Modules.Tween);
+    NumberUtil = require(Knit.ReplicatedModules.NumberUtil);
+
     CollectionService:GetInstanceAddedSignal("ButtonStyle"):Connect(function(v)
         self:StyleButton(v)
     end)

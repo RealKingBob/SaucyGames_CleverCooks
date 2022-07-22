@@ -14,18 +14,9 @@ local AvatarService = Knit.CreateService {
     Client = {};
 }
 
-local AvatarServiceLogs = {};
-
 local PlayerService = game:GetService("Players");
 local InsertService = game:GetService("InsertService");
 local ReplicatedStorage = game:GetService("ReplicatedStorage");
-
-local DataService = require(script.Parent.DataService);
-local InventoryService = require(script.Parent.InventoryService);
-local Rarity = Knit.ReplicatedRarities
-
-local DuckModels = ReplicatedStorage:WaitForChild("Assets").DuckModels
-local DeathEffects = ReplicatedStorage:WaitForChild("Assets").DeathEffects
 
 local GameLibrary = ReplicatedStorage:WaitForChild("GameLibrary");
 local Beams = GameLibrary:WaitForChild("Beams");
@@ -94,7 +85,7 @@ end;
 function AvatarService:CheckForHeadless(UserId) -- [UserId : Number]
     local AcceptableIds = {17}; -- Source: https://developer.roblox.com/en-us/api-reference/enum/AssetType
     if UserId then
-        warn(UserId,"[AvatarService]: Checking User["..tostring(UserId).."] for headless");--print("[AvatarService]: Checking User[",AvatarId,"] for headless");
+        --warn(UserId,"[AvatarService]: Checking User["..tostring(UserId).."] for headless");--print("[AvatarService]: Checking User[",AvatarId,"] for headless");
         local CharacterInfo;
         local call, err = pcall(function()
             CharacterInfo = PlayerService:GetCharacterAppearanceInfoAsync(UserId);
@@ -135,7 +126,7 @@ function AvatarService:GetAvatarAccessories(UserId) -- [IngredientOjects, Ingred
     local AccessoryIds = {};
     local AcceptableIds = {8,41,42,57,58}; -- Source: https://developer.roblox.com/en-us/api-reference/enum/AssetType
     if UserId then
-        warn(UserId,"[AvatarService]: Retrieving User["..tostring(UserId).."] avatar accessories");--print("[AvatarService]: Retrieving User[",AvatarId,"] avatar accessories");
+        --warn(UserId,"[AvatarService]: Retrieving User["..tostring(UserId).."] avatar accessories");--print("[AvatarService]: Retrieving User[",AvatarId,"] avatar accessories");
         local CharacterInfo;
         local call, err = pcall(function()
             CharacterInfo = PlayerService:GetCharacterAppearanceInfoAsync(UserId);
@@ -144,7 +135,7 @@ function AvatarService:GetAvatarAccessories(UserId) -- [IngredientOjects, Ingred
         if call == true then
             for _,asset in pairs(CharacterInfo["assets"]) do
                 if table.find(AcceptableIds,asset["assetType"]["id"]) then -- Matches current id with AcceptableIds
-                    warn(UserId,"[AvatarService]: Adding accessory ["..tostring(asset["name"]).."] to array"); --print("[AvatarService]: Adding accessory [", asset["name"],"] to array");
+                    --warn(UserId,"[AvatarService]: Adding accessory ["..tostring(asset["name"]).."] to array"); --print("[AvatarService]: Adding accessory [", asset["name"],"] to array");
                     table.insert(AccessoryIds,asset["id"]);
                 end;
             end;
@@ -158,7 +149,7 @@ end;
 
 function AvatarService:GetAvatarColor(UserId) -- [UserId : Number]
     if UserId then
-        warn(UserId,"[AvatarService]: Retrieving User["..tostring(UserId).."] body color");--print("[AvatarService]: Retrieving User[",AvatarId,"] body color");
+        --warn(UserId,"[AvatarService]: Retrieving User["..tostring(UserId).."] body color");--print("[AvatarService]: Retrieving User[",AvatarId,"] body color");
         local CharacterInfo;
         local call, err = pcall(function()
             CharacterInfo = PlayerService:GetCharacterAppearanceInfoAsync(UserId);
@@ -178,7 +169,7 @@ end;
 function AvatarService:GetAvatarFace(UserId) -- [UserId : Number]
     local AcceptableIds = {18}; -- Source: https://developer.roblox.com/en-us/api-reference/enum/AssetType
     if UserId then
-        warn(UserId,"[AvatarService]: Retrieving User["..tostring(UserId).."] face id");--print("[AvatarService]: Retrieving User[",AvatarId,"] face id");
+        --warn(UserId,"[AvatarService]: Retrieving User["..tostring(UserId).."] face id");--print("[AvatarService]: Retrieving User[",AvatarId,"] face id");
         local CharacterInfo;
         local call, err = pcall(function()
             CharacterInfo = PlayerService:GetCharacterAppearanceInfoAsync(UserId);
@@ -204,7 +195,7 @@ end;
 
 function AvatarService:SetHeadless(UserId, Character) -- [UserId : Number]
     if Character then
-        warn(UserId,"[AvatarService]: Setting User["..tostring(UserId).."] for headless");
+        --warn(UserId,"[AvatarService]: Setting User["..tostring(UserId).."] for headless");
         Character.Head.Transparency = 1;
         Character.Head.face.Texture = "";
     end;
@@ -219,7 +210,7 @@ function AvatarService:SetAvatarFace(UserId,Character,FaceId,IsCharacterFace) --
                 --print(asset:GetChildren())
                 if asset:FindFirstChildWhichIsA("Decal") then
                     local InsertedFace = asset:FindFirstChildWhichIsA("Decal");
-                    warn(UserId,"[AvatarService]: Loaded face ["..FaceId.."] successfully");
+                    --warn(UserId,"[AvatarService]: Loaded face ["..FaceId.."] successfully");
                     Head.face.Texture = InsertedFace.Texture;
                 end
             else
@@ -239,7 +230,7 @@ function AvatarService:SetAvatarColor(UserId,Character,BodyColorIds) -- [BodyCol
         local Head = Character:FindFirstChild("Head");
         local Torso = Character:FindFirstChild("Mouse.001");
         if Head and Torso then
-            warn(UserId,"[AvatarService]: Loaded body color ["..tostring(BodyColorIds[1]).."] successfully");
+            ---warn(UserId,"[AvatarService]: Loaded body color ["..tostring(BodyColorIds[1]).."] successfully");
             Head.BrickColor = BrickColor.new(BodyColorIds[1]);
             Torso.BrickColor = BrickColor.new(BodyColorIds[2]);
         else
@@ -255,7 +246,7 @@ function AvatarService:SetAvatarMaterial(UserId,Character,Material) -- [BodyColo
         local Head = Character:FindFirstChild("Head");
         local Torso = Character:FindFirstChild("Mouse.001");
         if Head and Torso then
-            warn(UserId,"[AvatarService]: Loaded material ["..tostring(Material).."] successfully");
+            --warn(UserId,"[AvatarService]: Loaded material ["..tostring(Material).."] successfully");
             Head.Material = Material;
             Torso.Material = Material;
         else
@@ -272,7 +263,7 @@ function AvatarService:SetAvatarAccessory(UserId,Humanoid,AccessoryId)
         if success and asset then
             if asset:FindFirstChildWhichIsA("Accessory") then
                 local accessory = asset:FindFirstChildWhichIsA("Accessory");
-                warn(UserId,"[AvatarService]: Loaded accessory [".. tostring(accessory).."] successfully");
+                --warn(UserId,"[AvatarService]: Loaded accessory [".. tostring(accessory).."] successfully");
                 --asset.Parent = workspace
                 Humanoid:AddAccessory(accessory);
             end
