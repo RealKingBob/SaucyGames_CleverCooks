@@ -257,4 +257,16 @@ end
 Players.PlayerAdded:Connect(onPlayerAdded);
 Players.PlayerRemoving:Connect(onPlayerRemoving);
 
+local DropUtil = require(Knit.Shared.Modules.DropUtil);
+
+task.spawn(function()
+	for _, value in ipairs(CollectionService:GetTagged(Knit.Config.CHEESE_SPAWN)) do
+		while true do
+			task.wait(5)
+			workspace.Spawnables.Cheese:ClearAllChildren()
+			DropUtil.DropCheese(value.CFrame, game.ReplicatedStorage.Spawnables.Cheese, 10, 5)
+		end
+	end
+end)
+
 ----------------------------------------------------------------------------------------------

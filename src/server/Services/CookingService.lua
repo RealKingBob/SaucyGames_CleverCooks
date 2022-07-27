@@ -15,6 +15,7 @@ local CookingService = Knit.CreateService {
         DropDown = Knit.CreateSignal(),
 		Recipe = Knit.CreateSignal(),
 		Cook = Knit.CreateSignal(),
+		SendIngredients = Knit.CreateSignal(),
 		ProximitySignal = Knit.CreateSignal();
 	};
 }
@@ -39,10 +40,6 @@ local ServerModules = Knit.Modules;
 local RemoteEvents = GameLibrary:FindFirstChild("RemoteEvents");
 local IngredientObjects = GameLibrary:FindFirstChild("IngredientObjects");
 local FoodObjects = GameLibrary:FindFirstChild("FoodObjects");
-
-local CookingSystem = RemoteEvents:FindFirstChild("CookingSystem");
-local ProximitySystem = RemoteEvents:FindFirstChild("ProximitySystem");
-local SendIngredientsEvent = RemoteEvents:FindFirstChild("SendIngredients")
 
 ----- Loaded Modules -----
 
@@ -240,7 +237,7 @@ function CookingService:KnitInit()
 				end
 				if TableAPI.CheckArrayEquality(prevIngredients[plr],playerIngredients[plr]) == false then
 					print("SENT DATA")
-					SendIngredientsEvent:FireClient(plr, playerIngredients[plr])
+					self.Client.SendIngredients:Fire(plr, playerIngredients[plr])
 				end
 				prevIngredients[plr] = playerIngredients[plr];
 			end

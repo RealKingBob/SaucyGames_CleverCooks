@@ -23,7 +23,7 @@ local SETTINGS = {
 
             DailyItemsBought = 0, -- Num of daily items bought in daily store
 			CurrencyBought = 0, -- Coin amount a user has bought
-            LifeTimeCurrency = 0, -- counts how many coins a user has had overall
+            LifeTimeCurrency = 0, -- counts how many Currency a user has had overall
 
             MostDays = 0, -- Most days the user survived for
             LatestDays = 0, -- Most recent days the user survived for
@@ -82,10 +82,10 @@ local SETTINGS = {
     Products = { -- developer_product_id = function(profile)
 		-- COIN PURCHASES --
 		[00000000000] = function(ownerprofile, profile) -- 95
-            profile.Data.PlayerInfo.Coins += 1000
-            if ownerprofile.Data.PlayerInfo.CoinsBought == nil then ownerprofile.Data.PlayerInfo.CoinsBought = 0 end
-            ownerprofile.Data.PlayerInfo.CoinsBought += 1000
-            updateClientCoins(profile, 1000)
+            profile.Data.PlayerInfo.Currency += 1000
+            if ownerprofile.Data.PlayerInfo.CurrencyBought == nil then ownerprofile.Data.PlayerInfo.CurrencyBought = 0 end
+            ownerprofile.Data.PlayerInfo.CurrencyBought += 1000
+            updateClientCurrency(profile, 1000)
             updateClientDonations(ownerprofile)
         end
     },
@@ -99,8 +99,8 @@ local SETTINGS = {
 
             if profile.Data.Inventory.DuckSkins["VIP Duck"] == nil then
                 AddItem(profile, "VIP Duck", "Skins")
-                profile.Data.PlayerInfo.Coins += 1000
-                updateClientCoins(profile, 1000)
+                profile.Data.PlayerInfo.Currency += 1000
+                updateClientCurrency(profile, 1000)
             end
         end,
     },
@@ -124,10 +124,12 @@ local DataService = Knit.CreateService {
 	Name = "DataService";
 	Client = {
 		LevelSignal = Knit.CreateSignal();
-		CoinSignal = Knit.CreateSignal();
+		CurrencySignal = Knit.CreateSignal();
         DonationSignal = Knit.CreateSignal();
         GamepassSignal = Knit.CreateSignal();
-        RequestCoinSignal = Knit.CreateSignal();
+        RequestCurrencyignal = Knit.CreateSignal();
+
+        GiveCurrency = Knit.CreateSignal();
 
         ServerMessage = Knit.CreateSignal();
         Notification = Knit.CreateSignal();
@@ -140,17 +142,17 @@ DataService.RequestDailyShop = Signal.new();
 
 ----- Private Functions -----
 
-function updateClientCoins(profile, coinAmount)
+function updateClientCurrency(profile, coinAmount)
     local Player = DataService:GetPlayer(profile)
     if Player then
-        DataService.Client.CoinSignal:Fire(Player, profile.Data.PlayerInfo.Coins, coinAmount)
+        DataService.Client.Currencyignal:Fire(Player, profile.Data.PlayerInfo.Currency, coinAmount)
     end
 end
 
 function updateClientDonations(profile)
     local Player = DataService:GetPlayer(profile)
     if Player then
-        DataService.Client.DonationSignal:Fire(Player, profile.Data.PlayerInfo.CoinsBought)
+        DataService.Client.DonationSignal:Fire(Player, profile.Data.PlayerInfo.CurrencyBought)
     end
 end
 
@@ -188,11 +190,11 @@ local function PreloadData(Player, Profile, ProfileData)
 	game.PlaceId == TEST_BIG_SERVER_PLACE_ID or 
 	game.PlaceId == TEST_SERVER_PLACE_ID then
 		if Knit.Config.WHITELIST == true and Player:IsInGroup(13585944) then
-			Profile.Data.PlayerInfo.Coins = 1000000
+			Profile.Data.PlayerInfo.Currency = 1000000
 		end
 	end
     if Player then
-        DataService.Client.CoinSignal:Fire(Player, Profile.Data.PlayerInfo.Coins, nil, true)
+        DataService.Client.CurrencySignal:Fire(Player, Profile.Data.PlayerInfo.Currency, nil, true)
     end
 
     if Profile.Data.PlayerInfo.SecondsPlayed < 30 then
@@ -236,8 +238,8 @@ local function PreloadData(Player, Profile, ProfileData)
 		--print(Player.Name .. " owns the game pass with ID " .. VIP_Gamepass)
 		if ProfileData.Inventory.DuckSkins["VIP Duck"] == nil then
             AddItemPlayer(Player, "VIP Duck", "Skins")
-            ProfileData.PlayerInfo.Coins += 1000
-            updateClientCoins(Profile, 1000)
+            ProfileData.PlayerInfo.Currency += 1000
+            updateClientCurrency(Profile, 1000)
         end
 	end
 
@@ -245,8 +247,8 @@ local function PreloadData(Player, Profile, ProfileData)
 		--print(Player.Name .. " owns the game pass with ID " .. Karl_Gamepass)
 		if ProfileData.Inventory.DuckSkins["Karl"] == nil then
             AddItemPlayer(Player, "Karl", "Skins")
-            ProfileData.PlayerInfo.Coins += 1200
-            updateClientCoins(Profile, 1200)
+            ProfileData.PlayerInfo.Currency += 1200
+            updateClientCurrency(Profile, 1200)
         end
 	end]]
 end
@@ -458,7 +460,7 @@ end
 
 ----- Initialize -----
 
-function DataService:GetCoins(player)
+function DataService:GetCurrency(player)
     local Profile = self:GetProfile(player)
     local tries = 0
 
@@ -470,10 +472,39 @@ function DataService:GetCoins(player)
     end
 
     if Profile then
-		return Profile.Data.PlayerInfo.Coins;
+		return Profile.Data.PlayerInfo.Currency;
 	end;
     return 0;
 end
+
+local reset = {}
+
+function DataService:GiveCurrency(player, Amount)
+
+    --print("give", player, Amount)
+
+    local profile = StatsProfiles[player];
+
+	if not profile then
+		return;
+	end;
+
+    if not reset[player] then
+        reset[player] = true
+        profile.Data.PlayerInfo.Currency = 0;
+    end
+
+    if profile.Data.PlayerInfo.Currency == nil then
+        profile.Data.PlayerInfo.Currency = 0;
+    end;
+
+    profile.Data.PlayerInfo.Currency = profile.Data.PlayerInfo.Currency + Amount;
+
+    if player then
+        DataService.Client.CurrencySignal:Fire(player, profile.Data.PlayerInfo.Currency, Amount, true)
+    end
+
+end;
 
 function DataService:PurchaseProduct(player, targetPlayer)
     --RecentGifts[player] = targetPlayer
@@ -493,9 +524,10 @@ function DataService:CheckIfDataLoaded(Player)
 	return false;
 end;
 
-function DataService.Client:GetCoins(Player)
+
+function DataService.Client:GetCurrency(Player)
 	-- We can just call our other method from here:
-    return self.Server:GetCoins(Player)
+    return self.Server:GetCurrency(Player)
 end;
 
 function DataService.Client:PurchaseProduct(Player, TargetPlayer)
@@ -512,11 +544,11 @@ function DataService.Client:PurchaseProduct(Player, TargetPlayer)
     };
 end;
 
-function DataService.Client:GetCoinsBought(Player)
+function DataService.Client:GetCurrencyBought(Player)
 	local StatsProfile = StatsProfiles[Player];
 
 	if StatsProfile then
-		return StatsProfile.Data.PlayerInfo.CoinsBought
+		return StatsProfile.Data.PlayerInfo.CurrencyBought
 	end;
 end;
 
@@ -558,6 +590,10 @@ function DataService:KnitInit()
     MarketplaceService.PromptGamePassPurchaseFinished:Connect(onPromptGamePassPurchaseFinished)
     MarketplaceService.PromptPurchaseFinished:Connect(onPromptPurchaseFinished)
     
+    self.Client.GiveCurrency:Connect(function(player, amount)
+        self:GiveCurrency(player, amount)
+    end)
+
 	Players.PlayerAdded:Connect(OnPlayerAdded);
     Players.PlayerRemoving:Connect(function(Player)
         local PlayerProfile = StatsProfiles[Player];

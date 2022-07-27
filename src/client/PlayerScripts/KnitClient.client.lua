@@ -47,6 +47,24 @@ Knit.Start():andThen(function()
 	print("Client started");	
 end):catch(warn)
 
+local DataService = Knit.GetService("DataService")
+local CurrencyCounterUI = Knit.GetController("CurrencyCounterUI")
+
+task.spawn(function()
+	task.wait(5)
+	DataService:GetCurrency():andThen(function(Coins)
+		CurrencyCounterUI:Update(Coins);
+	end)
+end)
+
+DataService.CurrencySignal:Connect(function(Coins, amount, disableEffect)
+	if disableEffect then
+		CurrencyCounterUI:Update(Coins);
+	else
+		CurrencyCounterUI:CollectCheese(Coins, amount);
+	end;
+end)
+
 --[[local DataService = Knit.GetService("DataService")
 local CoinCounterUI = Knit.GetController("CoinCounterUI")
 local CoinsUI = Knit.GetController("CoinsUI")

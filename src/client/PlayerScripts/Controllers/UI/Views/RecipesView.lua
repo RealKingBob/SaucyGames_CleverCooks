@@ -233,8 +233,10 @@ function setupRecipeButtons()
 		if checkIfAllGreen == true then
 			allIngredientsFound = true;
 		end
+
+		local CookingService = Knit.GetService("CookingService")
 		
-		--[[prevConnection = SendIngredientsEvent.OnClientEvent:Connect(function(args)
+		prevConnection = CookingService.SendIngredients:Connect(function(args)
 			greenIngredients = {};
 			print(args)
 			if args then
@@ -277,7 +279,7 @@ function setupRecipeButtons()
 					allIngredientsFound = true;
 				end
 			end
-		end)]]
+		end)
 	end
 
 	local function setupIngredients(foodName)
@@ -375,18 +377,15 @@ function RecipesView:KnitStart()
     
     setupRecipes()
 
-    CookButton.Button.MouseButton1Click:Connect(function()
+    CookButton.MouseButton1Click:Connect(function()
         if CookDebounce == false then
             CookDebounce = true
-            CookButton.Button.Position = UDim2.new(0, 0,0, 0)
             if recipeSelected then
                 --CookEvent:FireServer(recipename)
                 print(recipeSelected)
                 local CookingService = Knit.GetService("CookingService")
-                CookingService.Client.Cook:Fire(LocalPlayer, recipeSelected)
+                CookingService.Cook:Fire(LocalPlayer, recipeSelected)
             end	
-            task.wait(.1)
-            CookButton.Button.Position = UDim2.new(0, 0,-0.1, 0)
             task.wait(.5)
             CookButton.Visible = false;
             CookDebounce = false

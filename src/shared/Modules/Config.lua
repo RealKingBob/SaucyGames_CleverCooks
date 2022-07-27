@@ -7,6 +7,8 @@ return {
     WINNER_TAG = "Winner"; --// WINNER TAG
 
     CUTSCENE_TAG = "OnCutscene"; --// ON CUTSCENE TAG
+
+    CHEESE_SPAWN = "CheeseSpawner";
     
     RED_TEAM = "RedTeam"; --// RED_TEAM TAG
     BLUE_TEAM = "BlueTeam"; --// BLUE_TEAM TAG
