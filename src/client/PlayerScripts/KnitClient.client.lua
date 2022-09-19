@@ -65,6 +65,12 @@ DataService.CurrencySignal:Connect(function(Coins, amount, disableEffect)
 	end;
 end)
 
+local CookingService = Knit.GetService("CookingService");
+
+CookingService.Cook:Connect(function(RecipeName, Pan, CookingTime)
+	print("CLIENT COOK",RecipeName,Pan, CookingTime)
+end)
+
 --[[local DataService = Knit.GetService("DataService")
 local CoinCounterUI = Knit.GetController("CoinCounterUI")
 local CoinsUI = Knit.GetController("CoinsUI")

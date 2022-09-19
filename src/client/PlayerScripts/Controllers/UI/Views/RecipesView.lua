@@ -380,14 +380,14 @@ function setupRecipeButtons()
 	end)
 end
 
-function RecipesView:Cook()
+function RecipesView:Cook(pan)
 	if CookDebounce == false then
 		CookDebounce = true
 		if recipeSelected then
 			--CookEvent:FireServer(recipename)
 			print(recipeSelected)
 			local CookingService = Knit.GetService("CookingService")
-			CookingService.Cook:Fire(recipeSelected)
+			CookingService.Cook:Fire(recipeSelected, pan)
 		end	
 		task.wait(.5)
 		CookButton.Visible = false;
@@ -403,7 +403,7 @@ function RecipesView:KnitStart()
 	for _, pan in pairs(CollectionService:GetTagged("Pan")) do
 
 		pan.ProximityPrompt.Triggered:Connect(function(plr)
-			self:Cook();
+			self:Cook(pan);
 		end);
 	end
 

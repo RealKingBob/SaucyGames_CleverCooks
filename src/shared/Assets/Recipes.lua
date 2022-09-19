@@ -1,3 +1,9 @@
+local CookingTimes = {
+	["Hard"] = 30;
+	["Medium"] = 20;
+	["Easy"] = 10;
+}
+
 local Recipes = {
 	["Macaron"] = {
 		Name = "Macaron",
@@ -135,6 +141,17 @@ local Recipes = {
 		Difficulty = "Easy"	
 	},
 };
+
+function Recipes:GetCookTime(recipeName : string)
+	local recipePackage = self[recipeName];
+
+	if not recipePackage then return false end
+	if CookingTimes[recipePackage.Difficulty] then 
+		return CookingTimes[recipePackage.Difficulty]
+	else
+		return 15;
+	end
+end
 
 function Recipes:GetRandomRecipe()
 	local Array = {};

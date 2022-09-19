@@ -79,6 +79,7 @@ local CurrentIngredientObjects = {};
 
 local playerIngredients = {};
 local prevIngredients = {};
+local cookingPansQueue = {};
 
 local function PlayerAdded(player)
     CurrentIngredientObjects[player.Name] = {};
@@ -160,6 +161,19 @@ end;
 
 ----- Cooking Functions -----
 
+function CookingService:CanCookOnPan(player, pan)
+	if not cookingPansQueue[player.UserId] then return true; end
+	if #cookingPansQueue[player.UserId] == 0 then return true; end
+
+	if table.find(cookingPansQueue[player.UserId], pan) then return false; end
+
+	if #cookingPansQueue[player.UserId] > 1 then
+		-- check if has gamepass
+		return true;
+	end
+	return false;
+end
+
 function CookingService:Recipe(player, recipe)
 	print('[CookingService]: Finding recipe: '.. tostring(recipe));
 	--[[if player and recipe then
@@ -175,11 +189,14 @@ function CookingService:Recipe(player, recipe)
 	end;]]
 end;
 
-function CookingService:Cook(player,Character,recipe)
+function CookingService:Cook(player,Character,recipe, pan)
 	print('[CookingService]: Cooking Food: '.. tostring(recipe));
+
+	if self:CanCookOnPan(player, pan) == false then return false; end
+
 	local DataService = Knit.GetService("DataService")
 	local profile = DataService.GetProfile(player);
-	if not profile then
+	if profile then
 		if RecipeModule[tostring(recipe)] then
 			local IngredientsUsed = {};
 			local SelectedRecipe = RecipeModule[tostring(recipe)];
@@ -203,6 +220,16 @@ function CookingService:Cook(player,Character,recipe)
 				end;
 				IngredientsUsed = {};
 			else return end;
+
+			table.insert(cookingPansQueue[player.UserId], pan)
+
+			local cookingTime = RecipeModule:GetCookTime(tostring(recipe));
+
+			self.Client.Cook:Fire(tostring(recipe), pan, cookingTime)
+			task.wait(cookingTime);
+
+			local function tablefind(tab,el) for index, value in pairs(tab) do if value == el then	return index end end end
+			table.remove( cookingPansQueue[player.UserId], tablefind(cookingPansQueue[player.UserId], pan) );
 
 			local RawCalculatedEXP = (EXPMultiplier * #SelectedRecipe["Ingredients"]);
 			self.Client.ProximitySignal:Fire(player,"CookVisible",false);
@@ -375,8 +402,8 @@ function CookingService:KnitInit()
 		return self:Recipe(player, recipe);
     end)
 
-	self.Client.Cook:Connect(function(player, recipe)
-		return self:Cook(player, player.Character, recipe);
+	self.Client.Cook:Connect(function(player, recipe, pan)
+		return self:Cook(player, player.Character, recipe, pan);
     end)
 
     Players.PlayerAdded:Connect(PlayerAdded);
