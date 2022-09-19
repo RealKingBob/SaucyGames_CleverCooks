@@ -19,6 +19,8 @@ local MainUI = PlayerGui:WaitForChild("GUI")
 
 local DropDownDebounce = false -- Prevents spam on the function
 
+local dropConnection = nil;
+
 local ProxFunctions = {}
 
 --// FUNCTIONS \\--
@@ -33,8 +35,45 @@ function DropDown() -- Telling the server that you are dropping the item
 		DropDownDebounce = false
 	end
 end
-ProxFunctions["DropDown"] = function(tab)
-	MainUI.DropButton.Visible = tab
+ProxFunctions["DropDown"] = function(bool)
+	--MainUI.DropButton.Visible = tab
+	print(bool)
+	
+	if bool == true then
+		if dropConnection then
+			dropConnection:Disconnect();
+		end
+
+		local HumRoot = localPlayer.Character:FindFirstChild("HumanoidRootPart")
+
+		if not HumRoot then return end;
+
+		local proxim = HumRoot:FindFirstChild("ProximityPrompt")
+
+		if not proxim then return end;
+
+		local Ingredient = localPlayer.Character:FindFirstChild("Ingredient")
+
+		if not Ingredient then return end;
+
+		if Ingredient.Value ~= nil then
+			proxim.Enabled = true;
+
+			dropConnection = proxim.Triggered:Connect(function(plr)
+				print("drop down YUP")
+				DropDown();
+			end);
+		end
+	else
+		if dropConnection then
+			dropConnection:Disconnect();
+		end
+
+		local proxim = localPlayer.Character.HumanoidRootPart.ProximityPrompt
+
+		proxim.Enabled = false;
+	end
+	
 end
 
 ProxFunctions["CookVisible"] = function(tab)
@@ -58,9 +97,6 @@ function ProximityUI:KnitStart()
 
 		pcall(ProxFunctions[action], bool)
 	end)
-
-    MainUI.DropButton.MouseButton1Click:Connect(DropDown)
-    
 end
 
 

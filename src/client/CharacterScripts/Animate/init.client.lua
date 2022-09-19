@@ -387,7 +387,7 @@ function onSwimming(speed)
 		local scale = 10.0
 		playAnimation("swim", 0.4, Humanoid)
 		setAnimationSpeed(speed / scale)
-		Figure:WaitForChild("Humanoid").WalkSpeed = 16
+		--Figure:WaitForChild("Humanoid").WalkSpeed = 16
 		pose = "Swimming"
 	else
 		playAnimation("walk", 0.4, Humanoid)

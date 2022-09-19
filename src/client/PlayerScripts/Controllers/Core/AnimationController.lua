@@ -22,16 +22,18 @@ function AnimationController:SetAnimations(Animations)
                 Animate.fall:FindFirstChild("FallAnim").AnimationId = Animations[2];
                 Animate.jump:FindFirstChild("JumpAnim").AnimationId = Animations[3];
                 local PrevJPower = Humanoid.JumpPower;
-                task.spawn(function() --// Might be a better way to reset the animations but this will do
+                --[[task.spawn(function() --// Might be a better way to reset the animations but this will do
                     Humanoid.JumpPower = 1;
                     Humanoid.Jump = true;
                     task.wait(.5)
                     Humanoid.JumpPower = PrevJPower;
-                end)
-                for _, track in pairs (AnimationTracks) do
+                end)]]
+
+                Character.Humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
+                --[[for _, track in pairs (AnimationTracks) do
                     track:Stop();
                     track:Destroy();
-                end;
+                end;]]
             end;
         end;
     end;

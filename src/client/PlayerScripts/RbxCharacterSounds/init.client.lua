@@ -42,10 +42,10 @@ local SOUND_DATA : { [string]: {[string]: any}} = {
 		Pitch = 1,
 	},
 	Splash = {
-		SoundId = "rbxasset://sounds/impact_water.mp3",
+		SoundId = "",
 	},
 	Swimming = {
-		SoundId = "rbxasset://sounds/action_swim.mp3",
+		SoundId = "",
 		Looped = true,
 		Pitch = 1.6,
 	},

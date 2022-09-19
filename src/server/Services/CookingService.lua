@@ -95,12 +95,16 @@ end;
 -- Proximity Functions
 
 function CookingService:PickUp(Player, Character, Item)
+	print(Player, Character, Item)
 	if Player and Character and Item then
 		if (PlayersInServers[Player.UserId] == nil or PlayersInServers[Player.UserId][1] == nil) and Character:FindFirstChild("Ingredient").Value == nil then
 			PlayersInServers[Player.UserId] = {true, Item};
 			local ProximityService = Knit.GetService("ProximityService");
 			if Item:GetAttribute("Type") == "Ingredient"
 			or (Item:IsA("Model") and Item.PrimaryPart:GetAttribute("Type") == "Ingredient") then
+				
+				
+
 				local ClonedItem = IngredientObjects:FindFirstChild(Item.Name):Clone();
 
 				ProximityService:PickUpIngredient(Character, ClonedItem);
@@ -147,6 +151,7 @@ function CookingService:DropDown(Player,Character)
 			end;
 	
 			ProximityService:DropItem(Character, PlayersInServers[Player.UserId][2]);
+			self.Client.ProximitySignal:Fire(Player,"DropDown",false);
 	
 			PlayersInServers[Player.UserId] = nil;
 		end;
@@ -157,7 +162,7 @@ end;
 
 function CookingService:Recipe(player, recipe)
 	print('[CookingService]: Finding recipe: '.. tostring(recipe));
-	if player and recipe then
+	--[[if player and recipe then
 		local FoodHolder = CookingService:FindFoodHolder(player);
 		if RecipeModule[tostring(recipe)] then
 			if FoodHolder then
@@ -167,14 +172,14 @@ function CookingService:Recipe(player, recipe)
 				end;
 			end;
 		end;
-	end;
+	end;]]
 end;
 
 function CookingService:Cook(player,Character,recipe)
 	print('[CookingService]: Cooking Food: '.. tostring(recipe));
 	local DataService = Knit.GetService("DataService")
 	local profile = DataService.GetProfile(player);
-	if profile then
+	if not profile then
 		if RecipeModule[tostring(recipe)] then
 			local IngredientsUsed = {};
 			local SelectedRecipe = RecipeModule[tostring(recipe)];
@@ -204,7 +209,6 @@ function CookingService:Cook(player,Character,recipe)
 			--RewardService:GiveReward(profile, {EXP = MathAPI:Find_Closest_Divisible_Integer(RawCalculatedEXP, 2);})
 			SpawnItemsAPI:Spawn(player.UserId, player, recipe, FoodObjects, FoodAvailable, Character.HumanoidRootPart.Position + Character.HumanoidRootPart.CFrame.lookVector * 4);
 			--StatTrackService:SetRecentCookedFood(player, tostring(recipe));
-			CookingService:RemoveRecipe(player, recipe);
 		end;
 	else
 		warn("Could not find user["..tostring(player.UserId).."] profile to cook the food, please retry")

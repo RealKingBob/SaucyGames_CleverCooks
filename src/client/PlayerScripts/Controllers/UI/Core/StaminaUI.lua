@@ -93,13 +93,13 @@ function StaminaUI:SetupStamina(Character)
                     return;
                 end
 
-                if self:CheckSprintAnim(Humanoid) == true then
+                --[[if self:CheckSprintAnim(Humanoid) == true then
                     for i,v in pairs(Humanoid:FindFirstChildOfClass("Animator"):GetPlayingAnimationTracks()) do
                         if v.Name == "WalkAnim" then continue end
                         v:Stop()
                     end
                     return
-                end
+                end]]
     
     
                 staminaDebounce = true
@@ -113,7 +113,7 @@ function StaminaUI:SetupStamina(Character)
 
                 --print(Humanoid:FindFirstChildOfClass("Animator"):GetPlayingAnimationTracks())
 
-                local AnimSelected = Humanoid:FindFirstChildOfClass("Animator"):GetPlayingAnimationTracks()[1]
+                --[[local AnimSelected = Humanoid:FindFirstChildOfClass("Animator"):GetPlayingAnimationTracks()[1]
 
                 if AnimSelected == "rbxassetid://8028996064" then
                     AnimSelected = DefaultRunAnim;
@@ -123,7 +123,7 @@ function StaminaUI:SetupStamina(Character)
 
                 for i,v in pairs(Humanoid:FindFirstChildOfClass("Animator"):GetPlayingAnimationTracks()) do
                     v:Stop()
-                end
+                end]]
     
                 local camera = game.Workspace.CurrentCamera
     
@@ -190,7 +190,7 @@ function StaminaUI:SetupStamina(Character)
                     end
                     
                     StaminaTitle.Text = math.floor(Stamina).. '/' ..(MaxStamina)
-                until (sprinting == false) or (Stamina <= 0)
+                until (sprinting == false) or (Stamina <= 0) or (Humanoid.MoveDirection == Vector3.new(0,0,0))
 
                 if Stamina <= 0 then
                     cooldownStamina = true;
@@ -198,13 +198,13 @@ function StaminaUI:SetupStamina(Character)
 
                 if sprinting == true then
                     SprintAnim:Stop()
-                    if PrevAnim then PrevAnim:Play(); end
+                    --if PrevAnim then PrevAnim:Play(); end
                     fartParticle.Enabled = false;
-                    for i,v in pairs(Humanoid:FindFirstChildOfClass("Animator"):GetPlayingAnimationTracks()) do
+                    --[[for i,v in pairs(Humanoid:FindFirstChildOfClass("Animator"):GetPlayingAnimationTracks()) do
                         if v.Name == "WalkAnim" then continue end
                         v:Stop()
                     end
-                    if PrevAnim then PrevAnim:Play(); end
+                    if PrevAnim then PrevAnim:Play(); end]]
 
                     if cooldownStamina == true then
                         StaminaBar.BackgroundColor3 = cooldownStaminaColor;
@@ -225,16 +225,16 @@ function StaminaUI:SetupStamina(Character)
                 sprinting = false
 
                 SprintAnim:Stop()
-                if PrevAnim then PrevAnim:Play(); end
+                --if PrevAnim then PrevAnim:Play(); end
                 fartParticle.Enabled = false;
 
                 --print(PrevAnim)
-                for i,v in pairs(Humanoid:FindFirstChildOfClass("Animator"):GetPlayingAnimationTracks()) do
+                --[[for i,v in pairs(Humanoid:FindFirstChildOfClass("Animator"):GetPlayingAnimationTracks()) do
                     if v.Name == "WalkAnim" then continue end
                     v:Stop()
                 end
 
-                if PrevAnim then PrevAnim:Play(); end
+                if PrevAnim then PrevAnim:Play(); end]]
                 if cooldownStamina == true then
                     StaminaBar.BackgroundColor3 = cooldownStaminaColor;
                 else

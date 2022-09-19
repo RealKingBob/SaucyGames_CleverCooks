@@ -167,28 +167,33 @@ function AvatarService:GetAvatarColor(UserId) -- [UserId : Number]
 end;
 
 function AvatarService:GetAvatarFace(UserId) -- [UserId : Number]
-    local AcceptableIds = {18}; -- Source: https://developer.roblox.com/en-us/api-reference/enum/AssetType
-    if UserId then
-        --warn(UserId,"[AvatarService]: Retrieving User["..tostring(UserId).."] face id");--print("[AvatarService]: Retrieving User[",AvatarId,"] face id");
-        local CharacterInfo;
-        local call, err = pcall(function()
-            CharacterInfo = PlayerService:GetCharacterAppearanceInfoAsync(UserId);
-            return;
-        end);
-        if call == true then
-            for _,asset in pairs(CharacterInfo["assets"]) do
-                if table.find(AcceptableIds,asset["assetType"]["id"]) then -- Matches current id with AcceptableIds
-                    warn(UserId,"[AvatarService]: Returning face id ["..asset["name"].."]");
-                    return asset["id"];
-                end;
-            end;
-            warn(UserId,"[AvatarService][ERROR]: Did not find User["..tostring(UserId).."] face id, setting default face");--print("[AvatarService]: Retrieving User[",AvatarId,"] face id");
-            return 8056256;
-        else
-            warn(UserId,"[AvatarService][ERROR]: ".. tostring(err));
-            return nil;
-        end;
-    end;
+	local AcceptableIds = {18}; -- Source: https://developer.roblox.com/en-us/api-reference/enum/AssetType
+	if UserId then
+		--warn(UserId,"[AvatarService]: Retrieving User["..tostring(UserId).."] face id");--print("[AvatarService]: Retrieving User[",AvatarId,"] face id");
+		local CharacterInfo;
+		local call, err = pcall(function()
+			CharacterInfo = PlayerService:GetCharacterAppearanceInfoAsync(UserId);
+			return;
+		end);
+		if call == true then
+			for _,asset in pairs(CharacterInfo["assets"]) do
+				if table.find(AcceptableIds,tonumber(asset["assetType"]["id"])) then -- Matches current id with AcceptableIds
+					warn(UserId,"[AvatarService]: Returning face id ["..asset["name"].."]");
+					local assetId = asset["id"] --Replace the emote ID with another ID that you want the animation of
+					
+					--print(InsertService:LoadAsset(assetId):FindFirstChildOfClass'Decal'.Texture) --> http://www.roblox.com/asset/?id=3344650532
+					
+					local textureId = InsertService:LoadAsset(assetId):FindFirstChildOfClass'Decal'.Texture;
+					return textureId;
+				end;
+			end;
+			warn(UserId,"[AvatarService][ERROR]: Did not find User["..tostring(UserId).."] face id, setting default face");--print("[AvatarService]: Retrieving User[",AvatarId,"] face id");
+			return "rbxassetid://8056256";
+		else
+			warn(UserId,"[AvatarService][ERROR]: ".. tostring(err));
+			return nil;
+		end;
+	end;
 end;
 
 -- Setters()
@@ -217,7 +222,7 @@ function AvatarService:SetAvatarFace(UserId,Character,FaceId,IsCharacterFace) --
                 warn(UserId,"[AvatarService]: Failed to change avatar face to [".. FaceId .."]");
             end;
         else
-            Head.face.Texture = "rbxassetid://".. tostring(FaceId);
+            Head.face.Texture = tostring(FaceId);
             warn(UserId,"[AvatarService]: Loaded face ["..FaceId.."] successfully");
         end;
     else

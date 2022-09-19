@@ -138,6 +138,8 @@ local function onCharacterAdded(character)
 			if hasHeadless == true then
 				AvatarService:SetHeadless(userId,character);
 			end;
+
+			CollectionService:AddTag(character, "TrackInstance")
 		end
     end
 end
@@ -262,9 +264,9 @@ local DropUtil = require(Knit.Shared.Modules.DropUtil);
 task.spawn(function()
 	for _, value in ipairs(CollectionService:GetTagged(Knit.Config.CHEESE_SPAWN)) do
 		while true do
-			task.wait(5)
+			task.wait(math.random(4,6))
 			workspace.Spawnables.Cheese:ClearAllChildren()
-			DropUtil.DropCheese(value.CFrame, game.ReplicatedStorage.Spawnables.Cheese, 10, 5)
+			DropUtil.DropCheese(value.CFrame, game.ReplicatedStorage.Spawnables.Cheese, math.random(10,15), math.random(5,10))
 		end
 	end
 end)

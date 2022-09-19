@@ -77,7 +77,17 @@ function GameController:ForIngredient(Ingredient)
 						local CookingService = Knit.GetService("CookingService");
 						CookingService.PickUp:Fire(Ingredient);
 						task.wait(.1);
-						Ingredient:Destroy();
+
+						if Ingredient.Parent then
+							if Ingredient.Parent.Name == Ingredient.Name then
+								Ingredient.Parent:Destroy();
+							end
+						end
+
+						if Ingredient then
+							Ingredient:Destroy();
+						end
+						
 					end;
 				end;
 			end;
@@ -180,13 +190,15 @@ function GameController:KnitInit()
         end;
         for _,v in pairs(game.Workspace:FindFirstChild("IngredientAvailable"):GetChildren()) do
             if v:IsA("Model") then
-                if v.PrimaryPart:GetAttribute("Owner") == "Default"
-                or v.PrimaryPart:GetAttribute("Owner") == nil 
-                or v.PrimaryPart:GetAttribute("Owner") == game.Players.LocalPlayer.Name then else
-                    print(v.PrimaryPart:GetAttribute("Owner"));
-                    print(v,"is getting destroyed in workspace");
-                    v:Destroy();
-                end;
+				if v.PrimaryPart then
+					if v.PrimaryPart:GetAttribute("Owner") == "Default"
+					or v.PrimaryPart:GetAttribute("Owner") == nil 
+					or v.PrimaryPart:GetAttribute("Owner") == game.Players.LocalPlayer.Name then else
+						print(v.PrimaryPart:GetAttribute("Owner"));
+						print(v,"is getting destroyed in workspace");
+						v:Destroy();
+					end;
+				end
             elseif v:IsA("MeshPart") then
                 if v:GetAttribute("Owner") == "Default" 
                 or v:GetAttribute("Owner") == nil 

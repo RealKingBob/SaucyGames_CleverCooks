@@ -1,3 +1,4 @@
+local CollectionService = game:GetService("CollectionService")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local UserInputService = game:GetService("UserInputService")
@@ -12,9 +13,20 @@ local ReplicatedBillboard = GameLibrary:FindFirstChild("BillboardUI")
 
 local localPlayer = Players.LocalPlayer
 
+local Status = {
+	PickUp = "Pickup";
+	Drop = "Drop";
+	Cook = "Cook";
+}
+
+local currentStatus = Status.PickUp;
+
 local playerGui = localPlayer:WaitForChild("PlayerGui")
 local customPrompt = ReplicatedBillboard:WaitForChild("Prompt")
 local customHeadUI = ReplicatedBillboard:WaitForChild("HeadUI")
+
+local customBigPrompt = ReplicatedBillboard:WaitForChild("BigPrompt")
+local customCookHeadUI = ReplicatedBillboard:WaitForChild("CookHeadUI")
 
 local KeyMapping = require(ReplicatedModules.KeyCodeImages);
 local IngredientModule = require(ReplicatedAssets.Ingredients);
@@ -33,18 +45,33 @@ local function getScreenGui()
 	return screenGui
 end;
 
-local function createPrompt(prompt, inputType, gui)
-	local promptUI = customPrompt:Clone()
-    local headUI = customHeadUI:Clone()
+function CustomProximityController:createPrompt(prompt, inputType, gui, customStatus)
+	local promptUI;
+    local headUI;
+	if customStatus == Status.Cook then
+		promptUI = customBigPrompt:Clone()
+    	headUI = customCookHeadUI:Clone()
+	else
+		promptUI = customPrompt:Clone()
+    	headUI = customHeadUI:Clone()
+	end
+	
 
     -- UI that needs to be updated from prompt
     local promptFrame = promptUI:WaitForChild("Frame")
 	local inputFrame = promptFrame:WaitForChild("InputFrame")
+	local titleFrame = promptFrame:WaitForChild("TitleFrame")
+	local titleText = titleFrame:WaitForChild("TitleText")
 	local buttonImage = inputFrame:WaitForChild("ButtonImage")
 	local buttonText = inputFrame:WaitForChild("ButtonText")
 
     local headFrame = headUI:WaitForChild("Frame")
 	local itemImage = headFrame:WaitForChild("ItemImage")
+
+	if currentStatus == Status.Drop then
+		promptUI.StudsOffsetWorldSpace = Vector3.new(0, 0, -1.5);
+		headUI.StudsOffsetWorldSpace = Vector3.new(0, 0, -1.5);
+	end
 
 	-- Updates the cloned prompt to match the information in the ProximityPrompt in workspace
 	local function updateUIFromPrompt()
@@ -151,6 +178,12 @@ local function createPrompt(prompt, inputType, gui)
     -- Head Frame Tweens
 	table.insert(tweensForFadeOut, TweenService:Create(headFrame, tweenInfoFast, { Size = UDim2.fromScale(1,0), BackgroundTransparency = 1, Visible = false }))
 	table.insert(tweensForFadeIn, TweenService:Create(headFrame, tweenInfoFast, { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 0, Visible = true }))
+
+	-- Prompt Title Frame Tweens
+	table.insert(tweensForFadeOut, TweenService:Create(titleText, tweenInfoFast, { Position = UDim2.fromScale(1,0) }))
+	table.insert(tweensForFadeIn, TweenService:Create(titleText, tweenInfoFast, { Position = UDim2.fromScale(0, 0) }))
+
+	titleText.Text = customStatus;
 	
 	-- Make the prompt work on mobile / clickable
 	if inputType == Enum.ProximityPromptInputType.Touch or prompt.ClickablePrompt then
@@ -203,8 +236,10 @@ local function createPrompt(prompt, inputType, gui)
 	promptUI.Adornee = prompt.Parent
 	promptUI.Parent = gui
 
-    headUI.Adornee = prompt.Parent
-    headUI.Parent = gui
+	if currentStatus == Status.PickUp then
+		headUI.Adornee = prompt.Parent
+		headUI.Parent = gui
+	end
 
 	for _, tween in ipairs(tweensForFadeIn) do
 		tween:Play()
@@ -230,18 +265,60 @@ end
 function CustomProximityController:KnitStart()
 	print("CUSTOM")
     ProximityPromptService.PromptShown:Connect(function(prompt, inputType)
+
         if prompt.Style == Enum.ProximityPromptStyle.Default then
             return
         end
-    
-        local gui = getScreenGui()
+		
+        local gui = getScreenGui();
+
+		local Character = game.Players:GetPlayerFromCharacter(prompt.Parent.Parent);
+
+		if CollectionService:HasTag(prompt.Parent, "Pan") then
+			currentStatus = Status.Cook;
+			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "Cook");
+
+			prompt.PromptHidden:Wait();
+		
+        	cleanupFunction();
+		elseif Character then
+			currentStatus = Status.Drop;
+			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "Drop");
+
+			prompt.PromptHidden:Wait();
+		
+        	cleanupFunction();
+		else
+			currentStatus = Status.PickUp;
+			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "Pickup");
+
+			prompt.PromptHidden:Wait();
+		
+        	cleanupFunction();
+		end
+		--[[if prompt.Parent.Parent ~= nil then
+			if game.Players:GetPlayerFromCharacter(prompt.Parent.Parent) then
+				currentStatus = Status.Drop;
+				cleanupFunction = self:createPrompt(prompt, inputType, gui, "Drop");
+			elseif CollectionService:HasTag(prompt.Parent, "Pan") then
+				currentStatus = Status.Cook;
+				cleanupFunction = self:createPrompt(prompt, inputType, gui, "Cook");
+			else
+				currentStatus = Status.PickUp;
+				cleanupFunction = self:createPrompt(prompt, inputType, gui, "Pickup");
+			end
+		else
+			if CollectionService:HasTag(prompt.Parent, "Pan") then
+				currentStatus = Status.Cook;
+				cleanupFunction = self:createPrompt(prompt, inputType, gui, "Cook");
+			else
+				currentStatus = Status.PickUp;
+				cleanupFunction = self:createPrompt(prompt, inputType, gui, "Pickup");
+			end
+		end]]
+		
         
-        local cleanupFunction = createPrompt(prompt, inputType, gui)
-    
-        prompt.PromptHidden:Wait()
-    
-        cleanupFunction()
-    end)     
+    end)
 end
 
 

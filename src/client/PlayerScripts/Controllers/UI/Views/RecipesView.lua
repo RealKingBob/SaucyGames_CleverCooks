@@ -1,3 +1,4 @@
+local CollectionService = game:GetService("CollectionService")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local RecipesView = Knit.CreateController { Name = "RecipesView" }
@@ -277,6 +278,13 @@ function setupRecipeButtons()
 				print('checkIfAllGreen', checkIfAllGreen)
 				if checkIfAllGreen == true then
 					allIngredientsFound = true;
+					for _, pan in pairs(CollectionService:GetTagged("Pan")) do
+						pan.ProximityPrompt.Enabled = true;
+					end
+				else
+					for _, pan in pairs(CollectionService:GetTagged("Pan")) do
+						pan.ProximityPrompt.Enabled = false;
+					end
 				end
 			end
 		end)
@@ -372,27 +380,34 @@ function setupRecipeButtons()
 	end)
 end
 
+function RecipesView:Cook()
+	if CookDebounce == false then
+		CookDebounce = true
+		if recipeSelected then
+			--CookEvent:FireServer(recipename)
+			print(recipeSelected)
+			local CookingService = Knit.GetService("CookingService")
+			CookingService.Cook:Fire(recipeSelected)
+		end	
+		task.wait(.5)
+		CookButton.Visible = false;
+		CookDebounce = false
+	end
+end
+
 
 function RecipesView:KnitStart()
     
     setupRecipes()
 
-    CookButton.MouseButton1Click:Connect(function()
-        if CookDebounce == false then
-            CookDebounce = true
-            if recipeSelected then
-                --CookEvent:FireServer(recipename)
-                print(recipeSelected)
-                local CookingService = Knit.GetService("CookingService")
-                CookingService.Cook:Fire(LocalPlayer, recipeSelected)
-            end	
-            task.wait(.5)
-            CookButton.Visible = false;
-            CookDebounce = false
-        end
-    end)
+	for _, pan in pairs(CollectionService:GetTagged("Pan")) do
 
-    game:GetService("RunService").RenderStepped:Connect(function()
+		pan.ProximityPrompt.Triggered:Connect(function(plr)
+			self:Cook();
+		end);
+	end
+
+    --[[game:GetService("RunService").RenderStepped:Connect(function()
         for _, Pan in pairs (workspace:WaitForChild("Pans"):WaitForChild("PanHitboxes"):GetChildren()) do
             if not Pan:IsA("Folder") then
                 local Mag = (Pan.Position - game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart").Position).magnitude
@@ -400,7 +415,8 @@ function RecipesView:KnitStart()
                     ShortDistanceObject = Pan
                     local IngredientValue = LocalPlayer:FindFirstChild("Data").GameValues.Ingredient
                     if IngredientValue.Value == nil and CookButton.Visible == false and recipeSelected ~= nil and allIngredientsFound == true then
-                        CookButton.Visible = true
+						Pan.ProximityPrompt.Enabled = true;
+                        --CookButton.Visible = true
                         --break
                     end
                 else
@@ -409,14 +425,15 @@ function RecipesView:KnitStart()
                         local OldMag = (ShortDistanceObject.Position - game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart").Position).magnitude
                         --print("OldMag",OldMag)
                         if OldMag > 11 then -- and CookGUI.Visible == true or IngredientValue.Value ~= nil and CookGUI.Visible == true
-                            CookButton.Visible = false
+							Pan.ProximityPrompt.Enabled = false;
+                            --CookButton.Visible = false
                             --break
                         end
                     end
                 end
             end
         end
-    end);
+    end);]]
 end
 
 

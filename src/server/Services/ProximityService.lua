@@ -52,7 +52,9 @@ function ProximityService:LinkItemToPlayer(Character,Object)
             _PrimaryPart.CFrame = Character:FindFirstChild("HumanoidRootPart").CFrame;
             _PrimaryPart.HandJoint.Attachment1 = Character:FindFirstChild("Head").RightGripAttachment;
             _PrimaryPart.FaceJoint.Attachment1 = Character:FindFirstChild("Head").FaceFrontAttachment;
+            Character.PrimaryPart.ProximityPrompt.Enabled = true;
             _PrimaryPart.ProximityPrompt.Enabled = false;
+            print("FALSE")
         else
             Object.CanCollide = false;
             Object.Massless = true;
@@ -60,7 +62,9 @@ function ProximityService:LinkItemToPlayer(Character,Object)
             Object.HandJoint.Attachment1 = Character:FindFirstChild("Head").RightGripAttachment;
             Object.FaceJoint.Attachment1 = Character:FindFirstChild("Head").FaceFrontAttachment;
             Object.CustomPhysicalProperties = PickProperties;
+            Character.PrimaryPart.ProximityPrompt.Enabled = true;
             Object.ProximityPrompt.Enabled = false;
+            print("false!!")
         end;
     end;
 end;
@@ -85,8 +89,12 @@ function ProximityService:UnlinkItemToPlayer(Character,Object)
 					part.CustomPhysicalProperties = DropProperties;
 				end;
 			end;
-			_PrimaryPart.Position = Character.HumanoidRootPart.Position + Character.HumanoidRootPart.CFrame.lookVector * 4 + Vector3.new(0,GetYOffset(Object),0);
-			_PrimaryPart.ProximityPrompt.Enabled = true;
+
+            Object:SetPrimaryPartCFrame(CFrame.new(Character.HumanoidRootPart.Position + Character.HumanoidRootPart.CFrame.lookVector * 4 + Vector3.new(0,GetYOffset(Object),0)))
+			--_PrimaryPart.Position = Character.HumanoidRootPart.Position + Character.HumanoidRootPart.CFrame.lookVector * 4 + Vector3.new(0,GetYOffset(Object),0);
+            
+			Character.PrimaryPart.ProximityPrompt.Enabled = false;
+            _PrimaryPart.ProximityPrompt.Enabled = true;
 		elseif Object:IsA("MeshPart") then
 			Object:SetAttribute("Owner", PlayerService:GetPlayerFromCharacter(Character).Name);
 			Object.HandJoint.Attachment1 = nil;
@@ -98,8 +106,10 @@ function ProximityService:UnlinkItemToPlayer(Character,Object)
 			Object.CanCollide = true;
 			Object.Massless = false;
 			Object.CustomPhysicalProperties = DropProperties;
+
 			Object.Position = Character.HumanoidRootPart.Position + Character.HumanoidRootPart.CFrame.lookVector * 4 + Vector3.new(0,GetYOffset(Object),0);
-			Object.ProximityPrompt.Enabled = true;
+			Character.PrimaryPart.ProximityPrompt.Enabled = false;
+            Object.ProximityPrompt.Enabled = true;
 		end;
 	end;
 end;
