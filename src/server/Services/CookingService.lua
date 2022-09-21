@@ -225,11 +225,15 @@ function CookingService:Cook(player,Character,recipe, pan)
 
 			local cookingTime = RecipeModule:GetCookTime(tostring(recipe));
 
+			print("cookingPansQueue", cookingPansQueue[player.UserId])
+
 			self.Client.Cook:Fire(tostring(recipe), pan, cookingTime)
 			task.wait(cookingTime);
 
 			local function tablefind(tab,el) for index, value in pairs(tab) do if value == el then	return index end end end
 			table.remove( cookingPansQueue[player.UserId], tablefind(cookingPansQueue[player.UserId], pan) );
+
+			print("cookingPansQueue", cookingPansQueue[player.UserId])
 
 			local RawCalculatedEXP = (EXPMultiplier * #SelectedRecipe["Ingredients"]);
 			self.Client.ProximitySignal:Fire(player,"CookVisible",false);
