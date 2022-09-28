@@ -217,6 +217,7 @@ function AvatarService:SetAvatarFace(UserId,Character,FaceId,IsCharacterFace) --
                     local InsertedFace = asset:FindFirstChildWhichIsA("Decal");
                     --warn(UserId,"[AvatarService]: Loaded face ["..FaceId.."] successfully");
                     Head.face.Texture = InsertedFace.Texture;
+                    warn(UserId,"[AvatarService]: Loaded face ["..FaceId.."] successfully");
                 end
             else
                 warn(UserId,"[AvatarService]: Failed to change avatar face to [".. FaceId .."]");

@@ -6,8 +6,9 @@ local plr = game.Players.LocalPlayer;
 
 local PlayerGui = plr:WaitForChild("PlayerGui");
 local Views = PlayerGui:WaitForChild("Views");
-local MainUI = PlayerGui:WaitForChild("Main")
-local BottomFrame = MainUI:WaitForChild("BottomFrame");
+local BottomFrame = Views:WaitForChild("BottomFrame");
+local LeftBar = PlayerGui:WaitForChild("LeftBar");
+local LeftContainer = LeftBar:WaitForChild("LeftContainer");
 
 --//Const
 local ViewOriginalSizes = {};
@@ -22,11 +23,11 @@ local currentStatus, debounce = false, false;
 --//Public Events
 ViewsUI.ViewToggled = ViewToggledEvent.Event;
 
-local function displayButtons()
+local function displayButtons(status)
     if debounce == false then
         debounce = true
 
-        currentStatus = not currentStatus;
+        currentStatus = status;
 
         for _, button in pairs(BottomFrame:GetChildren()) do
             if not button:IsA("TextButton") then continue end
@@ -55,7 +56,7 @@ end
 
 
 --//Public Methods
-function ViewsUI:OpenView(ViewName)
+function ViewsUI:OpenView(ViewName, ButtonEnabled)
 	if (CurrentView and CurrentView.Name == ViewName) then return; end
 	
 	self:CloseView();
@@ -71,6 +72,10 @@ function ViewsUI:OpenView(ViewName)
         return
     end
 
+    if ButtonEnabled then
+        task.spawn(displayButtons, false)
+    end
+    
 	CurrentView.Visible = true;
 	CurrentView.Position = UDim2.fromScale(OriginalPosition.X.Scale, 1.6);
 	CurrentView.Size = ViewOriginalSizes[CurrentView.Name]:Lerp(UDim2.fromScale(0, 0), .5);
@@ -83,7 +88,7 @@ end
 
 local deselectDeb = false;
 
-function ViewsUI:CloseView(ItemName)
+function ViewsUI:CloseView(ItemName, ButtonEnabled)
     if (not CurrentView) then return; end
 
     if (ItemName and CurrentView.Name ~= ItemName) then return; end
@@ -105,6 +110,10 @@ function ViewsUI:CloseView(ItemName)
 
     if (TargetView) then
         ViewToggledEvent:Fire(TargetView.Name, false);
+
+        if ButtonEnabled then
+            task.spawn(displayButtons, true)
+        end
         
         local OriginalPosition = ViewOriginalPositions[TargetView.Name];
         
@@ -123,16 +132,34 @@ function ViewsUI:KnitStart()
         ViewOriginalPositions[v.Name] = v.Position;
     end
 
+    local leftContainerDeb = false;
+
+    for _,v in pairs(LeftContainer:GetChildren()) do
+        if (v:IsA("TextButton")) then
+            v.MouseButton1Click:Connect(function()
+                if (Views:FindFirstChild(v.Name)) then
+                    if (CurrentView and CurrentView.Name == v.Name) then
+                        if leftContainerDeb == false then leftContainerDeb = true else return end
+                        self:CloseView(nil, true);
+                        task.wait(.5)
+                        leftContainerDeb = false;
+                    else		
+                        if leftContainerDeb == false then leftContainerDeb = true else return end
+                        self:OpenView(v.Name, true);
+                        task.wait(.5)
+                        leftContainerDeb = false;
+                    end
+                end
+            end)
+        end
+    end
+
     for _,v in pairs(BottomFrame:GetChildren()) do
         if (v:IsA("TextButton")) then
             v.MouseButton1Click:Connect(function()
-                if v.Name == "Menu" then
-                    displayButtons();
-                    return;
-                end
                 if (Views:FindFirstChild(v.Name)) then
                     if (CurrentView and CurrentView.Name == v.Name) then
-                        self:CloseView();
+                        --self:CloseView();
                     else		
                         self:OpenView(v.Name);
                     end

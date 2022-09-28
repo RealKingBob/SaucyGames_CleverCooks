@@ -133,7 +133,7 @@ local function onCharacterAdded(character)
 			end;
 			
 			AvatarService:SetAvatarColor(userId,character, playerColor);
-			AvatarService:SetAvatarFace(userId,character,playerFace, true);
+			AvatarService:SetAvatarFace(userId,character,playerFace, false);
 			
 			if hasHeadless == true then
 				AvatarService:SetHeadless(userId,character);

@@ -196,7 +196,7 @@ function CookingService:Cook(player,Character,recipe, pan)
 
 	local DataService = Knit.GetService("DataService")
 	local profile = DataService.GetProfile(player);
-	if profile then
+	if not profile then
 		if RecipeModule[tostring(recipe)] then
 			local IngredientsUsed = {};
 			local SelectedRecipe = RecipeModule[tostring(recipe)];
