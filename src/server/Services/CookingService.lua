@@ -48,6 +48,7 @@ local RecipeModule = require(ReplicatedAssets:WaitForChild("Recipes"));
 local SpawnItemsAPI = require(ServerModules:FindFirstChild("SpawnItems"));
 local TableAPI = require(ServerModules:FindFirstChild("Table"));
 local MathAPI = require(ServerModules:FindFirstChild("Math"));
+local DropUtil = require(ReplicatedModules.DropUtil)
 
 --[[local RecipeModule = require(ReplicatedModules:WaitForChild("RecipeModule"));
 local ZoneAPI = require(ReplicatedModules:FindFirstChild("Zone"));
@@ -162,7 +163,10 @@ end;
 ----- Cooking Functions -----
 
 function CookingService:CanCookOnPan(player, pan)
-	if not cookingPansQueue[player.UserId] then return true; end
+	if not cookingPansQueue[player.UserId] then 
+		cookingPansQueue[player.UserId] = {};
+		return true; 
+	end
 	if #cookingPansQueue[player.UserId] == 0 then return true; end
 
 	if table.find(cookingPansQueue[player.UserId], pan) then return false; end
@@ -221,13 +225,33 @@ function CookingService:Cook(player,Character,recipe, pan)
 				IngredientsUsed = {};
 			else return end;
 
+			print("COOKING TIME")
+
 			table.insert(cookingPansQueue[player.UserId], pan)
 
 			local cookingTime = RecipeModule:GetCookTime(tostring(recipe));
 
 			print("cookingPansQueue", cookingPansQueue[player.UserId])
 
-			self.Client.Cook:Fire(tostring(recipe), pan, cookingTime)
+			self.Client.Cook:Fire(player, tostring(recipe), pan, cookingTime)
+
+			task.spawn(function()
+				local waitTime = 2;
+				local numOfDrops = cookingTime / waitTime;
+				local cheeseDrop = RecipeModule:GetRecipeRewards(RecipeModule[tostring(recipe)].Difficulty);
+				local rCheeseDropReward = math.random(cheeseDrop[1],cheeseDrop[2])
+
+				local cheeseValuePerDrop = rCheeseDropReward / numOfDrops;
+				local cheeseObjectPerDrop = 10;
+				-- oCFrame, obj, amount, value
+
+				print("cooking drop", numOfDrops, cheeseDrop, rCheeseDropReward, cheeseValuePerDrop)
+				
+				for i = 1, numOfDrops do
+					DropUtil.DropCheese(pan.CFrame, game.ReplicatedStorage.Spawnables.Cheese, cheeseObjectPerDrop, math.floor((cheeseValuePerDrop / cheeseObjectPerDrop)))
+					task.wait(waitTime);
+				end
+			end)
 			task.wait(cookingTime);
 
 			local function tablefind(tab,el) for index, value in pairs(tab) do if value == el then	return index end end end

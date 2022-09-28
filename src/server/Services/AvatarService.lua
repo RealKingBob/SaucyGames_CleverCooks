@@ -116,7 +116,7 @@ function AvatarService:RefreshAvatar(UserId, Character) -- [Texture : String]
         self:SetAvatarFace(UserId, Character, self:GetAvatarFace(UserId), true);
         self:UnhideAvatarAccessory(UserId, Character);
         self:SetNametag(UserId)
-        warn(UserId,"[AvatarService]: Refreshed avatar [".. tostring(UserId).."] successfully");
+        --warn(UserId,"[AvatarService]: Refreshed avatar [".. tostring(UserId).."] successfully");
     end;
 end;
 
@@ -124,7 +124,7 @@ end;
 
 function AvatarService:GetAvatarAccessories(UserId) -- [IngredientOjects, IngredientAvailable],[FoodOjects, FoodAvailable]
     local AccessoryIds = {};
-    local AcceptableIds = {8,41,42,57,58}; -- Source: https://developer.roblox.com/en-us/api-reference/enum/AssetType
+    local AcceptableIds = {41,42,57,58}; -- 8 Source: https://developer.roblox.com/en-us/api-reference/enum/AssetType
     if UserId then
         --warn(UserId,"[AvatarService]: Retrieving User["..tostring(UserId).."] avatar accessories");--print("[AvatarService]: Retrieving User[",AvatarId,"] avatar accessories");
         local CharacterInfo;
@@ -178,7 +178,7 @@ function AvatarService:GetAvatarFace(UserId) -- [UserId : Number]
 		if call == true then
 			for _,asset in pairs(CharacterInfo["assets"]) do
 				if table.find(AcceptableIds,tonumber(asset["assetType"]["id"])) then -- Matches current id with AcceptableIds
-					warn(UserId,"[AvatarService]: Returning face id ["..asset["name"].."]");
+					--warn(UserId,"[AvatarService]: Returning face id ["..asset["name"].."]");
 					local assetId = asset["id"] --Replace the emote ID with another ID that you want the animation of
 					
 					--print(InsertService:LoadAsset(assetId):FindFirstChildOfClass'Decal'.Texture) --> http://www.roblox.com/asset/?id=3344650532
@@ -217,14 +217,14 @@ function AvatarService:SetAvatarFace(UserId,Character,FaceId,IsCharacterFace) --
                     local InsertedFace = asset:FindFirstChildWhichIsA("Decal");
                     --warn(UserId,"[AvatarService]: Loaded face ["..FaceId.."] successfully");
                     Head.face.Texture = InsertedFace.Texture;
-                    warn(UserId,"[AvatarService]: Loaded face ["..FaceId.."] successfully");
+                    --warn(UserId,"[AvatarService]: Loaded face ["..FaceId.."] successfully");
                 end
             else
                 warn(UserId,"[AvatarService]: Failed to change avatar face to [".. FaceId .."]");
             end;
         else
             Head.face.Texture = tostring(FaceId);
-            warn(UserId,"[AvatarService]: Loaded face ["..FaceId.."] successfully");
+            --warn(UserId,"[AvatarService]: Loaded face ["..FaceId.."] successfully");
         end;
     else
         warn(UserId,"[AvatarService][ERROR]: Missing one of the following: | Character -".. tostring(Character) .. " FaceId -".. tostring(FaceId) .."|");
@@ -298,7 +298,7 @@ function AvatarService:SetAvatarPoof(UserId, Character,AddPoof) -- [Texture : St
             end;
             ClonedTexture1.Name = "Poof";
             ClonedTexture2.Name = "Poof";
-            warn(UserId,"[AvatarService]: Added avatar poof particles successfully");
+            --warn(UserId,"[AvatarService]: Added avatar poof particles successfully");
         end;
     elseif Character then
         local Head = Character:FindFirstChild("Head");
@@ -314,7 +314,7 @@ function AvatarService:SetAvatarPoof(UserId, Character,AddPoof) -- [Texture : St
                 if Torso:FindFirstChild("Poof") then
                     Torso:FindFirstChild("Poof"):Destroy();
                 end
-                warn(UserId,"[AvatarService]: Destroyed avatar poof particles successfully");
+                --warn(UserId,"[AvatarService]: Destroyed avatar poof particles successfully");
             end)
         end;
     end;
@@ -330,13 +330,13 @@ function AvatarService:SetAvatarParticles(UserId, Character,ParticleName) -- [Te
                 Torso:FindFirstChild("Particle"):Destroy();
             end;
             ClonedTexture.Name = "Particle";
-            warn(UserId,"[AvatarService]: Added avatar particles [".. tostring(ParticleName).."] successfully");
+            --warn(UserId,"[AvatarService]: Added avatar particles [".. tostring(ParticleName).."] successfully");
         end;
     elseif Character then
         local Torso = Character:FindFirstChild("Mouse.001");
         if Torso and Torso:FindFirstChild("Particle")  then
             Torso:FindFirstChild("Particle"):Destroy();
-            warn(UserId,"[AvatarService]: Destroyed avatar particles [".. tostring(Character).."] successfully");
+            --warn(UserId,"[AvatarService]: Destroyed avatar particles [".. tostring(Character).."] successfully");
         end;
     end;
 end;
@@ -348,7 +348,7 @@ function AvatarService:SetAvatarTransparency(UserId, Character,Transparency) -- 
         if Head and Torso then
             Head.Transparency = Transparency;
             Torso.Transparency = Transparency;
-            warn(UserId,"[AvatarService]: Set transparency [".. tostring(Transparency).."] to avatar successfully");
+            --warn(UserId,"[AvatarService]: Set transparency [".. tostring(Transparency).."] to avatar successfully");
         end;
     end;
 end;
@@ -363,7 +363,7 @@ function AvatarService:SetAvatarTexture(UserId, Character,TextureName) -- [Textu
                 Torso:FindFirstChild("SurfaceAppearance"):Destroy();
             end;
             ClonedTexture.Name = "SurfaceAppearance";
-            warn(UserId,"[AvatarService]: Set texture [".. tostring(TextureName).."] to avatar successfully");
+            --warn(UserId,"[AvatarService]: Set texture [".. tostring(TextureName).."] to avatar successfully");
         end;
     elseif Character then
         local Torso = Character:FindFirstChild("Mouse.001");
@@ -394,14 +394,14 @@ function AvatarService:SetAvatarBeams(UserId, Character, BeamName1, BeamName2, P
             end;
             ClonedBeam1.Name = "Beam1";
             ClonedBeam2.Name = "Beam2";
-            warn(UserId,"[AvatarService]: Set beams [".. tostring(BeamName1).."] to avatar successfully");
+            --warn(UserId,"[AvatarService]: Set beams [".. tostring(BeamName1).."] to avatar successfully");
         end;
     elseif Character then
         local Torso = Character:FindFirstChild("Mouse.001");
         if Torso and Torso:FindFirstChild("Beam1") and Torso:FindFirstChild("Beam2") then
             Torso:FindFirstChild("Beam1"):Destroy();
             Torso:FindFirstChild("Beam2"):Destroy();
-            warn(UserId,"[AvatarService]: Destroyed beams [".. tostring(Character).."] on avatar successfully");
+            --warn(UserId,"[AvatarService]: Destroyed beams [".. tostring(Character).."] on avatar successfully");
         end;
     end;
 end;

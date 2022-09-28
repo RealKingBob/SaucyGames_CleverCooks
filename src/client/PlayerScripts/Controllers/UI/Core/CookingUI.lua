@@ -21,22 +21,47 @@ local PlayerGui = plr:WaitForChild("PlayerGui");
 
 local SizeInfo = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out);
 
+
+local roundDecimals = function(num, places) --num is your number or value and places is number of decimal places, in your case you would need 2
+    
+    places = math.pow(10, places or 0)
+    num = num * places
+   
+    if num >= 0 then 
+        num = math.floor(num + 0.5) 
+    else 
+        num = math.ceil(num - 0.5) 
+    end
+    
+    return num / places
+    
+end
+
 --//Public Methods
-function CookingUI:Update(CurrentFrame, Payload)
-    --[[local InnerFrame = TierFrame:WaitForChild("InnerFrame");
-    local MaxXP = BattlepassInfo["Tier "..Payload.CurrentLevel] ~= nil and BattlepassInfo["Tier "..Payload.CurrentLevel].XP or 2000 * Payload.CurrentLevel
-    local currentXP = math.floor(MaxXP * Payload.Alpha)
 
-    InnerFrame:WaitForChild("TierLabel").Text = "Tier "..Payload.CurrentLevel;
-    InnerFrame:WaitForChild("XPLabel").Text = tostring(currentXP) .. " / " .. tostring(MaxXP);
+function CookingUI:StartCooking(RecipeName, Pan, CookingTime)
+    local cookBillUI = Knit.GameLibrary.BillboardUI.CookHeadUI:Clone();
+    local recipeAssets = require(Knit.ReplicatedAssets.Recipes);
 
-    local BattlepassUI = Knit.GetController("BattlepassUI")
+    local currentRecipeImage = recipeAssets[RecipeName].Image;
 
-    BattlepassUI:HighlightContentBars(Payload.CurrentLevel)
+    local mainFrame = cookBillUI:WaitForChild("Frame")
 
-    --ProgressBar:WaitForChild("End"):WaitForChild("Frame"):WaitForChild("TextLabel").Text = Payload.CurrentLevel + 1;
+    mainFrame:WaitForChild("ItemImage").Image = currentRecipeImage;
+    mainFrame:WaitForChild("Duration").Text = tostring(CookingTime).."s";
 
-    TweenService:Create(ProgressBar:WaitForChild("Bar"), SizeInfo, { Size = UDim2.fromScale(Payload.Alpha, 1) }):Play();]]
+    cookBillUI.Parent = Pan
+
+    local SizeInfo = TweenInfo.new(CookingTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out);
+
+    TweenService:Create(mainFrame.BarHolder:WaitForChild("Bar"), SizeInfo, { Size = UDim2.fromScale(1, 1) }):Play();
+
+    for i = CookingTime, 0, -1 do
+        mainFrame:WaitForChild("Duration").Text = tostring(roundDecimals(i, 1)).."s";
+        task.wait(1);
+    end
+
+    cookBillUI:Destroy()
 end
 
 function CookingUI:KnitStart()

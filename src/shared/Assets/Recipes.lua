@@ -4,6 +4,12 @@ local CookingTimes = {
 	["Easy"] = 10;
 }
 
+local RecipeRewards = {
+	["Hard"] = {1200, 1500}, -- [min, max]
+	["Medium"] = {600, 800},
+	["Easy"] = {200, 400}
+}
+
 local Recipes = {
 	["Macaron"] = {
 		Name = "Macaron",
@@ -152,6 +158,10 @@ function Recipes:GetCookTime(recipeName : string)
 		return 15;
 	end
 end
+
+function Recipes:GetRecipeRewards(Difficulty)
+	return RecipeRewards[Difficulty];
+end;
 
 function Recipes:GetRandomRecipe()
 	local Array = {};

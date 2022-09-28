@@ -59,6 +59,7 @@ local function customDebris(instance, lifetime)
 end
 
 function DropUtil.DropCheese(oCFrame, obj, amount, value)
+
     for i= 0, amount do
         local cloneObject = obj:Clone()
         cloneObject.Name = "Cheese"..i
@@ -87,6 +88,14 @@ function DropUtil.DropCheese(oCFrame, obj, amount, value)
     
                 CheeseDrop:Play();
             end
+        end)
+
+        task.spawn(function()
+            task.delay(10, function()
+                if cloneObject and cloneObject.Parent then
+                    cloneObject:Destroy()
+                end
+            end)
         end)
     end
 end

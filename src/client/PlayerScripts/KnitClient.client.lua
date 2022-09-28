@@ -26,6 +26,7 @@ Knit.Controllers = Knit.PlayerScripts:WaitForChild("Controllers")
 Knit.Shared = ReplicatedStorage.Common;
 Knit.ReplicatedAssets = Knit.Shared.Assets;
 Knit.ReplicatedModules = Knit.Shared.Modules;
+Knit.GameLibrary = ReplicatedStorage.GameLibrary;
 
 
 Knit.Config = require(Knit.ReplicatedModules.Config);
@@ -33,6 +34,7 @@ Knit.Config = require(Knit.ReplicatedModules.Config);
 ----- Loaded Modules -----
 
 Knit.AddControllersDeep(Knit.Controllers)
+local UIStrokeAdjuster = require(Knit.Modules.UIStrokeStyle)
 
 StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
 StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
@@ -66,9 +68,11 @@ DataService.CurrencySignal:Connect(function(Coins, amount, disableEffect)
 end)
 
 local CookingService = Knit.GetService("CookingService");
+local CookingUI = Knit.GetController("CookingUI");
 
 CookingService.Cook:Connect(function(RecipeName, Pan, CookingTime)
 	print("CLIENT COOK",RecipeName,Pan, CookingTime)
+	CookingUI:StartCooking(RecipeName,Pan, CookingTime)
 end)
 
 --[[local DataService = Knit.GetService("DataService")
