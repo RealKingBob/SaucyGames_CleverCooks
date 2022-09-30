@@ -90,14 +90,6 @@ function DropUtil.DropCheese(oCFrame, obj, amount, value)
                 CheeseDrop:Play();
             end
         end)
-
-        --[[task.spawn(function()
-            task.delay(10, function()
-                if cloneObject and cloneObject.Parent then
-                    cloneObject:Destroy()
-                end
-            end)
-        end)]]
     end
 end
 

@@ -69,6 +69,15 @@ function ProximityService:LinkItemToPlayer(Character,Object)
     end;
 end;
 
+--may not be very realistic at times
+local MIN_DAMAGE_FORCE = 120
+
+--just set this to humanoidrootpart position
+--when player has just stopped touching the ground
+--HumanoidState == Jumping or HumanoidState == Freefall
+--only set on state changed
+local AirbornStart = Vector3.zero
+
 function ProximityService:UnlinkItemToPlayer(Character,Object)
 	if Character and Object then
 		if Object:IsA("Model") and Object.PrimaryPart then
@@ -111,6 +120,23 @@ function ProximityService:UnlinkItemToPlayer(Character,Object)
 			Character.PrimaryPart.ProximityPrompt.Enabled = false;
             Object.ProximityPrompt.Enabled = true;
 		end;
+
+        --no need to make more than one touched connection because
+        --humanoid.Touched gives both parts
+        local TouchedConnection = Object.Touched:Connect(function(HitPart)
+            --required for force calculation
+            local TravelledDistance = (AirbornStart - Object.Position).Magnitude
+            
+            --Calc credit @Dav_itt
+            --https://devforum.roblox.com/t/--/1021305/4?u=judgy_oreo
+            local Force = HitPart.Mass * HitPart.AssemblyLinearVelocity.Magnitude^2 / (2 * TravelledDistance)
+            --can be used for fine-tuning
+            print("Impact force:", Force)
+            --is the impact force big enough for the player to take *any* damage?
+            if Force > MIN_DAMAGE_FORCE then
+                --Ragdoll or whatever
+            end
+        end)
 	end;
 end;
 

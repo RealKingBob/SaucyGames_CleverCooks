@@ -265,7 +265,7 @@ task.spawn(function()
 	for _, value in ipairs(CollectionService:GetTagged(Knit.Config.CHEESE_SPAWN)) do
 		while true do
 			task.wait(math.random(4,6))
-			workspace.Spawnables.Cheese:ClearAllChildren()
+			--workspace.Spawnables.Cheese:ClearAllChildren()
 			DropUtil.DropCheese(value.CFrame, game.ReplicatedStorage.Spawnables.Cheese, math.random(10,15), math.random(5,10))
 		end
 	end

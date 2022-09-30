@@ -2,7 +2,7 @@
 	Name: Cooking Service [V2]
 	Creator: Real_KingBob
 	Made in: 9/19/21
-    Updated: 5/28/22
+    Updated: 9/30/22
 	Description: Handles Cooking Mechanics / Proximity Mechanics for rat players
 ]]
 
@@ -288,26 +288,29 @@ function CookingService:KnitInit()
     print('[CookingService]: Activated! [V2]')
 
 	task.spawn(function()
-		while task.wait(1) do
+		local playerCheckDebounce = {}
+
+		while task.wait(0) do
 			for _, plr in pairs(Players:GetPlayers()) do
-				if prevIngredients[plr] == nil then
-					prevIngredients[plr] = {}
-				end;
-				playerIngredients[plr] = {}
+				if playerCheckDebounce[plr.UserId] == nil then playerCheckDebounce[plr.UserId] = false; end
+				if playerCheckDebounce[plr.UserId] == true then continue; end
+				playerCheckDebounce[plr.UserId] = true;
+				if prevIngredients[plr] == nil then prevIngredients[plr] = {} end;
+				playerIngredients[plr.UserId] = {}
 				for k, v in pairs(CurrentIngredientObjects) do
 					if tostring(k) == plr.Name then
 						for _, b in pairs(v) do
-							table.insert(playerIngredients[plr], tostring(b))
+							table.insert(playerIngredients[plr.UserId], tostring(b))
 						end
 					end
 				end
-				if TableAPI.CheckArrayEquality(prevIngredients[plr],playerIngredients[plr]) == false then
+				if TableAPI.CheckArrayEquality(prevIngredients[plr],playerIngredients[plr.UserId]) == false then
 					print("SENT DATA")
-					self.Client.SendIngredients:Fire(plr, playerIngredients[plr])
+					self.Client.SendIngredients:Fire(plr, playerIngredients[plr.UserId])
 				end
-				prevIngredients[plr] = playerIngredients[plr];
+				prevIngredients[plr] = playerIngredients[plr.UserId];
+				playerCheckDebounce[plr.UserId] = false;
 			end
-			
 		end
 	end)
 	
@@ -315,7 +318,7 @@ function CookingService:KnitInit()
 		local oldArray = {};
 		local oldFoodData = {};
 	
-		while task.wait(.5) do
+		while task.wait(0.1) do
 			local tempData = {};
 			local tCurrentIngredients = {};
 			local tCurrentIngredientObjects = {};
@@ -345,7 +348,54 @@ function CookingService:KnitInit()
 			end
 	
 			if #partsArray > 0 then
-				for _,touchedPart in pairs(partsArray) do
+				for _, touchedPart in ipairs(partsArray) do
+					if TableAPI.CheckTableEquality(oldArray, partsArray) ~= true then
+						oldArray = partsArray;
+					end;
+
+					local touchedType, touchedOwner;
+					if touchedPart.Parent:IsA("Model") then
+						if touchedPart.Parent.PrimaryPart then
+							local touchedPrimary = touchedPart.Parent.PrimaryPart;
+							touchedType = touchedPrimary:GetAttribute("Type");
+							touchedOwner = touchedPrimary:GetAttribute("Owner");
+						end
+					else
+						touchedType = touchedPart:GetAttribute("Type");
+						touchedOwner = touchedPart:GetAttribute("Owner");
+					end
+
+					if touchedType and touchedOwner ~= "Default" and touchedOwner ~= "None" and panZone:findPart(touchedPart) == true then
+						table.insert(tempData,{touchedOwner,touchedPart});
+
+						if tCurrentIngredients[touchedOwner] == nil then
+							tCurrentIngredients[touchedOwner] = {};
+							tCurrentIngredientObjects[touchedOwner] = {};
+						end;
+
+						if table.find(tCurrentIngredients[touchedOwner],touchedPart.Name) == nil then
+							table.insert(tCurrentIngredientObjects[touchedOwner],touchedPart);
+							table.insert(tCurrentIngredients[touchedOwner],touchedPart.Name);
+							for key,currentRecipe in pairs(RecipeModule) do
+								if type(currentRecipe) == "table" then
+									local valid = TableAPI.Equals(tCurrentIngredients[touchedOwner],currentRecipe["Ingredients"]);
+
+									if valid == true then
+										if possibleRecipes[touchedOwner] then
+											if table.find(possibleRecipes[touchedOwner],key) == nil then
+												table.insert(possibleRecipes[touchedOwner],key);
+												self:Recipe(game.Players:FindFirstChild(touchedOwner), key);
+											else
+												--print(possibleRecipes[touchedOwner]);
+											end;
+										end;
+									end;
+								end;
+							end;
+						end;
+					end;
+				end
+				--[[for _,touchedPart in pairs(partsArray) do
 					--print("touched",touchedPart)
 					if TableAPI.CheckTableEquality(oldArray, partsArray) ~= true then
 						oldArray = partsArray;
@@ -420,7 +470,7 @@ function CookingService:KnitInit()
 							end;
 						end;
 					end;
-				end;
+				end;]]
 				
 				FoodData = tempData; --Table.Sync(FoodData,tempData)
 				CurrentIngredientObjects = tCurrentIngredientObjects; --Table.Sync(CurrentIngredientObjects,tCurrentIngredientObjects)
@@ -431,6 +481,7 @@ function CookingService:KnitInit()
 				end;]]
 				
 				if TableAPI.CheckTableEquality(oldFoodData, FoodData) ~= true then
+					--print("FOOD DATA:", FoodData)
 					oldFoodData = FoodData;
 				end;
 			end;
