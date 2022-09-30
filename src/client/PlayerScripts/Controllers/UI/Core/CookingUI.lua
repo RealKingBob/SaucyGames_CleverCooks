@@ -39,6 +39,21 @@ end
 
 --//Public Methods
 
+function CookingUI:SpawnCookedParticles(food)
+    local MidAttachClone = Knit.Spawnables:WaitForChild("CookedParticle"):WaitForChild("MidAttach"):Clone()
+    MidAttachClone.Parent = food;
+
+    for _, v in ipairs(MidAttachClone:GetChildren()) do
+        if v:IsA("ParticleEmitter") then
+            v:Emit(60)
+        end
+    end
+
+    task.wait(1)
+
+    MidAttachClone:Destroy()
+end
+
 function CookingUI:StartCooking(RecipeName, Pan, CookingTime)
     local cookBillUI = Knit.GameLibrary.BillboardUI.CookHeadUI:Clone();
     local recipeAssets = require(Knit.ReplicatedAssets.Recipes);
@@ -54,12 +69,29 @@ function CookingUI:StartCooking(RecipeName, Pan, CookingTime)
 
     local SizeInfo = TweenInfo.new(CookingTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out);
 
+    for _, v in pairs(Pan:GetChildren()) do
+        if v:IsA("ParticleEmitter") then
+            v.Enabled = true;
+        end
+    end
+
     TweenService:Create(mainFrame.BarHolder:WaitForChild("Bar"), SizeInfo, { Size = UDim2.fromScale(1, 1) }):Play();
 
     for i = CookingTime, 0, -1 do
         mainFrame:WaitForChild("Duration").Text = tostring(roundDecimals(i, 1)).."s";
+
+        if i == 0 then
+            
+        end
         task.wait(1);
     end
+
+    for _, v in pairs(Pan:GetChildren()) do
+        if v:IsA("ParticleEmitter") then
+            v.Enabled = false;
+        end
+    end
+
 
     cookBillUI:Destroy()
 end

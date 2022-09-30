@@ -107,19 +107,30 @@ function SpawnItems:Spawn(UserId, Owner, ItemName, RootFolder, Directory, Locati
             end;
             if Location then
                 if ItemClone:IsA("Model") and ItemClone.PrimaryPart then
-                    ItemClone.PrimaryPart.Position = Location;
+                    ItemClone:SetPrimaryPartCFrame(CFrame.new(Location))
+                    --ItemClone.PrimaryPart.Position = Location;
                 else
                     ItemClone.Position = Location;
                 end
             end
             ItemClone.Parent = Directory;
-            return true;
+
+            if ItemClone:IsA("Model") and ItemClone.PrimaryPart then
+                return ItemClone.PrimaryPart;
+            else
+                return ItemClone;
+            end
+            
         else
             ItemClone.Parent = Directory;
-            return true;
+            if ItemClone:IsA("Model") and ItemClone.PrimaryPart then
+                return ItemClone.PrimaryPart;
+            else
+                return ItemClone;
+            end
         end;
     end;
-    return false;
+    return nil;
 end;
 
 return SpawnItems;

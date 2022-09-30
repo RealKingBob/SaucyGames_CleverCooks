@@ -133,7 +133,7 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 			end;
 		end
 
-		print(prompt.Parent:GetAttribute("Type"))
+		--print(prompt.Parent:GetAttribute("Type"))
 		if prompt.Parent:GetAttribute("Type") == "Food" then
 			if prompt.Parent.Parent:IsA("Model") then
 				if RecipeModule[prompt.Parent.Parent.Name] then
@@ -263,7 +263,7 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 end
 
 function CustomProximityController:KnitStart()
-	print("CUSTOM")
+	--print("CUSTOM")
     ProximityPromptService.PromptShown:Connect(function(prompt, inputType)
 
         if prompt.Style == Enum.ProximityPromptStyle.Default then

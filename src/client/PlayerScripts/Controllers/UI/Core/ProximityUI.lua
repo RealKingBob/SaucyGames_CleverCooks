@@ -37,7 +37,7 @@ function DropDown() -- Telling the server that you are dropping the item
 end
 ProxFunctions["DropDown"] = function(bool)
 	--MainUI.DropButton.Visible = tab
-	print(bool)
+	--print(bool)
 	
 	if bool == true then
 		if dropConnection then
@@ -60,7 +60,7 @@ ProxFunctions["DropDown"] = function(bool)
 			proxim.Enabled = true;
 
 			dropConnection = proxim.Triggered:Connect(function(plr)
-				print("drop down YUP")
+				--print("drop down YUP")
 				DropDown();
 			end);
 		end
@@ -88,12 +88,10 @@ end
 
 function ProximityUI:KnitStart()
 
-	print("proximity core ")
-
     local CookingService = Knit.GetService("CookingService");
 
     CookingService.ProximitySignal:Connect(function(action, bool)
-        print(action, bool)
+        --print(action, bool)
 
 		pcall(ProxFunctions[action], bool)
 	end)

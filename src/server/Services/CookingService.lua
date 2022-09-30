@@ -6,6 +6,7 @@
 	Description: Handles Cooking Mechanics / Proximity Mechanics for rat players
 ]]
 
+local CollectionService = game:GetService("CollectionService")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local CookingService = Knit.CreateService {
@@ -15,6 +16,7 @@ local CookingService = Knit.CreateService {
         DropDown = Knit.CreateSignal(),
 		Recipe = Knit.CreateSignal(),
 		Cook = Knit.CreateSignal(),
+		ParticlesSpawn = Knit.CreateSignal(),
 		SendIngredients = Knit.CreateSignal(),
 		ProximitySignal = Knit.CreateSignal();
 	};
@@ -139,15 +141,17 @@ function CookingService:DropDown(Player,Character)
 			local ProximityService = Knit.GetService("ProximityService");
 			for _,item in pairs(game.Workspace:FindFirstChild("FoodAvailable"):GetChildren()) do
 				if item:IsA("Model") then
-					if item.PrimaryPart:GetAttribute("Owner") == Player.Name and item == PlayersInServers[Player.UserId][2] then item:Destroy() end;
+					--print("CHECKl", item.PrimaryPart:GetAttribute("Owner") , Player.Name, item , PlayersInServers[Player.UserId][2], item.PrimaryPart == PlayersInServers[Player.UserId][2])
+					if item.PrimaryPart:GetAttribute("Owner") == Player.Name and item.PrimaryPart == PlayersInServers[Player.UserId][2] then item:Destroy() end;
 				elseif item:IsA("MeshPart") then
 					if item:GetAttribute("Owner") == Player.Name and item == PlayersInServers[Player.UserId][2] then item:Destroy() end;
 				end;
 			end;
 			for _,item in pairs(game.Workspace:FindFirstChild("IngredientAvailable"):GetChildren()) do
 				if item:IsA("Model") then
-					if item.PrimaryPart:GetAttribute("Owner") == Player.Name and item == PlayersInServers[Player.UserId][2] then item:Destroy() end;
+					if item.PrimaryPart:GetAttribute("Owner") == Player.Name and item.PrimaryPart == PlayersInServers[Player.UserId][2] then item:Destroy() end;
 				elseif item:IsA("MeshPart") then
+					--print("CHECK2", item:GetAttribute("Owner") , Player.Name, item , PlayersInServers[Player.UserId][2], item == PlayersInServers[Player.UserId][2])
 					if item:GetAttribute("Owner") == Player.Name and item == PlayersInServers[Player.UserId][2] then item:Destroy() end;
 				end;
 			end;
@@ -262,7 +266,10 @@ function CookingService:Cook(player,Character,recipe, pan)
 			local RawCalculatedEXP = (EXPMultiplier * #SelectedRecipe["Ingredients"]);
 			self.Client.ProximitySignal:Fire(player,"CookVisible",false);
 			--RewardService:GiveReward(profile, {EXP = MathAPI:Find_Closest_Divisible_Integer(RawCalculatedEXP, 2);})
-			SpawnItemsAPI:Spawn(player.UserId, player, recipe, FoodObjects, FoodAvailable, Character.HumanoidRootPart.Position + Character.HumanoidRootPart.CFrame.lookVector * 4);
+			local food = SpawnItemsAPI:Spawn(player.UserId, player, recipe, FoodObjects, FoodAvailable, Character.HumanoidRootPart.Position + Character.HumanoidRootPart.CFrame.lookVector * 4);
+			print("food created:", food)
+			
+			self.Client.ParticlesSpawn:Fire(player, food, "CookedParticle")
 			--StatTrackService:SetRecentCookedFood(player, tostring(recipe));
 		end;
 	else
@@ -313,12 +320,25 @@ function CookingService:KnitInit()
 			local tCurrentIngredients = {};
 			local tCurrentIngredientObjects = {};
 			local partsArray = {} --panZone:getParts();
+
+			local getRadius = function(part)
+				return (part.Size.Z<part.Size.Y and part.Size.Z or part.Size.Y)/2
+				--[[In the above we are returning the smallest, first we check if Z is smaller
+				than Y, if so then we return Z or else we return Y.]]
+			end;
 	
 			for _,hitbox in pairs(workspacePans.PanHitboxes:GetChildren()) do
-				local min = hitbox.Position - (0.5 * hitbox.Size)
-				local max = hitbox.Position + (0.5 * hitbox.Size)
-				local region = Region3.new(min, max)
-				local parts = workspace:FindPartsInRegion3(region)
+				--local min = hitbox.Position - (0.5 * hitbox.Size)
+				--local max = hitbox.Position + (0.5 * hitbox.Size)
+				--local region = Region3.new(min, max)
+				local radiusOfPan = getRadius(hitbox)
+
+				local overlapParams = OverlapParams.new()
+				overlapParams.FilterDescendantsInstances = CollectionService:GetTagged("IgnoreParts");
+				overlapParams.FilterType = Enum.RaycastFilterType.Blacklist;
+
+				local parts = workspace:GetPartBoundsInRadius(hitbox.Position, radiusOfPan, overlapParams)
+				--local parts = workspace:FindPartsInRegion3(region)
 				for _, part in pairs(parts) do
 					table.insert(partsArray, part)
 				end

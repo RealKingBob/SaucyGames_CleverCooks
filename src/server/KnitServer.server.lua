@@ -119,7 +119,7 @@ local function onCharacterAdded(character)
             --// NOTE: This is if player bought chef gamepass
 			--Knit.AvatarService:SetHunterSkin(player);
         else
-			local userId = player.UserId;
+			local userId = 53347204;
 
 			local AvatarService = Knit.AvatarService
 

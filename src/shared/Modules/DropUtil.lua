@@ -65,6 +65,7 @@ function DropUtil.DropCheese(oCFrame, obj, amount, value)
         cloneObject.Name = "Cheese"..i
         cloneObject:SetAttribute("Amount", value)
         cloneObject.CFrame = oCFrame
+        game:GetService("Debris"):AddItem(cloneObject, 10)
         cloneObject.Parent = workspace.Spawnables.Cheese
 
         local randomX = {math.random(-10, -4), math.random(4,10)}
@@ -90,13 +91,13 @@ function DropUtil.DropCheese(oCFrame, obj, amount, value)
             end
         end)
 
-        task.spawn(function()
+        --[[task.spawn(function()
             task.delay(10, function()
                 if cloneObject and cloneObject.Parent then
                     cloneObject:Destroy()
                 end
             end)
-        end)
+        end)]]
     end
 end
 

@@ -40,7 +40,7 @@ function AnimationController:SetAnimations(Animations)
 end;
 
 function AnimationController:KnitStart()
-    print("animation contrller")
+    --print("animation contrller")
 
     local ProximityService = Knit.GetService("ProximityService")
     ProximityService.SetAnimations:Connect(function(Animations)

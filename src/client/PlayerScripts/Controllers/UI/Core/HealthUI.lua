@@ -6,17 +6,18 @@ local HealthUI = Knit.CreateController { Name = "HealthUI" }
 local LocalPlayer = game.Players.LocalPlayer;
 
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui");
-local MainUI = PlayerGui:WaitForChild("Main")
-local BarsFrame = MainUI:WaitForChild("BarsFrame");
-local HealthFrame = BarsFrame:WaitForChild("Health")
-local HealthBar = HealthFrame:WaitForChild("Bar")
-local HealthTitle = HealthFrame:WaitForChild("Title")
-
 
 local HealthConnection, MaxHealthConnection;
 
 function HealthUI:Update(Humanoid)
     local health = math.clamp(Humanoid.Health / Humanoid.MaxHealth, 0, 1)
+
+    local MainUI = PlayerGui:WaitForChild("Main")
+    local BarsFrame = MainUI:WaitForChild("BarsFrame");
+    local HealthFrame = BarsFrame:WaitForChild("Health")
+    local HealthBar = HealthFrame:WaitForChild("Bar")
+    local HealthTitle = HealthFrame:WaitForChild("Title")
+
     HealthBar:TweenSize(UDim2.fromScale(health, 1), Enum.EasingDirection.InOut, Enum.EasingStyle.Linear, Humanoid.Health / Humanoid.MaxHealth, true)
     HealthTitle.Text = math.floor(Humanoid.Health).. '/' ..Humanoid.MaxHealth
 end

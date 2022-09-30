@@ -62,17 +62,17 @@ function GameController:ForIngredient(Ingredient)
 	Ingredient.ProximityPrompt.Triggered:Connect(function(plr)
 		if Cooldown == false then
 			Cooldown = true;
-			print("triggered")
+			--print("triggered")
 			if plr.Character:FindFirstChild("Ingredient") then
-				print("character")
+				--print("character")
 				if plr.Character:FindFirstChild("Ingredient").Value == nil then
-					print("mag")
+					--print("mag")
 					local Mag;
 
 					Mag = (Ingredient.Position - game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart").Position).magnitude;
 					--print("Pickup Mag:",Mag)
 					if Mag and Mag <= 6 then
-						print(tostring(Ingredient).." is Ingredient");
+						--print(tostring(Ingredient).." is Ingredient");
 
 						local CookingService = Knit.GetService("CookingService");
 						CookingService.PickUp:Fire(Ingredient);
@@ -118,12 +118,21 @@ function GameController:ForFood(Food)
 					Mag = (Food.Position - game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart").Position).magnitude;
 					--print("Pickup Mag:",Mag)
 					if Mag and Mag <= 6 then
-						print(tostring(Food).." is Food");
+						--print(tostring(Food).." is Food");
 
 						local CookingService = Knit.GetService("CookingService");
 						CookingService.PickUp:Fire(Food);
 						task.wait(.1);
-						Food:Destroy();
+
+						if Food.Parent then
+							if Food.Parent.Name == Food.Name then
+								Food.Parent:Destroy();
+							end
+						end
+
+						if Food then
+							Food:Destroy();
+						end
 					end;
 				end;
 			end;
@@ -135,7 +144,7 @@ function GameController:ForFood(Food)
 end;
 
 function GameController:KnitStart()
-	print("game controller")
+	--print("game controller")
     task.wait(1)
 
     for _,Ingredient in ipairs(IngredientAvailable:GetChildren()) do
@@ -171,7 +180,8 @@ function GameController:KnitInit()
     game:GetService("RunService").RenderStepped:Connect(function()
         for _,v in pairs(game.Workspace:FindFirstChild("FoodAvailable"):GetChildren()) do
             if v:IsA("Model") then
-                if v.PrimaryPart:GetAttribute("Owner") == "Default" 
+				if v.PrimaryPart == nil 
+                or v.PrimaryPart:GetAttribute("Owner") == "Default" 
                 or v.PrimaryPart:GetAttribute("Owner") == nil 
                 or v.PrimaryPart:GetAttribute("Owner") == game.Players.LocalPlayer.Name then else
                     print(v.PrimaryPart:GetAttribute("Owner"));
@@ -190,15 +200,14 @@ function GameController:KnitInit()
         end;
         for _,v in pairs(game.Workspace:FindFirstChild("IngredientAvailable"):GetChildren()) do
             if v:IsA("Model") then
-				if v.PrimaryPart then
-					if v.PrimaryPart:GetAttribute("Owner") == "Default"
-					or v.PrimaryPart:GetAttribute("Owner") == nil 
-					or v.PrimaryPart:GetAttribute("Owner") == game.Players.LocalPlayer.Name then else
-						print(v.PrimaryPart:GetAttribute("Owner"));
-						print(v,"is getting destroyed in workspace");
-						v:Destroy();
-					end;
-				end
+				if v.PrimaryPart == nil
+				or v.PrimaryPart:GetAttribute("Owner") == "Default"
+				or v.PrimaryPart:GetAttribute("Owner") == nil 
+				or v.PrimaryPart:GetAttribute("Owner") == game.Players.LocalPlayer.Name then else
+					print(v.PrimaryPart:GetAttribute("Owner"));
+					print(v,"is getting destroyed in workspace");
+					v:Destroy();
+				end;
             elseif v:IsA("MeshPart") then
                 if v:GetAttribute("Owner") == "Default" 
                 or v:GetAttribute("Owner") == nil 

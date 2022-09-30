@@ -29,12 +29,12 @@ local Recipes = {
 		Image = "rbxassetid://8019445605",
 		Ingredients = {
 			"Red Onion",
-			"Garlic",
+			--[["Garlic",
 			"Courgette",
 			"Tomato",
 			"Yellow Bell Pepper",
 			"Red Bell Pepper",
-			"Lemon"
+			"Lemon"]]
 		},
 		Unlockable = true, 
 		Difficulty = "Hard"	

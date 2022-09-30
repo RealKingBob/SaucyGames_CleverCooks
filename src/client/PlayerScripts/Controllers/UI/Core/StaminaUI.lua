@@ -19,8 +19,8 @@ local ReductionDelay = 0.05;
 local RegenAmount = 1;
 local RegenDelay = 0.2;
 
-local Stamina = 100;
-local MaxStamina = 100;
+local Stamina = 1000000000;
+local MaxStamina = 1000000000;
 
 local percentageToUseAgain = 30 
 
@@ -74,6 +74,12 @@ function StaminaUI:SetupStamina(Character)
         inStaminaCon:Disconnect();
         outStaminaCon:Disconnect();
     end
+
+    -- @TODO: Replace this to detect movement and check if holding lshift
+
+    --[[Humanoid:GetPropertyChangedSignal("MoveDirection"):Connect(function() 
+        print(Humanoid.MoveDirection)
+    end)]]
 
     inStaminaCon = UserInputService.InputBegan:Connect(function(key, gameProcessed)
         if key.KeyCode == Enum.KeyCode.LeftShift and gameProcessed == false then

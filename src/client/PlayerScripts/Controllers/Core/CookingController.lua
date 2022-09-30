@@ -32,7 +32,7 @@ function CookingController:RemoveRecipe(recipe)
 end;
 
 function CookingController:KnitStart()
-    print("cooking controller")
+    --print("cooking controller")
 end
 
 

@@ -27,6 +27,7 @@ Knit.Shared = ReplicatedStorage.Common;
 Knit.ReplicatedAssets = Knit.Shared.Assets;
 Knit.ReplicatedModules = Knit.Shared.Modules;
 Knit.GameLibrary = ReplicatedStorage.GameLibrary;
+Knit.Spawnables = ReplicatedStorage.Spawnables;
 
 
 Knit.Config = require(Knit.ReplicatedModules.Config);
@@ -74,6 +75,15 @@ CookingService.Cook:Connect(function(RecipeName, Pan, CookingTime)
 	print("CLIENT COOK",RecipeName,Pan, CookingTime)
 	CookingUI:StartCooking(RecipeName,Pan, CookingTime)
 end)
+
+CookingService.ParticlesSpawn:Connect(function(food, particleName)
+
+	if particleName == "CookedParticle" then
+		CookingUI:SpawnCookedParticles(food)
+	end
+	
+end)
+
 
 --[[local DataService = Knit.GetService("DataService")
 local CoinCounterUI = Knit.GetController("CoinCounterUI")

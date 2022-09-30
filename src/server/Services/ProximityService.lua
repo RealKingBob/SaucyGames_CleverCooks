@@ -49,7 +49,7 @@ function ProximityService:LinkItemToPlayer(Character,Object)
                     b.Massless = true;
                 end;
             end;
-            _PrimaryPart.CFrame = Character:FindFirstChild("HumanoidRootPart").CFrame;
+            Object:SetPrimaryPartCFrame(Character:FindFirstChild("HumanoidRootPart").CFrame)
             _PrimaryPart.HandJoint.Attachment1 = Character:FindFirstChild("Head").RightGripAttachment;
             _PrimaryPart.FaceJoint.Attachment1 = Character:FindFirstChild("Head").FaceFrontAttachment;
             Character.PrimaryPart.ProximityPrompt.Enabled = true;

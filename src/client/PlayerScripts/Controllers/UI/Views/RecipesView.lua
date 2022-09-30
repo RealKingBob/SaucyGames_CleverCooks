@@ -106,7 +106,7 @@ function recipePageCreated(PageNumber,PageData)
 end
 
 function setupRecipes()
-    print("setupRecipes")
+    --print("setupRecipes")
 	local Pages = recipeSection:WaitForChild("Pages")
 	local PageOrganizer = recipeList:WaitForChild("PageOrganizer")
 	

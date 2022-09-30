@@ -35,7 +35,7 @@ function CollectionController:KnitStart()
                                 if magnitude <= 2 then
                                     if not Debounces[dropable] then
                                         Debounces[dropable] = true
-                                        print("+"..tostring(DropAmount).." GIVEN")
+                                        --print("+"..tostring(DropAmount).." GIVEN")
                                         TweenService:Create(dropable.Cheese, TweenInfo.new(0.1), {Size = UDim2.fromScale(0,0)}):Play()
                                         task.wait(0.1)
                                         dropable:Destroy()
