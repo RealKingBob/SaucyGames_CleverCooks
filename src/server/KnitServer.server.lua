@@ -45,7 +45,6 @@ Knit.InventoryService = require(Knit.Services.InventoryService);
 Knit.CookingService = require(Knit.Services.CookingService);
 Knit.CrateService = require(Knit.Services.CrateService);
 Knit.NpcService = require(Knit.Services.NpcService);
-Knit.DeliveryService = require(Knit.Services.DeliveryService);
 
 Knit.ComponentsLoaded = false;
 ----- Initialize -----

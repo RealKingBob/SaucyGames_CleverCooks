@@ -11,7 +11,9 @@ local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local AvatarService = Knit.CreateService {
     Name = "AvatarService";
-    Client = {};
+    Client = {
+        BoostEffect = Knit.CreateSignal();
+    };
 }
 
 local PlayerService = game:GetService("Players");
@@ -138,6 +140,24 @@ function AvatarService:GetAvatarHat(Player) -- [Player : Instance]
     else
         return nil;
     end
+end;
+
+function AvatarService:PlayBoostEffect(Player, bool) -- [Player : Instance]
+    if not Player then return false end;
+    local Character = Player.Character;
+
+    if not Character then return false end;
+    if not Character:FindFirstChild("HumanoidRootPart") then return false end;
+    if not Character:FindFirstChild("HumanoidRootPart"):FindFirstChild("Attachment") then return false end;
+    if Character then
+        for index, particle in pairs(Character.HumanoidRootPart.Attachment:GetChildren()) do
+            if particle.Name ~= "Circle" and particle:IsA("ParticleEmitter") then
+                particle.Enabled = bool;
+            end
+        end
+        return true;
+    end
+    return false;
 end;
 
 function AvatarService:GetBoosterEffect(Player) -- [Player : Instance]
@@ -529,6 +549,9 @@ end
 
 function AvatarService:KnitInit()
     
+    self.Client.BoostEffect:Connect(function(player, bool)
+        self:PlayBoostEffect(player, bool)
+    end)
 end
 
 return AvatarService;

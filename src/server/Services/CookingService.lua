@@ -65,6 +65,7 @@ local RewardService = require(ModuleServices:FindFirstChild("RewardService"));
 local DataService = require(ModuleServices:FindFirstChild("DataService"));]]
 
 local panZone = ZoneAPI.new(workspacePans:WaitForChild("PanHitboxes"));
+local deliverZone = ZoneAPI.new(CollectionService:GetTagged("DeliverStation"));
 
 ----- Variables -----
 
@@ -84,6 +85,7 @@ local CurrentIngredientObjects = {};
 local playerIngredients = {};
 local prevIngredients = {};
 local cookingPansQueue = {};
+local deliverQueues = {};
 
 local function PlayerAdded(player)
     CurrentIngredientObjects[player.Name] = {};
@@ -286,6 +288,75 @@ function CookingService:Cook(player,Character,recipe, pan)
 	end;
 end;
 
+function CookingService:DeliverFood(player, food)
+    print('[CookingService]: Submitting Food: '.. tostring(food));
+
+	local DataService = Knit.GetService("DataService")
+	local profile = DataService.GetProfile(player);
+	if not profile then
+
+		if RecipeModule[tostring(food)] then
+			--print(SelectedRecipe,SelectedRecipe["Ingredients"])
+			for k, v in ipairs(food:GetDescendants()) do
+				if v:IsA("BasePart") or v:IsA("MeshPart") or v:IsA("Weld") then
+					continue
+				else
+					v:Destroy();
+				end
+			end
+
+			print("DELIVER TIME")
+
+			if not deliverQueues[player.UserId] then 
+				deliverQueues[player.UserId] = {};
+			end
+
+			table.insert(deliverQueues[player.UserId], food)
+
+			local cookingTime = RecipeModule:GetCookTime(tostring(food));
+
+			--print("cookingPansQueue", cookingPansQueue[player.UserId])
+
+			self.Client.Cook:Fire(player, tostring(food), food, cookingTime)
+
+			task.spawn(function()
+				local waitTime = 2;
+				local numOfDrops = cookingTime / waitTime;
+				local cheeseDrop = RecipeModule:GetRecipeRewards(RecipeModule[tostring(food)].Difficulty);
+				local rCheeseDropReward = math.random(cheeseDrop[1],cheeseDrop[2])
+
+				local cheeseValuePerDrop = rCheeseDropReward / numOfDrops;
+				local cheeseObjectPerDrop = 10;
+				-- oCFrame, obj, amount, value
+
+				--print("cooking drop", numOfDrops, cheeseDrop, rCheeseDropReward, cheeseValuePerDrop)
+				
+				for i = 1, numOfDrops do
+					DropUtil.DropCheese(food.CFrame, game.ReplicatedStorage.Spawnables.Cheese, player, cheeseObjectPerDrop, math.floor((cheeseValuePerDrop / cheeseObjectPerDrop)))
+					task.wait(waitTime);
+				end
+			end)
+			task.wait(cookingTime);
+
+			local function tablefind(tab,el) for index, value in pairs(tab) do if value == el then	return index end end end
+			table.remove( deliverQueues[player.UserId], tablefind(deliverQueues[player.UserId], food) );
+
+			--print("cookingPansQueue", cookingPansQueue[player.UserId])
+
+			--local RawCalculatedEXP = (EXPMultiplier * #SelectedRecipe["Ingredients"]);
+			self.Client.ProximitySignal:Fire(player,"CookVisible",false);
+			--RewardService:GiveReward(profile, {EXP = MathAPI:Find_Closest_Divisible_Integer(RawCalculatedEXP, 2);})
+
+			print("food delivered:", food)
+			
+			self.Client.ParticlesSpawn:Fire(player, food, "CookedParticle")
+			--StatTrackService:SetRecentCookedFood(player, tostring(recipe));
+		end;
+	else
+		warn("Could not find user["..tostring(player.UserId).."] profile to deliver the food, please retry")
+	end;
+end
+
 function CookingService:KnitStart()
 	SpawnItemsAPI:SpawnAllIngredients(2);
     --SpawnItemsAPI:SpawnAll(IngredientObjects,IngredientsAvailable);
@@ -341,6 +412,38 @@ function CookingService:KnitInit()
 			local tCurrentIngredients = {};
 			local tCurrentIngredientObjects = {};
 			local partsArray = {};
+
+			for _, deliverHitbox in pairs(CollectionService:GetTagged("DeliverStation")) do
+				local radiusOfDeliverZone = getRadius(deliverHitbox)
+
+				local overlapParams = OverlapParams.new()
+				overlapParams.FilterDescendantsInstances = CollectionService:GetTagged("IgnoreParts");
+				overlapParams.FilterType = Enum.RaycastFilterType.Blacklist;
+
+				local parts = workspace:GetPartBoundsInRadius(deliverHitbox.Position, radiusOfDeliverZone, overlapParams)
+				for _, part in pairs(parts) do
+					local touchedType, touchedOwner, touchedObject;
+					if part.Parent:IsA("Model") then
+						if part.Parent.PrimaryPart then
+							local touchedPrimary = part.Parent.PrimaryPart;
+							touchedType = touchedPrimary:GetAttribute("Type");
+							touchedOwner = touchedPrimary:GetAttribute("Owner");
+							touchedObject = touchedPrimary.Parent;
+						end
+					else
+						touchedType = part:GetAttribute("Type");
+						touchedOwner = part:GetAttribute("Owner");
+						touchedObject = part;
+					end
+					if touchedType == "Food" and touchedOwner ~= "None" then
+						local OwnerPlayer = Players:FindFirstChild(touchedOwner)
+						if OwnerPlayer then
+							print(part, "in deliverzone")
+							self:DeliverFood(OwnerPlayer, touchedObject)
+						end
+					end
+				end
+			end
 	
 			for _,hitbox in pairs(workspacePans.PanHitboxes:GetChildren()) do
 				local radiusOfPan = getRadius(hitbox)

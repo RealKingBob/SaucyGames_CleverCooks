@@ -184,6 +184,7 @@ function DailyView:KnitStart()
                 end)
             else
                 Knit.GetController("ViewsUI"):OpenView("Shop");
+                task.wait(0.3);
                 Knit.GetController("ShopView"):GoToArea("Currency");
             end
         end)

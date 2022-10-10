@@ -180,6 +180,7 @@ function CurrencyCounterUI:KnitStart()
         local ShopView = Knit.GetController("ShopView");
 
         Knit.GetController("ViewsUI"):OpenView("Shop");
+		task.wait(0.3);
         ShopView:GoToArea("Currency");
     end)
 end

@@ -307,7 +307,7 @@ function InventoryUI:KnitStart()
                         self:SelectItem(tostring(LastInventory[CurrentItem]), v.Name);
                     end
                 end
-                print(v.Name)
+                --print(v.Name)
                 self:SelectCategory(v.Name)
             end)
         end

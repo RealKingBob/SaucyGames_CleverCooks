@@ -55,6 +55,7 @@ function StaminaUI:CheckSprintAnim(Humanoid)
 end
 
 function StaminaUI:SetupStamina(Character)
+    local AvatarService = Knit.GetService("AvatarService");
 
     Stamina = MaxStamina;
 
@@ -162,11 +163,7 @@ function StaminaUI:SetupStamina(Character)
             --camShake:Shake(CameraShaker.Presets.Earthquake)
 
             SprintAnim:Play()
-            for index, particle in ipairs(Character.HumanoidRootPart.Attachment:GetChildren()) do
-                if particle.Name ~= "Circle" and particle:IsA("ParticleEmitter") then
-                    particle.Enabled = true;
-                end
-            end
+            AvatarService.BoostEffect:Fire(true)
 
             local MainUI = PlayerGui:WaitForChild("Main")
             local BarsFrame = MainUI:WaitForChild("BarsFrame");
@@ -194,11 +191,7 @@ function StaminaUI:SetupStamina(Character)
                 sprinting = false
                 --if PrevAnim then PrevAnim:Play(); end
 
-                for index, particle in ipairs(Character.HumanoidRootPart.Attachment:GetChildren()) do
-                    if particle:IsA("ParticleEmitter") then
-                        particle.Enabled = false;
-                    end
-                end
+                AvatarService.BoostEffect:Fire(false)
 
                 if cooldownStamina == true then
                     StaminaBar.BackgroundColor3 = cooldownStaminaColor;
@@ -234,12 +227,7 @@ function StaminaUI:SetupStamina(Character)
 
                 SprintAnim:Stop()
                 --if PrevAnim then PrevAnim:Play(); end
-                for index, particle in ipairs(Character.HumanoidRootPart.Attachment:GetChildren()) do
-                    if particle:IsA("ParticleEmitter") then
-                        particle.Enabled = false;
-                    end
-                end
-
+                AvatarService.BoostEffect:Fire(false)
                 --print(PrevAnim)
 
                 local MainUI = PlayerGui:WaitForChild("Main")
