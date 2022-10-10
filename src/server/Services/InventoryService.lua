@@ -9,10 +9,10 @@
             -- Example return: { 
                     Inventory = {
                     CurrentDeathEffect = "Default",
-                    CurrentDuckSkin = "Default",
+                    CurrentHat = "Default",
                     CurrentDuckEmote = "Default",
                     Boosters = {},
-                    DuckSkins = {},
+                    Hats = {},
                     DuckEmotes = {},
                     DuckEffects = {},
                 }, -- Inventory of the user
@@ -78,9 +78,8 @@ local DataService = Knit.DataService;
 local Config = require(ReplicatedStorage.Common.Modules.Config);
 local TableUtil = require(Knit.Util.TableUtil);
 
-local DuckSkins = Knit.ReplicatedDuckSkins;
-local DuckEmotes = Knit.ReplicatedDuckEmotes;
-local DeathEffect = Knit.ReplicatedDuckEffects;
+local HatSkins = require(Knit.ReplicatedHatSkins);
+local BoosterEffects = require(Knit.ReplicatedBoosterEffects);
 
 function InventoryService.PrintItems(player, Type)
 	
@@ -121,14 +120,14 @@ function InventoryService:HasItem(player, itemName, itemType)
     if Profile then
         local PlayerProfile = PlayerInventoryProfiles[player] or DataService:GetProfile(player).Data;
         if PlayerProfile then
-            if itemType == "Skins" then
-                if PlayerProfile.Inventory.DuckSkins[tostring(itemName)] then
+            if itemType == "Hats" then
+                if PlayerProfile.Inventory.Hats[tostring(itemName)] then
                     return true;
                 else
                     return false;
                 end
-            elseif itemType == "Effects" then 
-                if PlayerProfile.Inventory.DuckEffects[tostring(itemName)] then
+            elseif itemType == "Booster Effects" then 
+                if PlayerProfile.Inventory.BoosterEffects[tostring(itemName)] then
                     return true;
                 else
                     return false;
@@ -144,8 +143,8 @@ function InventoryService:IsDuplicate(player, itemName, itemType)
     if Profile then
         local PlayerProfile = PlayerInventoryProfiles[player] or DataService:GetProfile(player).Data;
         if PlayerProfile then
-            if itemType == "Skins" then
-                if PlayerProfile.Inventory.DuckSkins[tostring(itemName)] then
+            if itemType == "Hats" then
+                if PlayerProfile.Inventory.Hats[tostring(itemName)] then
                     task.spawn(function()
                         task.wait(3);
                         PlayerProfile.PlayerInfo.Coins += 350
@@ -158,8 +157,8 @@ function InventoryService:IsDuplicate(player, itemName, itemType)
                         DuplicateAmount = 350,
                     };
                 end
-            elseif itemType == "Effects" then 
-                if PlayerProfile.Inventory.DuckEffects[tostring(itemName)] then
+            elseif itemType == "Booster Effects" then 
+                if PlayerProfile.Inventory.BoosterEffects[tostring(itemName)] then
                     task.spawn(function()
                         task.wait(3);
                         PlayerProfile.PlayerInfo.Coins += 200
@@ -211,38 +210,27 @@ function InventoryService.ResetInventory(player, type)
             PlayerInventoryProfiles[player].Inventory = decodedInventory
         end
 
-        if type == "Skins" then
-            PlayerInventoryProfiles[player].Inventory.DuckSkins = {}
-            PlayerInventoryProfiles[player].Inventory.DuckSkins["Default Duck"] = {
+        if type == "Hats" then
+            PlayerInventoryProfiles[player].Inventory.Hats = {}
+            PlayerInventoryProfiles[player].Inventory.Hats["Default Hat"] = {
                 Quantity = 1; -- DataInventory[ItemName].Quantity + 
                 Rarity = "Common"
             }
-        elseif type == "Effects" then
-            PlayerInventoryProfiles[player].Inventory.DuckEffects = {}
-            PlayerInventoryProfiles[player].Inventory.DuckEffects["Default"] = {
-                Quantity = 1; -- DataInventory[ItemName].Quantity + 
-                Rarity = "Common"
-            }
-        elseif type == "Emotes" then
-            PlayerInventoryProfiles[player].Inventory.DuckEmotes = {}
-            PlayerInventoryProfiles[player].Inventory.DuckEmotes["Default"] = {
+        elseif type == "Booster Effects" then
+            PlayerInventoryProfiles[player].Inventory.BoosterEffects = {}
+            PlayerInventoryProfiles[player].Inventory.BoosterEffects["Default Boost"] = {
                 Quantity = 1; -- DataInventory[ItemName].Quantity + 
                 Rarity = "Common"
             }
         else
-            PlayerInventoryProfiles[player].Inventory.DuckSkins = {}
-            PlayerInventoryProfiles[player].Inventory.DuckEffects = {}
-            PlayerInventoryProfiles[player].Inventory.DuckEmotes = {}
+            PlayerInventoryProfiles[player].Inventory.Hats = {}
+            PlayerInventoryProfiles[player].Inventory.BoosterEffects = {}
 
-            PlayerInventoryProfiles[player].Inventory.DuckSkins["Default Duck"] = {
+            PlayerInventoryProfiles[player].Inventory.Hats["Default Hat"] = {
                 Quantity = 1; -- DataInventory[ItemName].Quantity + 
                 Rarity = "Common"
             }
-            PlayerInventoryProfiles[player].Inventory.DuckEffects["Default"] = {
-                Quantity = 1; -- DataInventory[ItemName].Quantity + 
-                Rarity = "Common"
-            }
-            PlayerInventoryProfiles[player].Inventory.DuckEmotes["Default"] = {
+            PlayerInventoryProfiles[player].Inventory.BoosterEffects["Default Boost"] = {
                 Quantity = 1; -- DataInventory[ItemName].Quantity + 
                 Rarity = "Common"
             }
@@ -267,15 +255,15 @@ function InventoryService.AddAllItem(player, type)
         local selectedItem
         local DataInventory
 
-        if type == "Skins" then
-            selectedInfo = DuckSkins
-            DataInventory = PlayerInventoryProfiles[player].Inventory.DuckSkins
-        elseif type == "Effects" then
-            selectedInfo = DeathEffect
-            DataInventory = PlayerInventoryProfiles[player].Inventory.DuckEffects
-        elseif type == "Emotes" then
+        if type == "Hats" then
+            selectedInfo = HatSkins
+            DataInventory = PlayerInventoryProfiles[player].Inventory.Hats
+        elseif type == "Booster Effects" then
+            selectedInfo = BoosterEffects
+            DataInventory = PlayerInventoryProfiles[player].Inventory.BoosterEffects
+        --[[elseif type == "Emotes" then
             selectedInfo = DuckEmotes
-            DataInventory = PlayerInventoryProfiles[player].Inventory.DuckEmotes
+            DataInventory = PlayerInventoryProfiles[player].Inventory.DuckEmotes]]
         else
             return
         end
@@ -317,15 +305,15 @@ function InventoryService.AddItem(player, item, type)
         local selectedItem
         local DataInventory
 
-        if type == "Skins" then
-            selectedInfo = DuckSkins
-            DataInventory = PlayerInventoryProfiles[player].Inventory.DuckSkins
-        elseif type == "Effects" then
-            selectedInfo = DeathEffect
-            DataInventory = PlayerInventoryProfiles[player].Inventory.DuckEffects
-        elseif type == "Emotes" then
+        if type == "Hats" then
+            selectedInfo = HatSkins
+            DataInventory = PlayerInventoryProfiles[player].Inventory.Hats
+        elseif type == "Booster Effects" then
+            selectedInfo = BoosterEffects
+            DataInventory = PlayerInventoryProfiles[player].Inventory.BoosterEffects
+        --[[elseif type == "Emotes" then
             selectedInfo = DuckEmotes
-            DataInventory = PlayerInventoryProfiles[player].Inventory.DuckEmotes
+            DataInventory = PlayerInventoryProfiles[player].Inventory.DuckEmotes]]
         else
             return
         end
@@ -364,12 +352,12 @@ function InventoryService.RemoveItem(player, item, type)
 
         local DataInventory
 
-        if type == "Skins" then
-            DataInventory = PlayerInventoryProfiles[player].Inventory.DuckSkins
-        elseif type == "Effects" then
-            DataInventory = PlayerInventoryProfiles[player].Inventory.DuckEffects
-        elseif type == "Emotes" then
-            DataInventory = PlayerInventoryProfiles[player].Inventory.DuckEmotes
+        if type == "Hats" then
+            DataInventory = PlayerInventoryProfiles[player].Inventory.Hats
+        elseif type == "Booster Effects" then
+            DataInventory = PlayerInventoryProfiles[player].Inventory.BoosterEffects
+        --[[elseif type == "Emotes" then
+            DataInventory = PlayerInventoryProfiles[player].Inventory.DuckEmotes]]
         else
             return
         end
@@ -390,24 +378,23 @@ function InventoryService.EquipItem(player, item, type)
             local decodedInventory = HttpService:JSONDecode(PlayerInventoryProfiles[player].Inventory)
             PlayerInventoryProfiles[player].Inventory = decodedInventory
         end
-        if type == "Skins" then
-            if PlayerInventoryProfiles[player].Inventory.DuckSkins[tostring(item)] or Config.GIVE_ALL_INVENTORY == true then
-                PlayerInventoryProfiles[player].Inventory.CurrentDuckSkin = tostring(item)
-                if not CollectionService:HasTag(player, Knit.Config.HUNTER_TAG) then
-                    local AvatarService = require(script.Parent.AvatarService);
-                    AvatarService:SetAvatarSkin(player, tostring(item));
-                end
+        if type == "Hats" then
+            if PlayerInventoryProfiles[player].Inventory.Hats[tostring(item)] or Config.GIVE_ALL_INVENTORY == true then
+                PlayerInventoryProfiles[player].Inventory.CurrentHat = tostring(item)
+                local AvatarService = require(script.Parent.AvatarService);
+                    
+                print("Set avatar skin")
+                
+                AvatarService:SetAvatarHat(player, tostring(item));
             end
-        elseif type == "Effects" then
-            PlayerInventoryProfiles[player].Inventory.CurrentDeathEffect = tostring(item)
-            if PlayerInventoryProfiles[player].Inventory.DuckEffects[tostring(item)] or Config.GIVE_ALL_INVENTORY == true then
-                if not CollectionService:HasTag(player, Knit.Config.HUNTER_TAG) then
-                    local AvatarService = require(script.Parent.AvatarService);
-                    AvatarService:SetDeathEffect(player, tostring(item));
-                end
+        elseif type == "Booster Effects" then
+            PlayerInventoryProfiles[player].Inventory.CurrentBoosterEffect = tostring(item)
+            if PlayerInventoryProfiles[player].Inventory.BoosterEffects[tostring(item)] or Config.GIVE_ALL_INVENTORY == true then
+                local AvatarService = require(script.Parent.AvatarService);
+                AvatarService:SetBoosterEffect(player, tostring(item));
             end
-        elseif type == "Emotes" then
-            PlayerInventoryProfiles[player].Inventory.CurrentDuckEmote = tostring(item)
+        --[[elseif type == "Emotes" then
+            PlayerInventoryProfiles[player].Inventory.CurrentDuckEmote = tostring(item)]]
         else
             return
         end
@@ -419,14 +406,11 @@ function InventoryService:InitializeInventory(player)
         repeat task.wait(0.001) until DataService:GetProfile(player) ~= nil
 		local PlayerProfile = DataService:GetProfile(player);
         if PlayerProfile then
-            if player.UserId == 2510232695 -- karl
-            or player.UserId == 21831137 -- bob
-            or player.UserId == 52624453 -- longnose
-            or player.UserId == 131997771 -- emerald
+            if player.UserId == 21831137 -- bob
             or player.UserId == 1464956079 then -- sen
                 --print("PASSED")
-                self.AddAllItem(player, "Skins")
-                self.AddAllItem(player, "Effects")
+                --self.AddAllItem(player, "Hats")
+                --self.AddAllItem(player, "Effects")
             end
             PlayerInventoryProfiles[player] = TableUtil.Copy(PlayerProfile.Data, true)
             if PlayerInventoryProfiles[player] then

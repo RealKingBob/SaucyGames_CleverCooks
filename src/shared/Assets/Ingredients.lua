@@ -13,7 +13,11 @@ local Ingredients = {
 	},
 	["Salt"] = {
 		Name = "Salt",
-		Image = "rbxassetid://8019445103",
+		Image = "rbxassetid://11148732344",
+	},
+	["Pepper"] = {
+		Name = "Pepper",
+		Image = "rbxassetid://11148732733",
 	},
 	["Wheat Bag"] = {
 		Name = "Wheat Bag",
@@ -22,6 +26,14 @@ local Ingredients = {
 	["Red Onion"] = {
 		Name = "Red Onion",
 		Image = "rbxassetid://8019445197",
+	},
+	["White Onion"] = {
+		Name = "White Onion",
+		Image = "rbxassetid://11136084843",
+	},
+	["Onion"] = {
+		Name = "Onion",
+		Image = "rbxassetid://11136085096",
 	},
 	["Garlic"] = {
 		Name = "Garlic",

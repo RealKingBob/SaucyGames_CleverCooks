@@ -73,7 +73,9 @@ function ViewsUI:OpenView(ViewName, ButtonEnabled)
     end
 
     if ButtonEnabled then
-        task.spawn(displayButtons, false)
+        if ViewName ~= "Settings" then
+            task.spawn(displayButtons, false)
+        end
     end
     
 	CurrentView.Visible = true;
@@ -92,18 +94,6 @@ function ViewsUI:CloseView(ItemName, ButtonEnabled)
     if (not CurrentView) then return; end
 
     if (ItemName and CurrentView.Name ~= ItemName) then return; end
-
-    if CurrentView.Name == "Settings" or ItemName == "Settings" then
-        if deselectDeb == false then
-            deselectDeb = true;
-            local SettingsUI = Knit.GetController("SettingsUI")
-            SettingsUI:DeselectButton()
-            task.spawn(function()
-                task.wait(.45)
-                deselectDeb = false;
-            end)
-        end
-    end
     
     local TargetView = CurrentView
     CurrentView = nil;
@@ -134,7 +124,7 @@ function ViewsUI:KnitStart()
 
     local leftContainerDeb = false;
 
-    for _,v in pairs(LeftContainer:GetChildren()) do
+    for _,v in pairs(LeftContainer:GetDescendants()) do
         if (v:IsA("TextButton")) then
             v.MouseButton1Click:Connect(function()
                 if (Views:FindFirstChild(v.Name)) then

@@ -177,10 +177,10 @@ end
 
 function CurrencyCounterUI:KnitStart()
     AddButton.MouseButton1Click:Connect(function()
-        --local ShopUI = Knit.GetController("ShopUI");
+        local ShopView = Knit.GetController("ShopView");
 
-        --Knit.GetController("ViewsUI"):OpenView("Shop");
-        --ShopUI:GoToPage("Coins");
+        Knit.GetController("ViewsUI"):OpenView("Shop");
+        ShopView:GoToArea("Currency");
     end)
 end
 

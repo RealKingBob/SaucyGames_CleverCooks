@@ -58,14 +58,18 @@ local function customDebris(instance, lifetime)
 	end
 end
 
-function DropUtil.DropCheese(oCFrame, obj, amount, value)
+function DropUtil.DropCheese(oCFrame, obj, player, amount, value)
 
     for i= 0, amount do
         local cloneObject = obj:Clone()
         cloneObject.Name = "Cheese"..i
         cloneObject:SetAttribute("Amount", value)
+        if not player then player = { Name = nil; UserId = 0; } end
+        cloneObject:SetAttribute("OwnerName", player.Name)
+        cloneObject:SetAttribute("OwnerId", player.UserId)
+
         cloneObject.CFrame = oCFrame
-        game:GetService("Debris"):AddItem(cloneObject, 10)
+        game:GetService("Debris"):AddItem(cloneObject, 120)
         cloneObject.Parent = workspace.Spawnables.Cheese
 
         local randomX = {math.random(-10, -4), math.random(4,10)}
@@ -94,8 +98,7 @@ function DropUtil.DropCheese(oCFrame, obj, amount, value)
 end
 
 function DropUtil.DropCurrencyText(oCFrame, amount, userId)
-
-    local DataService = Knit.GetService("DataService")
+    print("DropCurrencyText", amount, userId)
 
     local function fadeInObj(instance)
         local PopUpTweenInfo = TweenInfo.new(.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out);
@@ -131,7 +134,7 @@ function DropUtil.DropCurrencyText(oCFrame, amount, userId)
 
         local player = Players:GetPlayerByUserId(userId)
 
-        DataService.GiveCurrency:Fire(tonumber(amount))
+        --DataService:GiveCurrency(player, tonumber(amount))
 
         fadeInObj(prevObj)
         cancelDebris[userId] = customDebris(prevObj, 1.25)
@@ -157,7 +160,9 @@ function DropUtil.DropCurrencyText(oCFrame, amount, userId)
         CurrencyCollected:Play();
     end
 
-    DataService.GiveCurrency:Fire(tonumber(amount))
+    local player = Players:GetPlayerByUserId(userId)
+
+    --DataService:GiveCurrency(player, tonumber(amount))
 
     fadeInObj(cloneObject)
 

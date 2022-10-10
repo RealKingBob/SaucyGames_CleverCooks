@@ -12,6 +12,12 @@ local Debounces = {};
 local DropUtil = require(Knit.Shared.Modules.DropUtil);
 
 function CollectionController:KnitStart()
+    local ProximityService = Knit.GetService("ProximityService");
+
+    ProximityService.CurrencyCollected:Connect(function(RootCFrame, DropAmount)
+        --print("CurrencyCollected", RootCFrame, DropAmount)
+        DropUtil.DropCurrencyText(RootCFrame, DropAmount, LocalPlayer.UserId)
+    end)
     
     while true do
         local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait();
@@ -38,8 +44,8 @@ function CollectionController:KnitStart()
                                         --print("+"..tostring(DropAmount).." GIVEN")
                                         TweenService:Create(dropable.Cheese, TweenInfo.new(0.1), {Size = UDim2.fromScale(0,0)}):Play()
                                         task.wait(0.1)
+                                        ProximityService.CurrencyCollected:Fire(dropable, Root.CFrame, DropAmount)
                                         dropable:Destroy()
-                                        DropUtil.DropCurrencyText(Root.CFrame, DropAmount, LocalPlayer.UserId)
                                         Debounces[dropable] = nil
                                     end
                                 end

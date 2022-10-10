@@ -53,7 +53,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
     DuckSkin
 ]]
 local Rarities = {}
-local UiAssets = script.Parent.Parent.Parent:WaitForChild("UiAssets")
+local UiAssets = ReplicatedStorage:WaitForChild("UiAssets")
 
 Rarities.RarityTable = {
     ["Exclusive"] = {
@@ -135,13 +135,21 @@ function Rarities.getRarityDataFromRarityName(Name)
 	return nil;
 end
 
-function Rarities.getRarityDataFromItemName(Name)
-    --[[local DucksSkins = require(ReplicatedStorage.Common.Assets.DuckSkins)
-    for duckTitle,duckData in next, DucksSkins.SkinsTable do
-        if duckTitle == Name then
-            return Rarities.getRarityDataFromId(duckData.Rarity);
+function Rarities.getRarityDataFromItemName(Name, Type)
+    local CategoryItems
+    if Type == "Hats" then
+        CategoryItems = require(ReplicatedStorage.Common.Assets.HatSkins)
+    elseif Type == "Booster Effects" then
+        CategoryItems = require(ReplicatedStorage.Common.Assets.BoosterEffects)
+    else 
+        return nil;
+    end
+
+    for itemTitle, itemData in next, CategoryItems.ItemsTable do
+        if itemTitle == Name then
+            return Rarities.getRarityDataFromId(itemData.Rarity);
         end
-    end]]
+    end
 	return nil;
 end
 

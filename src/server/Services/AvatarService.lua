@@ -19,9 +19,18 @@ local InsertService = game:GetService("InsertService");
 local ReplicatedStorage = game:GetService("ReplicatedStorage");
 
 local GameLibrary = ReplicatedStorage:WaitForChild("GameLibrary");
+local HatSkins = GameLibrary:WaitForChild("ChefHats");
+local BoosterEffects = GameLibrary:WaitForChild("BoosterEffects");
 local Beams = GameLibrary:WaitForChild("Beams");
 local Particles = GameLibrary:WaitForChild("Particles");
 local SurfaceAppearances = GameLibrary:WaitForChild("SurfaceAppearances");
+
+local DataService = require(script.Parent.DataService);
+local InventoryService = require(script.Parent.InventoryService);
+local Rarity = Knit.ReplicatedRarities
+
+local PlayerProfileData = {};
+
 
 ----- Public functions -----
 
@@ -122,9 +131,27 @@ end;
 
 -- Getters()
 
+function AvatarService:GetAvatarHat(Player) -- [Player : Instance]
+    local PlayerData = PlayerProfileData[Player] or DataService:GetProfile(Player)
+    if PlayerData then
+        return PlayerData.Data.Inventory.CurrentHat;
+    else
+        return nil;
+    end
+end;
+
+function AvatarService:GetBoosterEffect(Player) -- [Player : Instance]
+    local PlayerData = PlayerProfileData[Player] or DataService:GetProfile(Player)
+    if PlayerData then
+        return PlayerData.Data.Inventory.CurrentBoosterEffect;
+    else
+        return nil;
+    end
+end;
+
 function AvatarService:GetAvatarAccessories(UserId) -- [IngredientOjects, IngredientAvailable],[FoodOjects, FoodAvailable]
     local AccessoryIds = {};
-    local AcceptableIds = {8, 41,42,57,58}; -- 8 Source: https://developer.roblox.com/en-us/api-reference/enum/AssetType
+    local AcceptableIds = {41,42,57,58}; -- 8 Source: https://developer.roblox.com/en-us/api-reference/enum/AssetType
     if UserId then
         --warn(UserId,"[AvatarService]: Retrieving User["..tostring(UserId).."] avatar accessories");--print("[AvatarService]: Retrieving User[",AvatarId,"] avatar accessories");
         local CharacterInfo;
@@ -204,6 +231,95 @@ function AvatarService:SetHeadless(UserId, Character) -- [UserId : Number]
         Character.Head.Transparency = 1;
         Character.Head.face.Texture = "";
     end;
+end;
+
+function AvatarService:SetRandomAvatarHat(Player)
+    local PlayerData = DataService:GetProfile(Player)
+    if PlayerData then
+        local BoostName = BoosterEffects:GetChildren()[math.random(1, #BoosterEffects:GetChildren())]
+        self:SetAvatarHat(Player, BoostName)
+    else
+        return
+    end
+end;
+
+function AvatarService:SetAvatarHat(Player, HatName)
+    local PlayerData
+    if not PlayerProfileData[Player] then
+        PlayerData = DataService:GetProfile(Player)
+    else
+        PlayerData = PlayerProfileData[Player]
+    end
+    if typeof(HatName) == "string" then
+        HatName = HatSkins:FindFirstChild(HatName)
+    end
+    if PlayerData then 
+        --print(PlayerData.Data.Inventory.CurrentHat, HatName)
+        if PlayerData.Data.Inventory.CurrentHat and HatName then
+            if PlayerData.Data.Inventory.CurrentHat ~= HatName then
+                PlayerData.Data.Inventory.CurrentHat = tostring(HatName)
+                InventoryService:InventoryChanged(Player);
+            end
+            if HatSkins:FindFirstChild(tostring(HatName)) then
+                local Character = Player.Character;
+                if not Character then return end
+                for _, v in pairs(Character:GetChildren()) do
+                    if v:IsA("Accessory") and v:GetAttribute("Hat") == true then
+                        v:Destroy();
+                    end
+                end
+
+                local hatClone = HatSkins:FindFirstChild(tostring(HatName)):Clone();
+                local Humanoid = Character:FindFirstChild("Humanoid")
+
+                if hatClone and Humanoid then
+                    Humanoid:AddAccessory(hatClone);
+                end
+            end
+        end
+    else
+        return
+    end
+end;
+
+function AvatarService:SetBoosterEffect(Player, BoostName)
+    local PlayerData
+    if not PlayerProfileData[Player] then
+        PlayerData = DataService:GetProfile(Player)
+    else
+        PlayerData = PlayerProfileData[Player]
+    end
+    if typeof(BoostName) == "string" then
+        BoostName = BoosterEffects:FindFirstChild(BoostName)
+    end
+    if PlayerData then 
+        --print(PlayerData.Data.Inventory.CurrentBoosterEffect, HatName)
+        if PlayerData.Data.Inventory.CurrentBoosterEffect and BoostName then
+            if PlayerData.Data.Inventory.CurrentBoosterEffect ~= BoostName then
+                PlayerData.Data.Inventory.CurrentBoosterEffect = tostring(BoostName)
+                InventoryService:InventoryChanged(Player);
+            end
+            if BoosterEffects:FindFirstChild(tostring(BoostName)) then
+                local Character = Player.Character;
+                if not Character then return end
+                if not Character:FindFirstChild("Humanoid") then return end
+                if not Character.HumanoidRootPart:FindFirstChild("Attachment") then return end
+                
+                Character.HumanoidRootPart:FindFirstChild("Attachment"):ClearAllChildren();
+
+                local boostClone = BoosterEffects:FindFirstChild(tostring(BoostName)):Clone();
+                
+                for _, particle in pairs(boostClone:GetDescendants()) do
+                    if particle:IsA("ParticleEmitter") then
+                        particle.Enabled = false;
+                        particle.Parent = Character.HumanoidRootPart:FindFirstChild("Attachment");
+                    end
+                end
+            end
+        end
+    else
+        return
+    end
 end;
 
 function AvatarService:SetAvatarFace(UserId,Character,FaceId,IsCharacterFace) -- [UserId : Number]

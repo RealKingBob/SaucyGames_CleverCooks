@@ -29,6 +29,7 @@ Knit.ReplicatedModules = Knit.Shared.Modules;
 Knit.GameLibrary = ReplicatedStorage.GameLibrary;
 Knit.Spawnables = ReplicatedStorage.Spawnables;
 
+Knit.ReplicatedHatSkins = Knit.ReplicatedAssets.HatSkins;
 
 Knit.Config = require(Knit.ReplicatedModules.Config);
 

@@ -12,12 +12,12 @@ local Shared = ReplicatedStorage:WaitForChild("Common")
 
 local ReplicatedAssets = Shared:WaitForChild("Assets")
 local ReplicatedModules = Shared:WaitForChild("Modules")
-local ReplicatedGuiFrames = GameLibrary:WaitForChild("GuiFrames")
+local Prefabs = LocalPlayer.PlayerGui:WaitForChild("Prefabs")
 
-local FoodTemplate = ReplicatedGuiFrames:WaitForChild("FoodTemplate")
-local IngredientTemplate = ReplicatedGuiFrames:WaitForChild("IngredientTemplate")
-local PageTemplate = ReplicatedGuiFrames:WaitForChild("PageTemplate")
-local HoverIngredientTemplate = ReplicatedGuiFrames:WaitForChild("HoverIngredientTemplate")
+local FoodTemplate = Prefabs:WaitForChild("FoodTemplate")
+local IngredientTemplate = Prefabs:WaitForChild("IngredientTemplate")
+local PageTemplate = Prefabs:WaitForChild("PageTemplate")
+local HoverIngredientTemplate = Prefabs:WaitForChild("HoverIngredientTemplate")
 
 local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 
@@ -36,7 +36,7 @@ local recipeList = recipeSection:WaitForChild("RecipeList")
 local recipeTitle = recipeSection:WaitForChild("RecipeTitle")
 local ingredientList = recipeSection:WaitForChild("IngredientsList"):WaitForChild("ScrollingFrame")
 local selectedRecipeFrame = recipeSection:WaitForChild("SelectedRecipe")
-local selectedIconImage = selectedRecipeFrame:WaitForChild("Icon"):WaitForChild("IconImage")
+local selectedIconImage = selectedRecipeFrame:WaitForChild("IconImage")
 
 local selectButton = recipeSection:WaitForChild("SelectButton")
 
@@ -75,9 +75,9 @@ function recipePageCreated(PageNumber,PageData)
 						ClonedFoodTemplate.Name = tostring(key)
 						ClonedFoodTemplate.FoodTitle.Text = tostring(key)
 						if value["Image"] == "" or value["Image"] == nil then
-							ClonedFoodTemplate.ImageFrame.Icon.IconImage.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
+							ClonedFoodTemplate.Icon.IconImage.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
 						else
-							ClonedFoodTemplate.ImageFrame.Icon.IconImage.Image = value.Image
+							ClonedFoodTemplate.Icon.IconImage.Image = value.Image
 						end
 						ClonedFoodTemplate.Parent = Page
 						PageData[key] = nil
@@ -86,9 +86,9 @@ function recipePageCreated(PageNumber,PageData)
 						ClonedFoodTemplate.Name = tostring(key)
 						ClonedFoodTemplate.FoodTitle.Text = tostring(key)
 						if value["Image"] == "" or value["Image"] == nil then
-							ClonedFoodTemplate.ImageFrame.Icon.IconImage.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
+							ClonedFoodTemplate.Icon.IconImage.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
 						else
-							ClonedFoodTemplate.ImageFrame.Icon.IconImage.Image = value.Image
+							ClonedFoodTemplate.Icon.IconImage.Image = value.Image
 						end
 						ClonedFoodTemplate.Parent = Page
 						PageData[key] = nil
@@ -137,7 +137,6 @@ function setupRecipes()
 				TotalPages += 1
 			end
 		end
-		Pages.Text = "Page "..tostring(PageOrganizer.CurrentPage).."/"..tostring(TotalPages)
 	end)
 
     LeftButton.MouseButton1Click:Connect(function()
@@ -148,6 +147,9 @@ function setupRecipes()
 				TotalPages += 1
 			end
 		end
+	end)
+
+	PageOrganizer:GetPropertyChangedSignal("CurrentPage"):Connect(function()
 		Pages.Text = "Page "..tostring(PageOrganizer.CurrentPage).."/"..tostring(TotalPages)
 	end)
 	setupRecipeButtons()
@@ -202,15 +204,18 @@ function setupRecipeButtons()
 			
 			if myReplicatedIngredients then
 				if #myReplicatedIngredients == 0 then
+					clonedIngredientFrame.UIStroke.Color = notCompletedColors[2]
 					clonedIngredientFrame.BackgroundColor3 = notCompletedColors[2]
 					clonedIngredientFrame.Icon.BackgroundColor3 = notCompletedColors[1]
 				else
 					for _,v in pairs(myReplicatedIngredients) do
 						if clonedIngredientFrame.Name == tostring(v) then
+							clonedIngredientFrame.UIStroke.Color = completedColors[2]
 							clonedIngredientFrame.BackgroundColor3 = completedColors[2]
 							clonedIngredientFrame.Icon.BackgroundColor3 = completedColors[1]
 							break;
 						else
+							clonedIngredientFrame.UIStroke.Color = notCompletedColors[2]
 							clonedIngredientFrame.BackgroundColor3 = notCompletedColors[2]
 							clonedIngredientFrame.Icon.BackgroundColor3 = notCompletedColors[1]
 						end
@@ -230,21 +235,30 @@ function setupRecipeButtons()
 				break;
 			end
 		end
-		print('checkIfAllGreen', checkIfAllGreen)
+		--print('checkIfAllGreen', checkIfAllGreen)
 		if checkIfAllGreen == true then
 			allIngredientsFound = true;
+			for _, pan in pairs(CollectionService:GetTagged("Pan")) do
+				if pan:FindFirstChild("CookHeadUI") then continue end;
+				pan.ProximityPrompt.Enabled = true;
+			end
+		else
+			for _, pan in pairs(CollectionService:GetTagged("Pan")) do
+				pan.ProximityPrompt.Enabled = false;
+			end
 		end
 
 		local CookingService = Knit.GetService("CookingService")
 		
 		prevConnection = CookingService.SendIngredients:Connect(function(args)
 			greenIngredients = {};
-			print(args)
+			--print(args)
 			if args then
 				myReplicatedIngredients = args
 				if #myReplicatedIngredients == 0 then
 					for _, frame in pairs(IngredientsTab:GetChildren()) do
 						if frame:IsA("Frame") then
+							frame.UIStroke.Color = notCompletedColors[2]
 							frame.BackgroundColor3 = notCompletedColors[2]
 							frame.Icon.BackgroundColor3 = notCompletedColors[1]
 							table.insert(greenIngredients, frame)
@@ -255,10 +269,12 @@ function setupRecipeButtons()
 						for _,v in pairs(myReplicatedIngredients) do
 							if frame:IsA("Frame") then
 								if frame.Name == tostring(v) then
+									frame.UIStroke.Color = completedColors[2]
 									frame.BackgroundColor3 = completedColors[2]
 									frame.Icon.BackgroundColor3 = completedColors[1]
 									break;
 								else
+									frame.UIStroke.Color = notCompletedColors[2]
 									frame.BackgroundColor3 = notCompletedColors[2]
 									frame.Icon.BackgroundColor3 = notCompletedColors[1]
 								end
@@ -275,10 +291,11 @@ function setupRecipeButtons()
 						break;
 					end
 				end
-				print('checkIfAllGreen', checkIfAllGreen)
+				--print('checkIfAllGreen', checkIfAllGreen)
 				if checkIfAllGreen == true then
 					allIngredientsFound = true;
 					for _, pan in pairs(CollectionService:GetTagged("Pan")) do
+						if pan:FindFirstChild("CookHeadUI") then continue end;
 						pan.ProximityPrompt.Enabled = true;
 					end
 				else
@@ -340,11 +357,17 @@ function setupRecipeButtons()
 		end
 	end
 	
+	local prevIngredientButton = nil;
 	for _,page in pairs(recipeList:GetChildren()) do
 		if page:IsA("Frame") then
 			for _, frame in pairs(page:GetChildren()) do
 				if frame:IsA("Frame") then
 					frame.Button.MouseButton1Click:Connect(function()
+						if prevIngredientButton ~= nil then
+							prevIngredientButton.FoodTitle.SelectedStroke.Enabled = false;
+						end
+						prevIngredientButton = frame;
+						frame.FoodTitle.SelectedStroke.Enabled = true;
 						setupIngredients(frame.Name)
 					end)
 				end

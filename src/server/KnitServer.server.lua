@@ -23,7 +23,10 @@ local Promise = require(Knit.Util.Promise);
 
 ----- Knit -----
 Knit.Shared = ReplicatedStorage.Common;
-Knit.GameLibrary = ReplicatedStorage.Common;
+Knit.ReplicatedModules = Knit.Shared.Modules;
+Knit.ReplicatedAssets = Knit.Shared.Assets;
+Knit.ReplicatedRarities = require(Knit.ReplicatedAssets.Rarities)
+Knit.GameLibrary = ReplicatedStorage.GameLibrary;
 Knit.Services = ServerScriptService.Services;
 Knit.Modules = ServerScriptService.Modules;
 Knit.Settings = ServerScriptService.Settings;
@@ -31,11 +34,18 @@ Knit.Config = require(Knit.Shared.Modules.Config);
 
 Knit.Components = ServerScriptService.Components;
 
+Knit.ReplicatedHatSkins = Knit.Shared.Assets.HatSkins;
+Knit.ReplicatedBoosterEffects = Knit.Shared.Assets.BoosterEffects;
+
 ----- Loaded Services -----
+Knit.DataService = require(Knit.Services.DataService);
 Knit.AvatarService = require(Knit.Services.AvatarService);
 Knit.ProximityService = require(Knit.Services.ProximityService);
+Knit.InventoryService = require(Knit.Services.InventoryService);
 Knit.CookingService = require(Knit.Services.CookingService);
-Knit.DataService = require(Knit.Services.DataService);
+Knit.CrateService = require(Knit.Services.CrateService);
+Knit.NpcService = require(Knit.Services.NpcService);
+Knit.DeliveryService = require(Knit.Services.DeliveryService);
 
 Knit.ComponentsLoaded = false;
 ----- Initialize -----
@@ -119,7 +129,7 @@ local function onCharacterAdded(character)
             --// NOTE: This is if player bought chef gamepass
 			--Knit.AvatarService:SetHunterSkin(player);
         else
-			local userId = 53347204;
+			local userId = player.UserId;
 
 			local AvatarService = Knit.AvatarService
 
@@ -134,7 +144,10 @@ local function onCharacterAdded(character)
 			
 			AvatarService:SetAvatarColor(userId,character, playerColor);
 			AvatarService:SetAvatarFace(userId,character,playerFace, false);
-			
+
+			AvatarService:SetAvatarHat(player, AvatarService:GetAvatarHat(player))
+			AvatarService:SetBoosterEffect(player, AvatarService:GetBoosterEffect(player))
+
 			if hasHeadless == true then
 				AvatarService:SetHeadless(userId,character);
 			end;
@@ -264,9 +277,9 @@ local DropUtil = require(Knit.Shared.Modules.DropUtil);
 task.spawn(function()
 	for _, value in ipairs(CollectionService:GetTagged(Knit.Config.CHEESE_SPAWN)) do
 		while true do
-			task.wait(math.random(4,6))
+			task.wait(math.random(20,60))
 			--workspace.Spawnables.Cheese:ClearAllChildren()
-			DropUtil.DropCheese(value.CFrame, game.ReplicatedStorage.Spawnables.Cheese, math.random(10,15), math.random(5,10))
+			DropUtil.DropCheese(value.CFrame, game.ReplicatedStorage.Spawnables.Cheese, nil, math.random(10,15), math.random(5,10))
 		end
 	end
 end)

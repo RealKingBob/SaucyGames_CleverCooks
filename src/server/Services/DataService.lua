@@ -54,12 +54,18 @@ local SETTINGS = {
         CratesOpened = {}, -- Specific crates opened by a user
         Battlepasses = {}, -- Battlepasses the user participated / completed
 		Inventory = {
-			CurrentDeathEffect = "Default",
-			CurrentSkin = "Default",
+			CurrentBoosterEffect = "Default Boost",
+			CurrentHat = "Default Hat",
 			CurrentEmote = "Default",
 			Boosters = {},
-			Skins = {
-                Default = {
+			Hats = {
+                ["Default Hat"] = {
+                    Quantity = 1;
+                    Rarity = 1
+                }
+            },
+            BoosterEffects = {
+                ["Default Boost"] = {
                     Quantity = 1;
                     Rarity = 1
                 }
@@ -81,13 +87,34 @@ local SETTINGS = {
 
     Products = { -- developer_product_id = function(profile)
 		-- COIN PURCHASES --
-		[00000000000] = function(ownerprofile, profile) -- 95
+		[00000000000] = function(ownerprofile, profile) -- 99
             profile.Data.PlayerInfo.Currency += 1000
             if ownerprofile.Data.PlayerInfo.CurrencyBought == nil then ownerprofile.Data.PlayerInfo.CurrencyBought = 0 end
             ownerprofile.Data.PlayerInfo.CurrencyBought += 1000
             updateClientCurrency(profile, 1000)
             updateClientDonations(ownerprofile)
-        end
+        end,
+        [00000000000] = function(ownerprofile, profile) -- 199
+            profile.Data.PlayerInfo.Currency += 2400
+            if ownerprofile.Data.PlayerInfo.CurrencyBought == nil then ownerprofile.Data.PlayerInfo.CurrencyBought = 0 end
+            ownerprofile.Data.PlayerInfo.CurrencyBought += 2400
+            updateClientCurrency(profile, 2400)
+            updateClientDonations(ownerprofile)
+        end,
+        [00000000000] = function(ownerprofile, profile) -- 499
+            profile.Data.PlayerInfo.Currency += 6500
+            if ownerprofile.Data.PlayerInfo.CurrencyBought == nil then ownerprofile.Data.PlayerInfo.CurrencyBought = 0 end
+            ownerprofile.Data.PlayerInfo.CurrencyBought += 6500
+            updateClientCurrency(profile, 6500)
+            updateClientDonations(ownerprofile)
+        end,
+        [00000000000] = function(ownerprofile, profile) -- 999
+            profile.Data.PlayerInfo.Currency += 14000
+            if ownerprofile.Data.PlayerInfo.CurrencyBought == nil then ownerprofile.Data.PlayerInfo.CurrencyBought = 0 end
+            ownerprofile.Data.PlayerInfo.CurrencyBought += 14000
+            updateClientCurrency(profile, 14000)
+            updateClientDonations(ownerprofile)
+        end,
     },
 
     Gamepasses = { -- developer_product_id = function(profile)
@@ -112,7 +139,7 @@ local SETTINGS = {
 }
 
 local ProfileStore = ProfileService.GetProfileStore(
-	"PlayerData1",
+	"PlayerData7",
 	SETTINGS.StatsTemplate
 );
 

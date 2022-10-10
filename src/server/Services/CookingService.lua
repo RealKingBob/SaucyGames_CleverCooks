@@ -69,6 +69,7 @@ local panZone = ZoneAPI.new(workspacePans:WaitForChild("PanHitboxes"));
 ----- Variables -----
 
 local EXPMultiplier = 10;
+local MaxFoodSpawnRange = 25;
 
 ----- Tables -----
 
@@ -106,8 +107,6 @@ function CookingService:PickUp(Player, Character, Item)
 			local ProximityService = Knit.GetService("ProximityService");
 			if Item:GetAttribute("Type") == "Ingredient"
 			or (Item:IsA("Model") and Item.PrimaryPart:GetAttribute("Type") == "Ingredient") then
-				
-				
 
 				local ClonedItem = IngredientObjects:FindFirstChild(Item.Name):Clone();
 
@@ -176,6 +175,7 @@ function CookingService:CanCookOnPan(player, pan)
 	if table.find(cookingPansQueue[player.UserId], pan) then return false; end
 
 	if #cookingPansQueue[player.UserId] > 1 then
+		print("needs gamepass to cook multiple foods")
 		-- check if has gamepass
 		return true;
 	end
@@ -235,7 +235,7 @@ function CookingService:Cook(player,Character,recipe, pan)
 
 			local cookingTime = RecipeModule:GetCookTime(tostring(recipe));
 
-			print("cookingPansQueue", cookingPansQueue[player.UserId])
+			--print("cookingPansQueue", cookingPansQueue[player.UserId])
 
 			self.Client.Cook:Fire(player, tostring(recipe), pan, cookingTime)
 
@@ -249,10 +249,10 @@ function CookingService:Cook(player,Character,recipe, pan)
 				local cheeseObjectPerDrop = 10;
 				-- oCFrame, obj, amount, value
 
-				print("cooking drop", numOfDrops, cheeseDrop, rCheeseDropReward, cheeseValuePerDrop)
+				--print("cooking drop", numOfDrops, cheeseDrop, rCheeseDropReward, cheeseValuePerDrop)
 				
 				for i = 1, numOfDrops do
-					DropUtil.DropCheese(pan.CFrame, game.ReplicatedStorage.Spawnables.Cheese, cheeseObjectPerDrop, math.floor((cheeseValuePerDrop / cheeseObjectPerDrop)))
+					DropUtil.DropCheese(pan.CFrame, game.ReplicatedStorage.Spawnables.Cheese, player, cheeseObjectPerDrop, math.floor((cheeseValuePerDrop / cheeseObjectPerDrop)))
 					task.wait(waitTime);
 				end
 			end)
@@ -261,12 +261,21 @@ function CookingService:Cook(player,Character,recipe, pan)
 			local function tablefind(tab,el) for index, value in pairs(tab) do if value == el then	return index end end end
 			table.remove( cookingPansQueue[player.UserId], tablefind(cookingPansQueue[player.UserId], pan) );
 
-			print("cookingPansQueue", cookingPansQueue[player.UserId])
+			--print("cookingPansQueue", cookingPansQueue[player.UserId])
 
 			local RawCalculatedEXP = (EXPMultiplier * #SelectedRecipe["Ingredients"]);
 			self.Client.ProximitySignal:Fire(player,"CookVisible",false);
 			--RewardService:GiveReward(profile, {EXP = MathAPI:Find_Closest_Divisible_Integer(RawCalculatedEXP, 2);})
-			local food = SpawnItemsAPI:Spawn(player.UserId, player, recipe, FoodObjects, FoodAvailable, Character.HumanoidRootPart.Position + Character.HumanoidRootPart.CFrame.lookVector * 4);
+
+			local DistanceBetweenPlayerAndPan = player:DistanceFromCharacter(pan.Position);
+			local food;
+
+			if DistanceBetweenPlayerAndPan > MaxFoodSpawnRange or DistanceBetweenPlayerAndPan == 0 then
+				food = SpawnItemsAPI:Spawn(player.UserId, player, recipe, FoodObjects, FoodAvailable, pan.Position + Vector3.new(0,5,0));
+			else
+				food = SpawnItemsAPI:Spawn(player.UserId, player, recipe, FoodObjects, FoodAvailable, Character.HumanoidRootPart.Position + Character.HumanoidRootPart.CFrame.lookVector * 4);
+			end
+
 			print("food created:", food)
 			
 			self.Client.ParticlesSpawn:Fire(player, food, "CookedParticle")
@@ -278,7 +287,8 @@ function CookingService:Cook(player,Character,recipe, pan)
 end;
 
 function CookingService:KnitStart()
-    SpawnItemsAPI:SpawnAll(IngredientObjects,IngredientsAvailable);
+	SpawnItemsAPI:SpawnAllIngredients(2);
+    --SpawnItemsAPI:SpawnAll(IngredientObjects,IngredientsAvailable);
     --SpawnItemsAPI:SpawnAtRandomSpawns(IngredientObjects,IngredientsAvailable, workspace.FoodSpawnPoints);
     --SpawnItemsAPI:SpawnAll(FoodObjects,IngredientsAvailable);
 end
@@ -297,6 +307,7 @@ function CookingService:KnitInit()
 				playerCheckDebounce[plr.UserId] = true;
 				if prevIngredients[plr] == nil then prevIngredients[plr] = {} end;
 				playerIngredients[plr.UserId] = {}
+				--print("CurrentIngredientObjects", CurrentIngredientObjects)
 				for k, v in pairs(CurrentIngredientObjects) do
 					if tostring(k) == plr.Name then
 						for _, b in pairs(v) do
@@ -306,6 +317,7 @@ function CookingService:KnitInit()
 				end
 				if TableAPI.CheckArrayEquality(prevIngredients[plr],playerIngredients[plr.UserId]) == false then
 					print("SENT DATA")
+					print("data comparison", prevIngredients[plr], playerIngredients[plr.UserId], TableAPI.CheckArrayEquality(prevIngredients[plr],playerIngredients[plr.UserId]))
 					self.Client.SendIngredients:Fire(plr, playerIngredients[plr.UserId])
 				end
 				prevIngredients[plr] = playerIngredients[plr.UserId];
@@ -317,23 +329,20 @@ function CookingService:KnitInit()
 	task.spawn(function()
 		local oldArray = {};
 		local oldFoodData = {};
+
+		local getRadius = function(part)
+			return (part.Size.Z<part.Size.Y and part.Size.Z or part.Size.Y)/2
+			--[[In the above we are returning the smallest, first we check if Z is smaller
+			than Y, if so then we return Z or else we return Y.]]
+		end;
 	
 		while task.wait(0.1) do
 			local tempData = {};
 			local tCurrentIngredients = {};
 			local tCurrentIngredientObjects = {};
-			local partsArray = {} --panZone:getParts();
-
-			local getRadius = function(part)
-				return (part.Size.Z<part.Size.Y and part.Size.Z or part.Size.Y)/2
-				--[[In the above we are returning the smallest, first we check if Z is smaller
-				than Y, if so then we return Z or else we return Y.]]
-			end;
+			local partsArray = {};
 	
 			for _,hitbox in pairs(workspacePans.PanHitboxes:GetChildren()) do
-				--local min = hitbox.Position - (0.5 * hitbox.Size)
-				--local max = hitbox.Position + (0.5 * hitbox.Size)
-				--local region = Region3.new(min, max)
 				local radiusOfPan = getRadius(hitbox)
 
 				local overlapParams = OverlapParams.new()
@@ -341,7 +350,6 @@ function CookingService:KnitInit()
 				overlapParams.FilterType = Enum.RaycastFilterType.Blacklist;
 
 				local parts = workspace:GetPartBoundsInRadius(hitbox.Position, radiusOfPan, overlapParams)
-				--local parts = workspace:FindPartsInRegion3(region)
 				for _, part in pairs(parts) do
 					table.insert(partsArray, part)
 				end
@@ -395,83 +403,7 @@ function CookingService:KnitInit()
 						end;
 					end;
 				end
-				--[[for _,touchedPart in pairs(partsArray) do
-					--print("touched",touchedPart)
-					if TableAPI.CheckTableEquality(oldArray, partsArray) ~= true then
-						oldArray = partsArray;
-					end;
-	
-					if touchedPart.Parent:IsA("Model") then
-						local touchedModel = touchedPart.Parent
-						local touchedPrimary = touchedModel.PrimaryPart;
-						if touchedPrimary then
-							local touchedType = touchedPrimary:GetAttribute("Type");
-							local touchedOwner = touchedPrimary:GetAttribute("Owner");
-		
-							if touchedType and touchedOwner ~= "Default" and touchedOwner ~= "None" and panZone:findPart(touchedPart) == true then
-								table.insert(tempData,{touchedOwner,touchedModel});
-		
-								if tCurrentIngredients[touchedOwner] == nil then
-									tCurrentIngredients[touchedOwner] = {};
-									tCurrentIngredientObjects[touchedOwner] = {};
-								end;
-								
-								if table.find(tCurrentIngredients[touchedOwner],touchedPart.Name) == nil then
-									table.insert(tCurrentIngredientObjects[touchedOwner],touchedPart.Parent);
-									table.insert(tCurrentIngredients[touchedOwner],touchedPart.Parent.Name);
-									for key,currentRecipe in pairs(RecipeModule) do
-										if type(currentRecipe) == "table" then
-											local valid = TableAPI.Equals(tCurrentIngredients[touchedOwner],currentRecipe["Ingredients"]);
-		
-											if valid == true then
-												if table.find(possibleRecipes[touchedOwner],key) == nil then
-													table.insert(possibleRecipes[touchedOwner],key);
 
-													self:Recipe(game.Players:FindFirstChild(touchedOwner), key);
-												else
-													--print(possibleRecipes[touchedOwner]);
-												end;
-											end;
-										end;
-									end;
-								end;
-							end;
-						end;
-					else
-						local touchedType = touchedPart:GetAttribute("Type");
-						local touchedOwner = touchedPart:GetAttribute("Owner");
-						if touchedType and touchedOwner ~= "Default" and touchedOwner ~= "None" and panZone:findPart(touchedPart) == true then
-							table.insert(tempData,{touchedOwner,touchedPart});
-	
-							if tCurrentIngredients[touchedOwner] == nil then
-								tCurrentIngredients[touchedOwner] = {};
-								tCurrentIngredientObjects[touchedOwner] = {};
-							end;
-	
-							if table.find(tCurrentIngredients[touchedOwner],touchedPart.Name) == nil then
-								table.insert(tCurrentIngredientObjects[touchedOwner],touchedPart);
-								table.insert(tCurrentIngredients[touchedOwner],touchedPart.Name);
-								for key,currentRecipe in pairs(RecipeModule) do
-									if type(currentRecipe) == "table" then
-										local valid = TableAPI.Equals(tCurrentIngredients[touchedOwner],currentRecipe["Ingredients"]);
-	
-										if valid == true then
-											if possibleRecipes[touchedOwner] then
-												if table.find(possibleRecipes[touchedOwner],key) == nil then
-													table.insert(possibleRecipes[touchedOwner],key);
-													self:Recipe(game.Players:FindFirstChild(touchedOwner), key);
-												else
-													--print(possibleRecipes[touchedOwner]);
-												end;
-											end;
-										end;
-									end;
-								end;
-							end;
-						end;
-					end;
-				end;]]
-				
 				FoodData = tempData; --Table.Sync(FoodData,tempData)
 				CurrentIngredientObjects = tCurrentIngredientObjects; --Table.Sync(CurrentIngredientObjects,tCurrentIngredientObjects)
 				CurrentIngredients = tCurrentIngredients; --Table.Sync(CurrentIngredients,tCurrentIngredients)
@@ -479,10 +411,14 @@ function CookingService:KnitInit()
 				--[[if #FoodData ~= 0 then
 					print('[CookingHandler]: Food - ',FoodData,CurrentIngredientObjects,CurrentIngredients); --print(CurrentIngredients,tCurrentIngredients)
 				end;]]
-				
+
 				if TableAPI.CheckTableEquality(oldFoodData, FoodData) ~= true then
 					--print("FOOD DATA:", FoodData)
 					oldFoodData = FoodData;
+				else
+					if #FoodData ~= 0 then
+						print("INEQUALITY", FoodData)
+					end
 				end;
 			end;
 		end;

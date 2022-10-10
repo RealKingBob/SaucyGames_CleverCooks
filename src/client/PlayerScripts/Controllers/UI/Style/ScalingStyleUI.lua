@@ -37,7 +37,7 @@ function ScalingStyleUI:UpdateGrid(Grid)
 	if (not ScrollingFrame) then return; end
 	
 	if (ScrollingFrame.ScrollingDirection == Enum.ScrollingDirection.Y) then
-		ScrollingFrame.CanvasSize = UDim2.fromOffset(0, Grid.AbsoluteContentSize.Y + 40); -- 15
+		ScrollingFrame.CanvasSize = UDim2.fromOffset(0, Grid.AbsoluteContentSize.Y ); -- 15
 	elseif (ScrollingFrame.ScrollingDirection == Enum.ScrollingDirection.X) then
 		ScrollingFrame.CanvasSize = UDim2.fromOffset(Grid.AbsoluteContentSize.X + 15, 0);
 	else

@@ -1,3 +1,6 @@
+local CollectionService = game:GetService("CollectionService")
+local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
+
 --[[
     Name: SpawnItems API [V1]
     By: Real_KingBob
@@ -34,6 +37,27 @@ function SpawnItems:PrintLogs(UserId) -- Prints out a table of logs for that was
         return SpawnItemsLogs;
     end;
 end;
+
+function SpawnItems:SpawnAllIngredients(NumOfIngredients)
+    local IngredientOjects = Knit.GameLibrary:WaitForChild("IngredientObjects")
+    local FoodSpawnPoints = CollectionService:GetTagged("FoodSpawnPoints");
+
+    for i = 1, NumOfIngredients do
+        for _, ingredient in ipairs(IngredientOjects:GetChildren()) do
+            local RandomFoodLocation = FoodSpawnPoints[math.random(1, #FoodSpawnPoints)]
+            
+            local ItemClone = ingredient:Clone();
+            if RandomFoodLocation then
+                if ItemClone:IsA("Model") and ItemClone.PrimaryPart then
+                    ItemClone:SetPrimaryPartCFrame(CFrame.new(RandomFoodLocation.Position + Vector3.new(math.random(-5,5) ,5, math.random(-5,5))))
+                else
+                    ItemClone.Position = RandomFoodLocation.Position + Vector3.new(math.random(-5,5) ,5, math.random(-5,5));
+                end
+            end
+            ItemClone.Parent = workspace:WaitForChild("IngredientAvailable");
+        end
+    end
+end
 
 function SpawnItems:SpawnAtRandomSpawns(RootFolder, Directory, SpawnFolder) -- [IngredientOjects, IngredientAvailable],[FoodOjects, FoodAvailable, Location]
     PrintL("[SpawnItemsAPI]: Spawned all items from RootFolder[".. tostring(RootFolder) .."] at random locations");

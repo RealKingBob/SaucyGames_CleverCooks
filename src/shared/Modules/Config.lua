@@ -30,6 +30,6 @@ return {
     MINIMUM_PLAYERS = 2; --// MINIMUM AMOUNT OF PLAYERS REQUIRED TO START INTERMISSION
     
     RESET_DAILY_SHOP_DATA = false; -- If shop data needs to be reset then if true player will reset shop data when join.
-    GIVE_ALL_INVENTORY = false; --// Gives all items on inventory
+    GIVE_ALL_INVENTORY = true; --// Gives all items on inventory
     DAILY_SHOP_OFFSET = 19 -- 7 PM EST, 24 hour time
 }
