@@ -43,21 +43,6 @@ function CookingUI:SpawnCookedParticles(food)
     local MidAttachClone = Knit.Spawnables:WaitForChild("CookedParticle"):WaitForChild("MidAttach"):Clone()
     MidAttachClone.Parent = food;
 
-    local HS = require(game:GetService("ReplicatedStorage"):FindFirstChild("HintService"))
-
-    local NewHint = HS.new() -- Creates a blank, and new hint
-
-    HS.HintAdding:Connect(function(AddedHint) -- Connect this to a function to detect when a hint is added
-        print(string.format("The new hint that was added says '%s'", AddedHint:getLabel()))
-    end)
-
-    NewHint:setText(tostring(food).." has been made!") -- Sets the text of NewHint
-    NewHint:setBottomCenter() -- Sets the position of the hint to the bottom center.
-    NewHint:setTweenLength(.1,.1) -- Sets how long the animations will last
-    NewHint:setTweenStyle(Enum.EasingStyle.Linear, Enum.EasingStyle.Linear)  -- Sets the animation styles
-    NewHint:setTweenDirection(Enum.EasingDirection.In, Enum.EasingDirection.Out) -- Sets the animation directions
-    NewHint:broadcast(false) -- Broadcasts the hint
-
     for _, v in ipairs(MidAttachClone:GetChildren()) do
         if v:IsA("ParticleEmitter") then
             v:Emit(60)
