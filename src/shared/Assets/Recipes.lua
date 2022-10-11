@@ -4,10 +4,18 @@ local CookingTimes = {
 	["Easy"] = 10;
 }
 
+--[[
+	-- THIS IS OLD AND NOW IS SPLIT BETWEEN COOK AND DELIVER NOW
 local RecipeRewards = {
 	["Hard"] = {1200, 1500}, -- [min, max]
 	["Medium"] = {600, 800},
 	["Easy"] = {200, 400}
+}]]
+
+local RecipeRewards = {
+	["Hard"] = {600, 800}, -- [min, max]
+	["Medium"] = {300, 400},
+	["Easy"] = {100, 200}
 }
 
 local Recipes = {

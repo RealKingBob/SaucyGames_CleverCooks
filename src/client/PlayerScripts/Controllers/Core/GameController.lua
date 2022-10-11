@@ -21,7 +21,7 @@ function TableFind(tab,el) -- table,value
 	end;
 end;
 
-function GameController:createProximityPrompt(object, type)
+--[[function GameController:createProximityPrompt(object, type)
 	if object:IsA("Model") 
 	and (not object.PrimaryPart:FindFirstChild("ProximityPrompt") or not object.PrimaryPart:FindFirstChildWhichIsA("ProximityPrompt")) then
 		local prox = Instance.new("ProximityPrompt");
@@ -51,7 +51,7 @@ function GameController:createProximityPrompt(object, type)
 		prox.ClickablePrompt = true;
 		prox.Parent = object;
 	end;
-end;
+end;]]
 
 
 function GameController:ForIngredient(Ingredient)
@@ -59,8 +59,9 @@ function GameController:ForIngredient(Ingredient)
 
 	if Ingredient:IsA("Model") then Ingredient = Ingredient.PrimaryPart end 
 
-	self:createProximityPrompt(Ingredient,"Ingredient");
+	--self:createProximityPrompt(Ingredient,"Ingredient");
 
+	if not Ingredient:FindFirstChild("ProximityPrompt") then return end
 	Ingredient:WaitForChild("ProximityPrompt").Enabled = true;
 	Ingredient.ProximityPrompt.Triggered:Connect(function(plr)
 		if Cooldown == false then
@@ -108,8 +109,9 @@ function GameController:ForFood(Food)
 
 	if Food:IsA("Model") then Food = Food.PrimaryPart end 
 
-	self:createProximityPrompt(Food,"Food");
+	--self:createProximityPrompt(Food,"Food");
 
+	if not Food:FindFirstChild("ProximityPrompt") then return end
 	Food:WaitForChild("ProximityPrompt").Enabled = true;
 	Food.ProximityPrompt.Triggered:Connect(function(plr)
 		if Cooldown == false then

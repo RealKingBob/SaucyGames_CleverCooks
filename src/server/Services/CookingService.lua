@@ -299,10 +299,26 @@ function CookingService:DeliverFood(player, food)
 			--print(SelectedRecipe,SelectedRecipe["Ingredients"])
 			for k, v in ipairs(food:GetDescendants()) do
 				if v:IsA("BasePart") or v:IsA("MeshPart") or v:IsA("Weld") then
-					continue
+					continue;
 				else
 					v:Destroy();
 				end
+			end
+
+			CollectionService:AddTag(food, "Delivering")
+
+			if food:IsA("Model") then
+				if food.PrimaryPart then
+					for _, v in ipairs(food:GetChildren()) do
+						v.Transparency = 1;
+						v.CanCollide = false;
+						v.Anchored = true;
+					end
+				end
+			else
+				food.Transparency = 1;
+				food.CanCollide = false;
+				food.Anchored = true;
 			end
 
 			print("DELIVER TIME")
@@ -330,11 +346,21 @@ function CookingService:DeliverFood(player, food)
 				-- oCFrame, obj, amount, value
 
 				--print("cooking drop", numOfDrops, cheeseDrop, rCheeseDropReward, cheeseValuePerDrop)
+
+				local foodObj;
+
+				if food:IsA("Model") then
+					foodObj = food.PrimaryPart;
+				else
+					foodObj = food;
+				end
 				
 				for i = 1, numOfDrops do
-					DropUtil.DropCheese(food.CFrame, game.ReplicatedStorage.Spawnables.Cheese, player, cheeseObjectPerDrop, math.floor((cheeseValuePerDrop / cheeseObjectPerDrop)))
+					DropUtil.DropCheese(foodObj.CFrame, game.ReplicatedStorage.Spawnables.Cheese, player, cheeseObjectPerDrop, math.floor((cheeseValuePerDrop / cheeseObjectPerDrop)))
 					task.wait(waitTime);
 				end
+
+				food:Destroy();
 			end)
 			task.wait(cookingTime);
 
@@ -349,7 +375,6 @@ function CookingService:DeliverFood(player, food)
 
 			print("food delivered:", food)
 			
-			self.Client.ParticlesSpawn:Fire(player, food, "CookedParticle")
 			--StatTrackService:SetRecentCookedFood(player, tostring(recipe));
 		end;
 	else
@@ -438,8 +463,10 @@ function CookingService:KnitInit()
 					if touchedType == "Food" and touchedOwner ~= "None" then
 						local OwnerPlayer = Players:FindFirstChild(touchedOwner)
 						if OwnerPlayer then
-							print(part, "in deliverzone")
-							self:DeliverFood(OwnerPlayer, touchedObject)
+							if CollectionService:HasTag(touchedObject, "Delivering") == false then
+								print(part, "in deliverzon+e")
+								self:DeliverFood(OwnerPlayer, touchedObject)
+							end
 						end
 					end
 				end
