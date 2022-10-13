@@ -328,6 +328,16 @@ function AvatarService:SetBoosterEffect(Player, BoostName)
                 Character.HumanoidRootPart:FindFirstChild("Attachment"):ClearAllChildren();
 
                 local boostClone = BoosterEffects:FindFirstChild(tostring(BoostName)):Clone();
+
+                local newSound;
+
+                if not ReplicatedStorage.Players.BoostSFX:FindFirstChild(Player.Name) then
+                    newSound = Instance.new("Sound")
+                    newSound.Name = Player.Name;
+                    newSound.Parent = ReplicatedStorage.Players.BoostSFX;
+                end
+                newSound = ReplicatedStorage.Players.BoostSFX:FindFirstChild(Player.Name);
+                newSound.SoundId = Knit.GameLibrary.Sounds.BoostEffects:FindFirstChild(tostring(BoostName)).SoundId;
                 
                 for _, particle in pairs(boostClone:GetDescendants()) do
                     if particle:IsA("ParticleEmitter") then

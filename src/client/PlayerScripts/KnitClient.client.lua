@@ -26,10 +26,12 @@ Knit.Controllers = Knit.PlayerScripts:WaitForChild("Controllers")
 Knit.Shared = ReplicatedStorage.Common;
 Knit.ReplicatedAssets = Knit.Shared.Assets;
 Knit.ReplicatedModules = Knit.Shared.Modules;
+Knit.GamePlayers = ReplicatedStorage.Players;
 Knit.GameLibrary = ReplicatedStorage.GameLibrary;
 Knit.Spawnables = ReplicatedStorage.Spawnables;
 
 Knit.ReplicatedHatSkins = Knit.ReplicatedAssets.HatSkins;
+Knit.ReplicatedBoosterEffects = Knit.ReplicatedAssets.BoosterEffects;
 
 Knit.Config = require(Knit.ReplicatedModules.Config);
 
@@ -85,6 +87,23 @@ CookingService.ParticlesSpawn:Connect(function(food, particleName)
 	
 end)
 
+local NotificationService = Knit.GetService("NotificationService");
+local NotificationUI = Knit.GetController("NotificationUI");
+
+NotificationService.NotifyMessage:Connect(function(messageText)
+	NotificationUI:Message(messageText);
+end)
+
+local ProximityService = Knit.GetService("ProximityService")
+local PlayerController = Knit.GetController("PlayerController")
+
+ProximityService.TrackItem:Connect(function(tracking, itemObj)
+	if tracking == true then
+		PlayerController:TrackItem(itemObj);
+	else
+		PlayerController:UnTrackItem();
+	end
+end)
 
 --[[local DataService = Knit.GetService("DataService")
 local CoinCounterUI = Knit.GetController("CoinCounterUI")

@@ -1,9 +1,11 @@
+local CollectionService = game:GetService("CollectionService")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 local PlayerService = game:GetService("Players");
 
 local ProximityService = Knit.CreateService {
     Name = "ProximityService";
     Client = {
+        TrackItem = Knit.CreateSignal();
         CurrencyCollected = Knit.CreateSignal();
         SetAnimations = Knit.CreateSignal();
     };
@@ -39,6 +41,26 @@ local function GetYOffset(object)
 	end;
 end;
 
+function ProximityService:GetNearestPan(fromPosition)
+	local selectedPan, dist = nil, math.huge
+	for _, pan in ipairs(CollectionService:GetTagged("Pan")) do
+		if pan and (pan.Position - fromPosition).Magnitude < dist then
+			selectedPan, dist = pan, (pan.Position - fromPosition).Magnitude
+		end
+	end
+	return selectedPan
+end
+
+function ProximityService:GetNearestDelivery(fromPosition)
+	local selectedDeliverZone, dist = nil, math.huge
+	for _, deliverZone in ipairs(CollectionService:GetTagged("DeliverStation")) do
+		if deliverZone and (deliverZone.Position - fromPosition).Magnitude < dist then
+			selectedDeliverZone, dist = deliverZone, (deliverZone.Position - fromPosition).Magnitude
+		end
+	end
+	return selectedDeliverZone
+end
+
 ----- Public functions -----
 
 function ProximityService:LinkItemToPlayer(Character,Object)
@@ -57,7 +79,7 @@ function ProximityService:LinkItemToPlayer(Character,Object)
             _PrimaryPart.FaceJoint.Attachment1 = Character:FindFirstChild("Head").FaceFrontAttachment;
             Character.PrimaryPart.ProximityPrompt.Enabled = true;
             _PrimaryPart.ProximityPrompt.Enabled = false;
-            print("FALSE")
+            --print("FALSE")
         else
             Object.CanCollide = false;
             Object.Massless = true;
@@ -67,7 +89,7 @@ function ProximityService:LinkItemToPlayer(Character,Object)
             Object.CustomPhysicalProperties = PickProperties;
             Character.PrimaryPart.ProximityPrompt.Enabled = true;
             Object.ProximityPrompt.Enabled = false;
-            print("false!!")
+            --print("false!!")
         end;
     end;
 end;
@@ -133,6 +155,7 @@ function ProximityService:PickUpIngredient(Character, Ingredient)
 		self.Client.SetAnimations:Fire(Player, {"rbxassetid://8029004455","rbxassetid://8028996064","rbxassetid://8029001222"}); -- idle, walk, jump animation for standing up
         self:LinkItemToPlayer(Character,Ingredient);
 
+        self.Client.TrackItem:Fire(Player, true, self:GetNearestPan(Character.PrimaryPart.Position))
         
         Player:FindFirstChild("Data").GameValues.Ingredient.Value = Ingredient;
         Character:FindFirstChild("Ingredient").Value = Ingredient;
@@ -156,6 +179,7 @@ function ProximityService:PickUpFood(Character, Food)
 		self.Client.SetAnimations:Fire(Player, {"rbxassetid://8029004455","rbxassetid://8028996064","rbxassetid://8029001222"}); -- idle, walk, jump animation for standing up
         self:LinkItemToPlayer( Character,Food);
         
+        self.Client.TrackItem:Fire(Player, true, self:GetNearestDelivery(Character.PrimaryPart.Position))
         
         Player:FindFirstChild("Data").GameValues.Ingredient.Value = Food;
         Character:FindFirstChild("Ingredient").Value = Food;
@@ -179,6 +203,8 @@ function ProximityService:DropItem( Character, Item)
         for _, track in pairs (AnimationTracks) do
             track:Stop();
         end;
+
+        self.Client.TrackItem:Fire(Player, false)
 
 		self.Client.SetAnimations:Fire(Player, {"rbxassetid://8028990292","rbxassetid://8028984908","rbxassetid://8028993547"}); -- idle, walk, jump animation for normal
 

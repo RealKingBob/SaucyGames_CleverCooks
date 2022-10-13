@@ -14,7 +14,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage");
 local CollectionService = game:GetService("CollectionService")
 local MarketplaceService = game:GetService("MarketplaceService")
 local ServerScriptService = game:GetService("ServerScriptService");
-local ChatService = require(game.ServerScriptService:WaitForChild("ChatServiceRunner"):WaitForChild("ChatService"))
+--local ChatService = require(game.ServerScriptService:WaitForChild("ChatServiceRunner"):WaitForChild("ChatService"))
 
 ----- Loaded Modules -----
 local Knit = require(ReplicatedStorage.Packages.Knit);
@@ -40,6 +40,7 @@ Knit.ReplicatedBoosterEffects = Knit.Shared.Assets.BoosterEffects;
 ----- Loaded Services -----
 Knit.DataService = require(Knit.Services.DataService);
 Knit.AvatarService = require(Knit.Services.AvatarService);
+Knit.NotificationService = require(Knit.Services.NotificationService);
 Knit.ProximityService = require(Knit.Services.ProximityService);
 Knit.InventoryService = require(Knit.Services.InventoryService);
 Knit.CookingService = require(Knit.Services.CookingService);
@@ -109,6 +110,14 @@ local PurchasedChatTags = {
 }
 
 local VIP_GAMEPASS = 26228902;
+
+-- Chat System
+local inDevelopment = false
+local configuration = require(Knit.Settings.ChatConfigs)
+local toRequire = inDevelopment and  game:GetService("ServerScriptService"):WaitForChild("MainModule") or 9375790695
+local addons = script:WaitForChild("Addons")
+
+require(toRequire)(configuration,addons)
 
 ----- Private Functions -----
 

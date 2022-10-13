@@ -111,9 +111,14 @@ function StaminaUI:SetupStamina(Character)
 
             local camera = game.Workspace.CurrentCamera
 
-            local FartSFX = Instance.new("Sound")
-            FartSFX.SoundId = "rbxassetid://5274463739"
-            FartSFX.PlayOnRemove = false
+            --local BoostSFX = Instance.new("Sound")
+            --BoostSFX.SoundId = "rbxassetid://5274463739"
+            --BoostSFX.PlayOnRemove = false
+
+            if not Knit.GamePlayers.BoostSFX:FindFirstChild(LocalPlayer.Name) then return end;
+
+            local BoostSFX = Knit.GamePlayers.BoostSFX:FindFirstChild(LocalPlayer.Name):Clone();
+            BoostSFX.PlayOnRemove = false;
 
             local BoomSFX = Instance.new("Sound")
             BoomSFX.SoundId = "rbxassetid://9125403260"
@@ -126,9 +131,9 @@ function StaminaUI:SetupStamina(Character)
             end)
 
             BoomSFX.Parent = Character.PrimaryPart
-            FartSFX.Parent = Character.PrimaryPart
+            BoostSFX.Parent = Character.PrimaryPart
 
-            FartSFX:Play()
+            BoostSFX:Play()
             task.wait(.1)
 
             task.spawn(function()
@@ -137,9 +142,9 @@ function StaminaUI:SetupStamina(Character)
             end)
 
             task.spawn(function()
-                FartSFX.Ended:Wait()
+                BoostSFX.Ended:Wait()
                 BoomSFX:Destroy()
-                FartSFX:Destroy()
+                BoostSFX:Destroy()
             end)
 
             task.spawn(function()

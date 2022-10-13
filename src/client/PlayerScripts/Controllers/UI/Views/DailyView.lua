@@ -13,7 +13,7 @@ local CommaValue;
 local CrateService;
 
 local HatSkins = require(Knit.ReplicatedHatSkins);
-local DeathEffects --= require(Knit.Shared.Assets.DeathEffects);
+local BoosterEffects = require(Knit.ReplicatedBoosterEffects);
 
 --//State
 local CurrentData;
@@ -27,7 +27,7 @@ end
 
 --//Public Methods
 function DailyView:Update(Data)
-    --print("DATA:", Data)
+    print("DATA:", Data)
     CurrentData = Data;
     local MainContainer = self.DailyPage:WaitForChild("Main");
 
@@ -42,8 +42,8 @@ function DailyView:Update(Data)
 
             if DisplayData["itemType"] == "Hats" then
                 ItemInfo = HatSkins.getItemFromKey(DisplayData["itemKey"])
-            elseif DisplayData["itemType"] == "Effects" then
-                ItemInfo = DeathEffects.getItemFromKey(DisplayData["itemKey"])
+            elseif DisplayData["itemType"] == "Booster Effects" then
+                ItemInfo = BoosterEffects.getItemFromKey(DisplayData["itemKey"])
             end
 
             if not ItemInfo then
@@ -57,8 +57,8 @@ function DailyView:Update(Data)
 
             if DisplayData["itemType"] == "Hats" then
                 RarityData = Rarities.getRarityDataFromItemName(ItemInfo.Key, "Hats");
-            elseif DisplayData["itemType"] == "Effects" then
-                RarityData = Rarities.getRarityDataFromEffectsName(ItemInfo.Key);
+            elseif DisplayData["itemType"] == "Booster Effects" then
+                RarityData = Rarities.getRarityDataFromItemName(ItemInfo.Key, "Booster Effects");
             end
 
             --print("itemRarity", ItemInfo, RarityData)
@@ -75,6 +75,8 @@ function DailyView:Update(Data)
 
             if DisplayData["itemType"] == "Hats" then
                 PurchaseInfo = MyInventory["Hats"]
+            elseif DisplayData["itemType"] == "Booster Effects" then
+                PurchaseInfo = MyInventory["BoosterEffects"]
             end
 
             if not PurchaseInfo then return end
@@ -140,12 +142,14 @@ function DailyView:KnitStart()
 
             if DisplayData["itemType"] == "Hats" then
                 InfoContainer = MyInventory["Hats"]
+            elseif DisplayData["itemType"] == "Booster Effects" then
+                InfoContainer = MyInventory["BoosterEffects"]
             end
 
             if DisplayData["itemType"] == "Hats" then
                 ItemInfo = HatSkins.getItemFromKey(DisplayData["itemKey"])
-            elseif DisplayData["itemType"] == "Effects" then
-                ItemInfo = DeathEffects.getItemFromKey(DisplayData["itemKey"])
+            elseif DisplayData["itemType"] == "Booster Effects" then
+                ItemInfo = BoosterEffects.getItemFromKey(DisplayData["itemKey"])
             end
 
             if not ItemInfo then

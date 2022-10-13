@@ -64,7 +64,7 @@ local StatTrackService = require(ModuleServices:FindFirstChild("StatTrackService
 local RewardService = require(ModuleServices:FindFirstChild("RewardService"));
 local DataService = require(ModuleServices:FindFirstChild("DataService"));]]
 
-local panZone = ZoneAPI.new(workspacePans:WaitForChild("PanHitboxes"));
+local panZone = ZoneAPI.new(CollectionService:GetTagged("Pan"));
 local deliverZone = ZoneAPI.new(CollectionService:GetTagged("DeliverStation"));
 
 ----- Variables -----
@@ -239,6 +239,8 @@ function CookingService:Cook(player,Character,recipe, pan)
 
 			--print("cookingPansQueue", cookingPansQueue[player.UserId])
 
+			Knit.GetService("NotificationService"):Message(false, player, "COOKING STARTED!")
+
 			self.Client.Cook:Fire(player, tostring(recipe), pan, cookingTime)
 
 			task.spawn(function()
@@ -280,6 +282,8 @@ function CookingService:Cook(player,Character,recipe, pan)
 
 			print("food created:", food)
 			
+			Knit.GetService("NotificationService"):Message(false, player, string.upper(tostring(food)).." WAS MADE!")
+
 			self.Client.ParticlesSpawn:Fire(player, food, "CookedParticle")
 			--StatTrackService:SetRecentCookedFood(player, tostring(recipe));
 		end;
@@ -333,6 +337,8 @@ function CookingService:DeliverFood(player, food)
 
 			--print("cookingPansQueue", cookingPansQueue[player.UserId])
 
+			Knit.GetService("NotificationService"):Message(false, player, string.upper(tostring(food)).." DELIVERING!")
+
 			self.Client.Cook:Fire(player, tostring(food), food, cookingTime)
 
 			task.spawn(function()
@@ -374,6 +380,8 @@ function CookingService:DeliverFood(player, food)
 			--RewardService:GiveReward(profile, {EXP = MathAPI:Find_Closest_Divisible_Integer(RawCalculatedEXP, 2);})
 
 			print("food delivered:", food)
+
+			Knit.GetService("NotificationService"):Message(false, player, string.upper(tostring(food)).." WAS DELIVERED!")
 			
 			--StatTrackService:SetRecentCookedFood(player, tostring(recipe));
 		end;
@@ -472,7 +480,7 @@ function CookingService:KnitInit()
 				end
 			end
 	
-			for _,hitbox in pairs(workspacePans.PanHitboxes:GetChildren()) do
+			for _,hitbox in pairs(CollectionService:GetTagged("Pan")) do
 				local radiusOfPan = getRadius(hitbox)
 
 				local overlapParams = OverlapParams.new()

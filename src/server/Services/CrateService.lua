@@ -107,6 +107,7 @@ local DataService = Knit.DataService;
 local InventoryService = Knit.InventoryService;
 
 local HatSkins = require(Knit.ReplicatedHatSkins);
+local BoosterEffects = require(Knit.ReplicatedBoosterEffects);
 local DuckEmotes --= Knit.ReplicatedDuckEmotes;
 local DeathEffect --= Knit.ReplicatedDuckEffects;
 local Rarities = Knit.ReplicatedRarities;
@@ -141,6 +142,18 @@ local DailyShopOffset = (60 * 60 * Knit.Config.DAILY_SHOP_OFFSET);
 local HourlyShopOffset = (60 * 60); 
 
 Synced.init() -- Will make the request to google.com if it hasn't already.
+
+local function GetItemsFromRarity(typeItem, rarityItem)
+    local Items;
+    if typeItem == "Hats" then
+        Items = HatSkins.getHatSkinsFromRarity(rarityItem, true)
+    elseif typeItem == "BoosterEffects" then
+        Items = BoosterEffects.getBoosterEffectsFromRarity(rarityItem, true)
+    else
+        Items = HatSkins.getHatSkinsFromRarity(5, true)
+    end
+    return Items
+end
 
 function CrateService:ResetShopItems(Player)
 	if Player then
@@ -865,7 +878,7 @@ function CrateService:StartDailyItems(player, profile, CurrentDay, NumOfItems)
             end;
         end;
 
-        local function GenerateItem()
+        local function GenerateItem(itemType : string)
             local returnedItem;
             local returnedRarity;
     
@@ -881,31 +894,31 @@ function CrateService:StartDailyItems(player, profile, CurrentDay, NumOfItems)
 
                 if weightNumber < RarityWeights.Legendary then 
                     --print("Legendary") 
-                    local Items = HatSkins.getHatSkinsFromRarity(5, true)
+                    local Items = GetItemsFromRarity(itemType, 5);
                     --Items = TableUtil.Shuffle(Items); // THIS RANDOMIZES THE ITEM RATHER THAN HAVING SAME ONE
                     weightitem = Items[seed:NextInteger(1,#Items)];
                     rarity = Items
                 elseif weightNumber < RarityWeights.Epic then 
                     --print("Epic")
-                    local Items = HatSkins.getHatSkinsFromRarity(4, true)
+                    local Items = GetItemsFromRarity(itemType, 4);
                     --Items = TableUtil.Shuffle(Items);
                     weightitem = Items[seed:NextInteger(1,#Items)];
                     rarity = Items
                 elseif weightNumber < RarityWeights.Rare then 
                     --print("Rare")
-                    local Items = HatSkins.getHatSkinsFromRarity(3, true)
+                    local Items = GetItemsFromRarity(itemType, 3);
                     --Items = TableUtil.Shuffle(Items);
                     weightitem = Items[seed:NextInteger(1,#Items)];
                     rarity = Items
                 elseif weightNumber < RarityWeights.Uncommon then 
                     --print("Uncommon")
-                    local Items = HatSkins.getHatSkinsFromRarity(2, true)
+                    local Items = GetItemsFromRarity(itemType, 2);
                     --Items = TableUtil.Shuffle(Items);
                     weightitem = Items[seed:NextInteger(1,#Items)];
                     rarity = Items
                 else
                     --print("Common")
-                    local Items = HatSkins.getHatSkinsFromRarity(1, true)
+                    local Items = GetItemsFromRarity(itemType, 1);
                     --Items = TableUtil.Shuffle(Items);
                     weightitem = Items[seed:NextInteger(1,#Items)];
                     rarity = Items
@@ -944,9 +957,14 @@ function CrateService:StartDailyItems(player, profile, CurrentDay, NumOfItems)
         end
 
         local AmountOfMissions = table.getn(profile.DailyShopItems) --// Amount of DailyShopItems
-        repeat
+        --[[repeat
             GenerateItem()
-        until #shopItems >= NumOfItems -- Until we get our desired # of items.
+        until #shopItems >= NumOfItems -- Until we get our desired # of items.]]
+
+        GenerateItem("Hats")
+        GenerateItem("BoosterEffects")
+        GenerateItem("Hats")
+        GenerateItem("BoosterEffects")
        
         --[[bool = not bool
         local itemInfo;
