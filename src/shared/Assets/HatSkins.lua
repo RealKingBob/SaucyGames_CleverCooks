@@ -121,7 +121,7 @@ HatsSkins.ItemsTable = {
 		Visible = true;
 		Rarity = 1, -- Not obtainable
 		CrateId = -1, -- In no crates
-		DecalId = "",
+		DecalId = "rbxassetid://11262933534",
 		IndividualPrice = 0, -- If it were to go on daily shop, this would be displayed
 		Tradeable = false
 	},

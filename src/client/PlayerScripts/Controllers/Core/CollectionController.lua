@@ -25,7 +25,11 @@ function CollectionController:KnitStart()
             local Root = Character:FindFirstChild("HumanoidRootPart")
             if Root then
                 for _, dropable in pairs(workspace.Spawnables.Cheese:GetChildren()) do
-                    if dropable:IsA("Part") and CollectionService:HasTag(dropable, "Dropable") then
+                    if dropable:GetAttribute("userId") ~= LocalPlayer.UserId then
+                        dropable:Destroy()
+                        continue;
+                    end
+                    if dropable:IsA("Part") and CollectionService:HasTag(dropable, "Dropable") and dropable:GetAttribute("userId") == LocalPlayer.UserId then
                         local magnitude = (Root.Position - dropable.Position).Magnitude;
 
                         if magnitude < 10 then
@@ -33,7 +37,7 @@ function CollectionController:KnitStart()
 
                             dropable.CanCollide = false;
                             dropable.Anchored = true;
-                            dropable.CFrame = dropable.CFrame:Lerp(Root.CFrame, 0.23)
+                            dropable.CFrame = dropable.CFrame:Lerp(Root.CFrame, 0.15)
 
                             --print("magnitude: ".. magnitude)
 

@@ -19,8 +19,8 @@ local ReductionDelay = 0.05;
 local RegenAmount = 1;
 local RegenDelay = 0.2;
 
-local Stamina = 100000000;
-local MaxStamina = 100000000;
+local Stamina = 100;
+local MaxStamina = 100;
 
 local percentageToUseAgain = 30 
 
@@ -55,6 +55,7 @@ function StaminaUI:CheckSprintAnim(Humanoid)
 end
 
 function StaminaUI:SetupStamina(Character)
+    local BoostSFX, BoomSFX;
     local AvatarService = Knit.GetService("AvatarService");
 
     Stamina = MaxStamina;
@@ -115,12 +116,14 @@ function StaminaUI:SetupStamina(Character)
             --BoostSFX.SoundId = "rbxassetid://5274463739"
             --BoostSFX.PlayOnRemove = false
 
+            
+
             if not Knit.GamePlayers.BoostSFX:FindFirstChild(LocalPlayer.Name) then return end;
 
-            local BoostSFX = Knit.GamePlayers.BoostSFX:FindFirstChild(LocalPlayer.Name):Clone();
+            BoostSFX = Knit.GamePlayers.BoostSFX:FindFirstChild(LocalPlayer.Name):Clone();
             BoostSFX.PlayOnRemove = false;
 
-            local BoomSFX = Instance.new("Sound")
+            BoomSFX = Instance.new("Sound")
             BoomSFX.SoundId = "rbxassetid://9125403260"
             BoomSFX.PlayOnRemove = false
 
@@ -143,8 +146,12 @@ function StaminaUI:SetupStamina(Character)
 
             task.spawn(function()
                 BoostSFX.Ended:Wait()
-                BoomSFX:Destroy()
-                BoostSFX:Destroy()
+                if BoostSFX then
+                    BoomSFX:Destroy()
+                end
+                if BoostSFX then
+                    BoostSFX:Destroy()
+                end
             end)
 
             task.spawn(function()
@@ -196,6 +203,13 @@ function StaminaUI:SetupStamina(Character)
                 sprinting = false
                 --if PrevAnim then PrevAnim:Play(); end
 
+                if BoostSFX then
+                    BoomSFX:Destroy()
+                end
+                if BoostSFX then
+                    BoostSFX:Destroy()
+                end
+
                 AvatarService.BoostEffect:Fire(false)
 
                 if cooldownStamina == true then
@@ -232,6 +246,12 @@ function StaminaUI:SetupStamina(Character)
 
                 SprintAnim:Stop()
                 --if PrevAnim then PrevAnim:Play(); end
+                if BoostSFX then
+                    BoomSFX:Destroy()
+                end
+                if BoostSFX then
+                    BoostSFX:Destroy()
+                end
                 AvatarService.BoostEffect:Fire(false)
                 --print(PrevAnim)
 

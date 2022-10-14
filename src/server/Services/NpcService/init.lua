@@ -136,6 +136,13 @@ function NpcService:SetupChef(NPC)
     local RandomPart = RandomSpots[math.random(1,#RandomSpots)];
 
     local friendIds = {};
+    local backupFriendsIds = {21831137, 710489960, 126337093, 126833961, 39831016, 71631677, 121649, 
+    25568057, 400900478, 97162681, 472860216, 14733384, 2051474553, 137759764, 65680312, 
+    91529715, 294982847, 14169349, 16964256, 1510547390, 53347204, 148513655, 42350716, 
+    72120971, 94158016, 62288192, 418172096, 313133642, 26432253, 53101289, 1727594062, 
+    1956952532, 64172462, 108916687, 30969265, 11044605, 398496794, 122881779, 697883351, 
+    151848836, 180028302, 64347573, 24160299, 6710154, 964148758, 13151032, 127786177, 
+    11561183, 55976311, 92714340, 139458, 67306263};
 
     local DirectionType = {
         Up = "Up";
@@ -268,7 +275,13 @@ function NpcService:SetupChef(NPC)
         end
         
         taskAnimTrack:Play();
-        task.wait(taskAnimTrack.Length);
+        if TaskType == "Alert" then
+            taskAnimTrack.Stopped:Wait()
+        else
+            task.wait(taskAnimTrack.Length);
+        end
+        --taskAnimTrack.Stopped:Wait()
+        --task.wait(taskAnimTrack.Length);
         
         if TaskType ~= "Alert" then
             NPC_Humanoid.WalkSpeed = 16;
@@ -295,25 +308,45 @@ function NpcService:SetupChef(NPC)
         end
         
         local GetPlayers = Players:GetPlayers();
+        local friendList;
         
         if #GetPlayers > 0 then	
             for _, player in pairs(GetPlayers) do
     
-                local friendList = Players:GetFriendsAsync(player.UserId)
-    
+                local success, errorMessage = pcall(function()
+                    friendList = Players:GetFriendsAsync(player.UserId)
+                end)
+                if not success then
+                    warn(errorMessage)
+                end
+                if friendList then
+                    for item, pageNo in iterPageItems(friendList) do
+                        table.insert(friendIds, item.Id);
+                    end
+                else
+                    friendIds = backupFriendsIds;
+                end
+
+            end
+        else
+
+            local success, errorMessage = pcall(function()
+                friendList = Players:GetFriendsAsync(21831137)
+            end)
+            if not success then
+                warn(errorMessage)
+            end
+            if friendList then
                 for item, pageNo in iterPageItems(friendList) do
                     table.insert(friendIds, item.Id);
                 end
+            else
+                friendIds = backupFriendsIds;
             end
-        else
-            local friendList = Players:GetFriendsAsync(21831137)
-    
-            for item, pageNo in iterPageItems(friendList) do
-                table.insert(friendIds, item.Id);
-            end
+
         end	
         
-        --print(friendIds)
+        print("friendIds:", friendIds)
     
         local RandomFriend;
             
@@ -441,7 +474,7 @@ function NpcService:SetupChef(NPC)
         
         local AnimationTracks = NPC_Animator:GetPlayingAnimationTracks()
         for _, AnimationTrack in pairs(AnimationTracks) do
-            --print(AnimationTrack.Name)
+            print("print", AnimationTrack.Name)
             if AnimationTrack.Name == "TaskAnim" then
                 AnimationTrack:Stop();
             end
@@ -479,23 +512,40 @@ function NpcService:SetupChef(NPC)
         end
         
         print(hit, target, typeof(hit))
-    
+        
+        --local NPCroot = NPC.HumanoidRootPart
+        --local CharRoot = Character.HumanoidRootPart
+
         if hit:IsA("Model") then
             Character = hit.PrimaryPart;
             
             local HRP = hit.PrimaryPart;
             
-            local direction = HRP.Position + HRP.CFrame.LookVector * HRP.Position.Magnitude
-            NPC_Root.CFrame = CFrame.lookAt(NPC_Root.Position, direction)
+            NPC:SetPrimaryPartCFrame(CFrame.lookAt(
+                NPC_Root.Position,
+                HRP.Position * Vector3.new(1, 0, 1)
+                    + NPC_Root.Position * Vector3.new(0, 1, 0)
+            ))
+            --local direction = HRP.Position + HRP.CFrame.LookVector * HRP.Position.Magnitude
+            --NPC_Root.CFrame = CFrame.lookAt(NPC_Root.Position, direction)
         else
             Character = hit;
             
             local HRP = hit;
             
-            local direction = HRP.Position + HRP.CFrame.LookVector * HRP.Position.Magnitude
-            NPC_Root.CFrame = CFrame.lookAt(NPC_Root.Position, direction)
+            NPC:SetPrimaryPartCFrame(CFrame.lookAt(
+                NPC_Root.Position,
+                HRP.Position * Vector3.new(1, 0, 1)
+                    + NPC_Root.Position * Vector3.new(0, 1, 0)
+            ))
+            --local direction = HRP.Position + HRP.CFrame.LookVector * HRP.Position.Magnitude
+            --NPC_Root.CFrame = CFrame.lookAt(NPC_Root.Position, direction)
         end
         
+        local player = Players:GetPlayerFromCharacter(Character.Parent);
+        if player then
+            Knit.GetService("NotificationService"):Message(false, player, "A ".. tostring(string.upper(JobType)).." SPOTTED YOU!")
+        end
         PlayAnim("Alert")
         
         NPC_Humanoid.WalkSpeed = NPC_RunSpeed;
@@ -611,7 +661,7 @@ function NpcService:SetupChef(NPC)
     end)
     
     Path.Error:Connect(function(errorType)
-        --warn("errorType | ", errorType, "targetPresent:", targetPresent, "travelRandom:", travelToRandomPoint, "status:", Path:GetStatus())
+        warn("errorType | ", errorType, "targetPresent:", targetPresent, "travelRandom:", travelToRandomPoint, "status:", Path:GetStatus())
         if travelToRandomPoint == true then
             if tostring(errorType) == "ComputationError" or tostring(errorType) == "TargetUnreachable" or tostring(errorType) == "LimitReached" then
                 print(tostring(errorType),'| ', "targetPresent:", targetPresent, "travelRandom:", travelToRandomPoint, "status:", Path:GetStatus())
@@ -782,8 +832,9 @@ function NpcService:KnitInit()
         end)
     end)
 
-    for _,v in pairs(CollectionService:GetTagged("NPC")) do
+    for i,v in pairs(CollectionService:GetTagged("NPC")) do
         task.spawn(function()
+            task.wait(i/2)
             self:SetupChef(v);
         end)
     end

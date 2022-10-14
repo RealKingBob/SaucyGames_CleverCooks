@@ -37,12 +37,12 @@ local Recipes = {
 		Image = "rbxassetid://8019445605",
 		Ingredients = {
 			"Red Onion",
-			--[["Garlic",
+			"Garlic",
 			"Courgette",
 			"Tomato",
 			"Yellow Bell Pepper",
 			"Red Bell Pepper",
-			"Lemon"]]
+			"Lemon"
 		},
 		Unlockable = true, 
 		Difficulty = "Hard"	
@@ -117,12 +117,6 @@ local Recipes = {
 		Unlockable = false, 
 		Difficulty = "Medium"
 	},
-	--[[["Cooked Steak"] = {
-			"Raw Steak",
-			"Salt",
-			"Pepper",
-			"Butter"
-	},]]
 
 	
 	-- Basic Recipes
@@ -141,6 +135,9 @@ local Recipes = {
 		Image = "rbxassetid://8019446800",
 		Ingredients = {
 			"Raw Steak",
+			"Salt",
+			"Pepper",
+			"Butter"
 		},
 		Unlockable = false, 
 		Difficulty = "Easy"

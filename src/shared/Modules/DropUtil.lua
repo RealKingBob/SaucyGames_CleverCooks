@@ -98,7 +98,7 @@ function DropUtil.DropCheese(oCFrame, obj, player, amount, value)
 end
 
 function DropUtil.DropCurrencyText(oCFrame, amount, userId)
-    print("DropCurrencyText", amount, userId)
+    --print("DropCurrencyText", amount, userId)
 
     local function fadeInObj(instance)
         local PopUpTweenInfo = TweenInfo.new(.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out);

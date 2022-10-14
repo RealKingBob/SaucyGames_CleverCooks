@@ -12,12 +12,6 @@ local Shared = ReplicatedStorage:WaitForChild("Common")
 
 local ReplicatedAssets = Shared:WaitForChild("Assets")
 local ReplicatedModules = Shared:WaitForChild("Modules")
-local Prefabs = LocalPlayer.PlayerGui:WaitForChild("Prefabs")
-
-local FoodTemplate = Prefabs:WaitForChild("FoodTemplate")
-local IngredientTemplate = Prefabs:WaitForChild("IngredientTemplate")
-local PageTemplate = Prefabs:WaitForChild("PageTemplate")
-local HoverIngredientTemplate = Prefabs:WaitForChild("HoverIngredientTemplate")
 
 local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 
@@ -61,6 +55,9 @@ local CookButton = mainGui.Cook
 function recipePageCreated(PageNumber,PageData)
 	local PageLimit = 6 -- 6 buttons per page
 	local recipeCount = 0
+	local Prefabs = LocalPlayer.PlayerGui:WaitForChild("Prefabs")
+	local FoodTemplate = Prefabs:WaitForChild("FoodTemplate")
+	local PageTemplate = Prefabs:WaitForChild("PageTemplate")
 	local Page = PageTemplate:Clone()
 	Page.Name = tostring(PageNumber)
 	Page.Parent = recipeList
@@ -191,6 +188,8 @@ function setupRecipeButtons()
 
 		for _,ingredient in pairs(RecipeModule[recipeSelected]["Ingredients"]) do
 			local foundIngredient = IngredientModule[ingredient]
+			local Prefabs = LocalPlayer.PlayerGui:WaitForChild("Prefabs")
+			local HoverIngredientTemplate = Prefabs:WaitForChild("HoverIngredientTemplate")
 			local clonedIngredientFrame = HoverIngredientTemplate:Clone()
 			clonedIngredientFrame.Size = UDim2.fromScale(0,0)
 			clonedIngredientFrame.Name = tostring(ingredient)
@@ -330,6 +329,8 @@ function setupRecipeButtons()
 			
 			for _, value in pairs(selectedRecipe["Ingredients"]) do
 				local foundIngredient = IngredientModule[value]
+				local Prefabs = LocalPlayer.PlayerGui:WaitForChild("Prefabs")
+				local IngredientTemplate = Prefabs:WaitForChild("IngredientTemplate")
 				local clonedIngredientFrame = IngredientTemplate:Clone()
 				clonedIngredientFrame.Name = tostring(value)
 				clonedIngredientFrame.IngredientTitle.Text = tostring(value)

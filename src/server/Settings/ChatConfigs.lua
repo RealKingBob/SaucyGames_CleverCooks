@@ -13,7 +13,7 @@ return {
 			[1] = "Guest", --> Rank ID 1 will automatically be assigned to each user (the config below can determine their final permission level)
 			[2] = "VIP",
 			[3] = "Admin",
-			[4] = "Owner" --> Automatically assigned to the group creator or game creator
+			[4] = "DEV" --> Automatically assigned to the group creator or game creator
 		},
 		Users = {
 			[1] = "Admin" --> Roblox -> Admin rank
@@ -31,10 +31,16 @@ return {
 	ChatTags = {
 		MaxAmountTags = 2, --> Maximum amount of tags one user can have
 		Users = {
-			["Roblox"] = { --> Assign Roblox a red 'Owner' tag
+			["Sencives"] = { --> Assign Roblox a red 'Owner' tag
 				{
-					Text = "Owner",
+					Text = "DEV",
 					Color = Color3.fromRGB(255,0,0)
+				}
+			},
+			["NoEmerald"] = { --> Assign Roblox a red 'Owner' tag
+				{
+					Text = "MANAGER",
+					Color = Color3.fromRGB(6, 207, 16)
 				}
 			}
 		},

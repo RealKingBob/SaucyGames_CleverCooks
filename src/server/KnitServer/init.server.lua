@@ -10,6 +10,7 @@
 local Players = game:GetService("Players");
 local RunService = game:GetService("RunService");
 local PhysicsService = game:GetService("PhysicsService");
+local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local ReplicatedStorage = game:GetService("ReplicatedStorage");
 local CollectionService = game:GetService("CollectionService")
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -118,6 +119,23 @@ local toRequire = inDevelopment and  game:GetService("ServerScriptService"):Wait
 local addons = script:WaitForChild("Addons")
 
 require(toRequire)(configuration,addons)
+
+local client, server, shared = require(script:FindFirstChild("LoaderUtils", true)).toWallyFormat(script.src, false)
+
+server.Name = "_SoftShutdownServerPackages"
+server.Parent = script
+
+client.Name = "_SoftShutdownClientPackages"
+client.Parent = ReplicatedFirst
+
+shared.Name = "_SoftShutdownSharedPackages"
+shared.Parent = ReplicatedFirst
+
+local clientScript = script.ClientScript
+clientScript.Name = "QuentySoftShutdownClientScript"
+clientScript:Clone().Parent = ReplicatedFirst
+
+require(server.SoftShutdownService):Init()
 
 ----- Private Functions -----
 
@@ -282,14 +300,14 @@ Players.PlayerRemoving:Connect(onPlayerRemoving);
 
 local DropUtil = require(Knit.Shared.Modules.DropUtil);
 
-task.spawn(function()
+--[[task.spawn(function()
 	for _, value in ipairs(CollectionService:GetTagged(Knit.Config.CHEESE_SPAWN)) do
 		while true do
 			task.wait(math.random(20,60))
 			--workspace.Spawnables.Cheese:ClearAllChildren()
-			DropUtil.DropCheese(value.CFrame, game.ReplicatedStorage.Spawnables.Cheese, nil, math.random(10,15), math.random(5,10))
+			--DropUtil.DropCheese(value.CFrame, game.ReplicatedStorage.Spawnables.Cheese, nil, math.random(10,15), math.random(5,10))
 		end
 	end
-end)
+end)]]
 
 ----------------------------------------------------------------------------------------------

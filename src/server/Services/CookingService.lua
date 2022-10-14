@@ -32,14 +32,12 @@ local ServerScriptService = game:GetService("ServerScriptService");
 
 local GameLibrary = ReplicatedStorage:FindFirstChild("GameLibrary");
 
-local workspacePans = workspace:WaitForChild("Pans");
 local IngredientsAvailable = workspace:WaitForChild("IngredientAvailable");
 local FoodAvailable = workspace:WaitForChild("FoodAvailable");
 
 local ReplicatedAssets = Knit.Shared.Assets;
 local ReplicatedModules = Knit.Shared.Modules;
 local ServerModules = Knit.Modules;
-local RemoteEvents = GameLibrary:FindFirstChild("RemoteEvents");
 local IngredientObjects = GameLibrary:FindFirstChild("IngredientObjects");
 local FoodObjects = GameLibrary:FindFirstChild("FoodObjects");
 
@@ -222,11 +220,35 @@ function CookingService:Cook(player,Character,recipe, pan)
 			end;
 			if #SelectedRecipe["Ingredients"] == #IngredientsUsed then
 				print('[CookingService]: Found all ingredients',IngredientsUsed);
-				for _,deleteIngredient in pairs(IngredientsUsed) do
-					deleteIngredient:Destroy();
-					if deleteIngredient then
-						deleteIngredient = nil;
-					end
+				local FoodSpawnPoints = CollectionService:GetTagged("FoodSpawnPoints");
+				for _, ingredient in pairs(IngredientsUsed) do
+					task.spawn(function()
+						if ingredient:IsA("Model") and ingredient.PrimaryPart then
+							ingredient.PrimaryPart.ProximityPrompt.Enabled = false;
+						else
+							ingredient.ProximityPrompt.Enabled = false;
+						end
+					end)
+				end;
+				for _, ingredient in pairs(IngredientsUsed) do
+					task.spawn(function()
+						local RandomFoodLocation = FoodSpawnPoints[math.random(1, #FoodSpawnPoints)];
+						if RandomFoodLocation then
+							if ingredient:IsA("Model") and ingredient.PrimaryPart then
+								ingredient:SetPrimaryPartCFrame(CFrame.new(RandomFoodLocation.Position + Vector3.new(math.random(-5,5) ,5, math.random(-5,5))))
+							else
+								ingredient.Position = RandomFoodLocation.Position + Vector3.new(math.random(-5,5) ,5, math.random(-5,5));
+							end
+						end
+
+						task.wait(0.1)
+	
+						if ingredient:IsA("Model") and ingredient.PrimaryPart then
+							ingredient.PrimaryPart.ProximityPrompt.Enabled = true;
+						else
+							ingredient.ProximityPrompt.Enabled = true;
+						end
+					end)
 				end;
 				IngredientsUsed = {};
 			else return end;
@@ -391,7 +413,11 @@ function CookingService:DeliverFood(player, food)
 end
 
 function CookingService:KnitStart()
-	SpawnItemsAPI:SpawnAllIngredients(2);
+	--local FoodSpawnPoints = CollectionService:GetTagged("FoodSpawnPoints");
+	--local RandomFoodLocation = FoodSpawnPoints[math.random(1, #FoodSpawnPoints)]
+
+	--SpawnItemsAPI:Spawn(nil, nil, "Raw Steak", IngredientObjects, IngredientsAvailable, RandomFoodLocation.Position + Vector3.new(0,5,0));
+	SpawnItemsAPI:SpawnAllIngredients(3);
     --SpawnItemsAPI:SpawnAll(IngredientObjects,IngredientsAvailable);
     --SpawnItemsAPI:SpawnAtRandomSpawns(IngredientObjects,IngredientsAvailable, workspace.FoodSpawnPoints);
     --SpawnItemsAPI:SpawnAll(FoodObjects,IngredientsAvailable);
@@ -456,24 +482,28 @@ function CookingService:KnitInit()
 				local parts = workspace:GetPartBoundsInRadius(deliverHitbox.Position, radiusOfDeliverZone, overlapParams)
 				for _, part in pairs(parts) do
 					local touchedType, touchedOwner, touchedObject;
-					if part.Parent:IsA("Model") then
-						if part.Parent.PrimaryPart then
-							local touchedPrimary = part.Parent.PrimaryPart;
-							touchedType = touchedPrimary:GetAttribute("Type");
-							touchedOwner = touchedPrimary:GetAttribute("Owner");
-							touchedObject = touchedPrimary.Parent;
-						end
-					else
-						touchedType = part:GetAttribute("Type");
-						touchedOwner = part:GetAttribute("Owner");
-						touchedObject = part;
-					end
-					if touchedType == "Food" and touchedOwner ~= "None" then
-						local OwnerPlayer = Players:FindFirstChild(touchedOwner)
-						if OwnerPlayer then
-							if CollectionService:HasTag(touchedObject, "Delivering") == false then
-								print(part, "in deliverzon+e")
-								self:DeliverFood(OwnerPlayer, touchedObject)
+					if part then
+						if part.Parent then
+							if part.Parent:IsA("Model") then
+								if part.Parent.PrimaryPart then
+									local touchedPrimary = part.Parent.PrimaryPart;
+									touchedType = touchedPrimary:GetAttribute("Type");
+									touchedOwner = touchedPrimary:GetAttribute("Owner");
+									touchedObject = touchedPrimary.Parent;
+								end
+							else
+								touchedType = part:GetAttribute("Type");
+								touchedOwner = part:GetAttribute("Owner");
+								touchedObject = part;
+							end
+							if touchedType == "Food" and touchedOwner ~= "None" then
+								local OwnerPlayer = Players:FindFirstChild(touchedOwner)
+								if OwnerPlayer then
+									if CollectionService:HasTag(touchedObject, "Delivering") == false then
+										print(part, "in deliverzon+e")
+										self:DeliverFood(OwnerPlayer, touchedObject)
+									end
+								end
 							end
 						end
 					end

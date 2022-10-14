@@ -55,9 +55,12 @@ end;]]
 
 
 function GameController:ForIngredient(Ingredient)
+	if not Ingredient then return end;
 	table.insert(CollectedItems,Ingredient);
 
-	if Ingredient:IsA("Model") then Ingredient = Ingredient.PrimaryPart end 
+	if Ingredient:IsA("Model") then Ingredient = Ingredient.PrimaryPart end
+
+	if not Ingredient then return end
 
 	--self:createProximityPrompt(Ingredient,"Ingredient");
 
@@ -104,10 +107,13 @@ end;
 
 
 function GameController:ForFood(Food)
+	if not Food then return end;
     local CookingService = Knit.GetService("CookingService");
 	table.insert(CollectedItems,Food);
 
 	if Food:IsA("Model") then Food = Food.PrimaryPart end 
+
+	if not Food then return end
 
 	--self:createProximityPrompt(Food,"Food");
 
