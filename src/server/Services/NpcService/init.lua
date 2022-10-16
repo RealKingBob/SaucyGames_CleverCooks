@@ -2,7 +2,9 @@ local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local NpcService = Knit.CreateService {
     Name = "NpcService";
-    Client = {};
+    Client = {
+        PlayAnimation = Knit.CreateSignal();
+    };
 }
 
 -- Services
@@ -167,9 +169,25 @@ function NpcService:SetupChef(NPC)
     local AlertAnimId = "http://www.roblox.com/asset/?id=4841401869";
     local ConfusedAnimId = "http://www.roblox.com/asset/?id=4940561610";
 
+    local function StopTaskAnim()
+        print("StopTaskAnim")
+        local AnimationTracks = NPC_Animator:GetPlayingAnimationTracks();
+        for i, AnimationTrack in pairs(AnimationTracks) do
+            --print("||||||||||", i, AnimationTrack.Name, AnimationTrack.Animation.AnimationId)
+            if AnimationTrack.Animation.AnimationId == InspectAnimId
+            or AnimationTrack.Animation.AnimationId == PrepareAnimId 
+            or AnimationTrack.Animation.AnimationId == CookAnimId 
+            or AnimationTrack.Animation.AnimationId == AlertAnimId 
+            or AnimationTrack.Animation.AnimationId == ConfusedAnimId then
+                AnimationTrack:Stop();
+            end
+        end
+    end
+
     local Path = PathfindingService.new(NPC, {
         AgentRadius = 20,
         AgentHeight = 37,
+        WaypointSpacing = 30,
         AgentCanJump = false,
         Costs = {
             TravelZone = 0.01,
@@ -178,7 +196,13 @@ function NpcService:SetupChef(NPC)
     });
 
     Path.Visualize = true;
+    for i,v in pairs(NPC:GetDescendants()) do
+        if v:IsA("Part") or v:IsA("MeshPart") then
+            v:SetNetworkOwner(nil);
+        end
+    end
     NPC:WaitForChild("FistParticles").Size = Vector3.new(8.518, 8.84, 6.045)
+    NPC_Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
     
     ----------------------------------------------------------------------
     
@@ -190,6 +214,8 @@ function NpcService:SetupChef(NPC)
             Neck.C0 = Neck.C0:lerp(NeckC0, UpdateSpeed/2)
         end
     end
+
+    
     
     --------------------------------------------------------------------------
     
@@ -262,24 +288,38 @@ function NpcService:SetupChef(NPC)
         elseif TaskType == "Alert" then
             taskAnim.AnimationId = AlertAnimId;
             zeroSpeed = true;
+        elseif TaskType == "Confused" then
+            taskAnim.AnimationId = ConfusedAnimId;
+            zeroSpeed = true;
         end
         
         local taskAnimTrack = controller:LoadAnimation(taskAnim);
+        taskAnimTrack:AdjustSpeed(0.58);
+        taskAnimTrack.Looped = false;
         taskAnimTrack.Priority = Enum.AnimationPriority.Action;
-        
         repeat task.wait(0.1) until taskAnimTrack.length ~= 0;
-        --print(taskAnimTrack.Name,taskAnimTrack.Length)
+        warn("Length:",taskAnimTrack.Name,taskAnimTrack.Length)
         
-        if zeroSpeed then
+        if zeroSpeed == true then
             NPC_Humanoid.WalkSpeed = 0;
         end
+
+        self.Client.PlayAnimation:FireAll(controller, taskAnim.AnimationId)
         
-        taskAnimTrack:Play();
-        if TaskType == "Alert" then
+        --taskAnimTrack:Play();
+        taskAnimTrack:AdjustSpeed(0.58);
+
+        task.wait(taskAnimTrack.Length);
+
+        --taskAnimTrack.Stopped:Wait()
+        print("anim done")
+        --[[if TaskType == "Alert" or TaskType == "Confused" then
             taskAnimTrack.Stopped:Wait()
+            print("anim done")
         else
             task.wait(taskAnimTrack.Length);
-        end
+        end]]
+
         --taskAnimTrack.Stopped:Wait()
         --task.wait(taskAnimTrack.Length);
         
@@ -472,13 +512,7 @@ function NpcService:SetupChef(NPC)
         
         prevRandomPart = RandomPart;
         
-        local AnimationTracks = NPC_Animator:GetPlayingAnimationTracks()
-        for _, AnimationTrack in pairs(AnimationTracks) do
-            print("print", AnimationTrack.Name)
-            if AnimationTrack.Name == "TaskAnim" then
-                AnimationTrack:Stop();
-            end
-        end
+        StopTaskAnim()
         
         RandomPart:SetAttribute("Activated", true)
         
@@ -500,12 +534,7 @@ function NpcService:SetupChef(NPC)
             prevRandomPart:SetAttribute("Activated", false);
         end
         
-        local AnimationTracks = NPC_Animator:GetPlayingAnimationTracks();
-        for _, AnimationTrack in pairs(AnimationTracks) do
-            if AnimationTrack.Name == "TaskAnim" then
-                AnimationTrack:Stop();
-            end
-        end
+        StopTaskAnim()
         
         if prevSignal then
             prevSignal:Disconnect();
@@ -561,7 +590,6 @@ function NpcService:SetupChef(NPC)
         
         local AnimationTracks = NPC_Animator:GetPlayingAnimationTracks()
         for _, AnimationTrack in pairs(AnimationTracks) do
-            --print(AnimationTrack.Name);
             --[[if AnimationTrack.Name == "RunAnim" or AnimationTrack.Name == "Animation1" then
                 
             end]]
@@ -656,6 +684,7 @@ function NpcService:SetupChef(NPC)
                 Path:Run(Character);
             end
         elseif travelToRandomPoint == true then
+            StopTaskAnim()
             NPC_Humanoid.WalkSpeed = NPC_WalkSpeed;
         end
     end)
@@ -663,8 +692,10 @@ function NpcService:SetupChef(NPC)
     Path.Error:Connect(function(errorType)
         warn("errorType | ", errorType, "targetPresent:", targetPresent, "travelRandom:", travelToRandomPoint, "status:", Path:GetStatus())
         if travelToRandomPoint == true then
-            if tostring(errorType) == "ComputationError" or tostring(errorType) == "TargetUnreachable" or tostring(errorType) == "LimitReached" then
-                print(tostring(errorType),'| ', "targetPresent:", targetPresent, "travelRandom:", travelToRandomPoint, "status:", Path:GetStatus())
+            if errorType == PathfindingService.ErrorType.ComputationError 
+            or errorType == PathfindingService.ErrorType.TargetUnreachable  
+            or errorType == PathfindingService.ErrorType.LimitReached  then
+                warn("REDIRECT:", tostring(errorType),'| ', "targetPresent:", targetPresent, "travelRandom:", travelToRandomPoint, "status:", Path:GetStatus())
                 
                 travelToRandomPoint = false;
     
@@ -674,11 +705,14 @@ function NpcService:SetupChef(NPC)
                 end
             end
         elseif targetPresent == true then
-            if tostring(errorType) == "ComputationError" then
-                print('ComputationError | ', "targetPresent:", targetPresent, "travelRandom:", travelToRandomPoint, "status:", Path:GetStatus())
+            if errorType == PathfindingService.ErrorType.ComputationError then
+                warn("HUH:", 'ComputationError | ', "targetPresent:", targetPresent, "travelRandom:", travelToRandomPoint, "status:", Path:GetStatus())
                 if Path:GetStatus() ~= "Idle" then
                     Path:Stop();
                 end
+
+                PlayAnim("Confused")
+                StopTaskAnim()
     
                 targetPresent = false;
                 travelToRandomPoint = false;
@@ -686,6 +720,8 @@ function NpcService:SetupChef(NPC)
                 if prevSignal then
                     prevSignal:Disconnect()
                 end
+
+                TravelToRandomPoint(TaskExclusion);
             end
         end
     end)
@@ -813,7 +849,7 @@ function NpcService:SetupChef(NPC)
         end
     
         task.wait();
-    end    
+    end 
 end
 
 function NpcService:KnitStart()

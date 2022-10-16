@@ -5,6 +5,27 @@ local LocalPlayer = Players.LocalPlayer
 
 local AnimationController = Knit.CreateController { Name = "AnimationController" }
 
+function AnimationController:Animate(Controller, Animation)
+    print(Controller, Animation)
+    local taskAnim = Instance.new("Animation");
+    taskAnim.Name = "TaskAnim";
+    taskAnim.AnimationId = Animation
+
+    local taskAnimTrack = Controller:LoadAnimation(taskAnim)
+    taskAnimTrack.Looped = false;
+
+    for _, AnimationTrack in pairs(Controller:GetPlayingAnimationTracks()) do
+        AnimationTrack:AdjustSpeed(0.58);
+    end
+
+    if Controller and Animation then
+        taskAnimTrack:Play();
+        taskAnimTrack:AdjustSpeed(0.58);
+        taskAnimTrack.Stopped:Wait()
+        print("STOP")
+    end
+end;
+
 function AnimationController:SetAnimations(Animations)
     local Character = LocalPlayer.Character
     if Character and Animations then
@@ -30,6 +51,11 @@ function AnimationController:KnitStart()
     local ProximityService = Knit.GetService("ProximityService")
     ProximityService.SetAnimations:Connect(function(Animations)
         self:SetAnimations(Animations);
+    end)
+
+    local NpcService = Knit.GetService("NpcService")
+    NpcService.PlayAnimation:Connect(function(Controller, Animation)
+        self:Animate(Controller, Animation);
     end)
 end
 
