@@ -1,6 +1,7 @@
 ----- Services -----
 local ReplicatedStorage = game:GetService("ReplicatedStorage");
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local ServerStorage = game:GetService("ServerStorage")
 local Debris = game:GetService("Debris")
 local CollectionService = game:GetService("CollectionService");
@@ -15,16 +16,12 @@ local PlayerTrack = require(Knit.ServerModules.PlayerTrack);
 local PlayerSettings = require(Knit.ReplicatedModules.SettingsUtil);
 local SystemInfo = require(Knit.ReplicatedAssets.SystemInfo);
 
------ Game Modes -----
-local SandboxMode = require(Knit.ServerModules.Modes.ClassicRound);
-local RoundMode = require(Knit.ServerModules.Modes.RaceRound);
+----- Tournament Modes -----
+local SandboxMode = require(Knit.ServerModules.GameModes.SandboxMode);
+local RoundMode = require(Knit.ServerModules.GameModes.RoundMode);
 
 ----- Settings -----
 local GAMESTATE = Knit.Config.GAME_STATES;
-local SANDBOX_TIME = Knit.Config.DEFAULT_SANDBOX_TIME;
-local ROUND_TIME = Knit.Config.DEFAULT_ROUND_TIME;
-local INTERMISSION_TIME = Knit.Config.DEFAULT_INTERMISSION_TIME;
-local MAPS = Knit.Config.MAPS;
 
 ----- GameService -----
 local GameService = Knit.CreateService {
@@ -58,6 +55,8 @@ local GameService = Knit.CreateService {
 
         HEffect = Knit.CreateSignal();
         GameC = Knit.CreateSignal();
+
+        UpdateWinner = Knit.CreateSignal();
     };
 }
 
@@ -67,27 +66,42 @@ local Cooldown = {};
 local PartTouchCooldown = {};
 local PartTouchConnections = {};
 
--- MAP SELECTING
-local sortedMaps = {}
-local CopiedMaps = TableUtil.Copy(MAPS);
-
 GameService.Intermission = nil;
-GameService.GameRound = nil;
+GameService.PreviousMap = nil;
+GameService.PreviousMode = nil;
+GameService.GameMode = nil;
 
 GameService.PlayersTracked = {};
+GameService.GetCurrentHunters = {};
 GameService.GameState = nil;
 GameService.SetGameplay = false;
 
+GameService.IsTournament = false;
+GameService.TournamentMode = nil;
+
+
 local currentMap = nil;
 local nextMap = nil;
+local boostedMap = false;
 
-local currentMode = "Sandbox";
+local currentMode = nil;
+local nextMode = nil;
+local boostedMode = false;
 
 local customMap = nil;
+local customMode = nil;
 
 local numOfIntermissions = 0;
 
 customMap = Knit.Config.CUSTOM_MAP;
+customMode = Knit.Config.CUSTOM_MODE;
+
+function GameService:ClearCooldowns()
+    Cooldown = {};
+    PartTouchCooldown = {};
+    PartTouchConnections = {};
+    return
+end
 
 function GameService:GetGameRound()
     return self.GameRound;
@@ -95,6 +109,25 @@ end
 
 function GameService:SetGameRound(gameMode)
     self.GameRound = gameMode;
+end
+
+function GameService:ForceMode(modeName)
+    if modeName then
+        nextMode = modeName
+    end
+end
+
+function GameService:ForceMap(mapName)
+    if mapName then
+        nextMap = mapName
+        boostedMap = true;
+    end
+
+    self.Client.UpdateMapQueue:FireAll({
+        CurrentMap = currentMap,
+        NextMap = nextMap,
+        Boosted = boostedMap,
+    });
 end
 
 function GameService:GetGameState()
@@ -110,6 +143,14 @@ end
 
 function GameService:SetPreviousMap(mapName)
     self.PreviousMap = mapName;
+end
+
+function GameService:GetPreviousMode()
+    return self.PreviousMode;
+end
+
+function GameService:SetPreviousMode(modeName)
+    self.PreviousMode = modeName;
 end
 
 function GameService:SetState(state)
@@ -138,9 +179,23 @@ function GameService.Client:GetMapData()
     --print("[GameService]: Requested for map data")
     return {
         --LevelData = levelData, 
-        MapData = sortedMaps,
+        --MapData = sortedMaps,
         --ModeData = sortedModes,
     }
+end
+
+function GameService:ClearTracked(player)
+    if player then
+        if self.PlayersTracked[player.UserId] then
+            self.PlayersTracked[player.UserId] = nil
+            return
+        end
+    end
+    self.PlayersTracked = {};
+end
+
+function GameService:AddTracker(player)
+    self.PlayersTracked[player.UserId] = PlayerTrack.new(player);
 end
 
 function GameService:GetPlayerTracked(player)
@@ -158,6 +213,7 @@ function GameService:SetLighting(MapName, Player)
     if PreviousMap ~= nil then
         CurrentMapName = PreviousMap
     end
+    print(CurrentMapName)
     print("[GameService]: MAP LIGHTING:", MapName, MapSettings[CurrentMapName].Lighting)
     local LightingInfo = MapSettings[CurrentMapName].Lighting;
     if Player then
@@ -165,6 +221,12 @@ function GameService:SetLighting(MapName, Player)
     else
         for _, player : Player in pairs(CollectionService:GetTagged(Knit.Config.ALIVE_TAG)) do
             self.Client.SetLighting:Fire(player, LightingInfo)
+        end
+
+        for _, player : Player in pairs(game.Players:GetPlayers()) do
+            if PAdmins[player.Name] == true then
+                self.Client.SetLighting:Fire(player, LightingInfo)
+            end
         end
     end
 end
@@ -184,15 +246,7 @@ end
 
 function GameService:ChangeSetting(player, SettingName, Option)
     --print("CHANGE SETTING:",player, SettingName, Option, PlayerSettings[SettingName].Options[Option][2])
-    if SettingName == "AFK" then
-        if PlayerSettings[SettingName].Options[Option][2] == true then
-            --print("Added AFK TAG")
-            CollectionService:AddTag(player, Knit.Config.AFK_TAG)
-        else
-            --print("Removed AFK TAG")
-            CollectionService:RemoveTag(player, Knit.Config.AFK_TAG)
-        end
-    elseif SettingName == "Music" then
+    if SettingName == "Music" then
         local AudioService = Knit.GetService("AudioService")
         if PlayerSettings[SettingName].Options[Option][2] == false then
             --print("MUTED")
@@ -214,138 +268,23 @@ function GameService.Client:GetGameResults(player)
     return self:GetGameResults(player);
 end
 
-local Select = false
-
-for _, mapData in pairs(CopiedMaps) do
-    sortedMaps[#sortedMaps + 1] = {
-        name = mapData.MapName,
-        chance = math.random(1, 10) / 10 -- 0.1 - 1
-    }
-end
-
-table.sort(sortedMaps, function(itemA, itemB)
-    return itemA.chance > itemB.chance
-end)
-
-local function getRandomMap()
-    local random = math.random();
-    local selectedMap = nil;
-
-    for _, map in pairs(sortedMaps) do
-        if random <= map.chance and selectedMap == nil then
-            selectedMap = map.name;
-            map.chance = -0.1;
-        end
-        map.chance += 0.1;
-    end
-
-    if selectedMap == nil then
-        table.sort(sortedMaps, function(itemA, itemB)
-            return itemA.chance > itemB.chance
-        end)
-        selectedMap = sortedMaps[1].name;
-        sortedMaps[1].chance = 0;
-    end
-    return selectedMap;
-end
-
 if customMap ~= nil then
     nextMap = customMap;
 else
-    nextMap = getRandomMap();
+    --nextMap = getRandomMap();
 end
 
-function GameService:StartGame(DeveloperEnabled : boolean)
+if customMode ~= nil then
+    nextMode = customMode;
+else
+    --nextMode = getRandomMode();
+end
 
-    task.wait(15);
-
-    while true do
-        --// Intermission Started
-        print("[GameService]: Intermission Started")
-        self:SetState(GAMESTATE.INTERMISSION)
-        self.Client.UpdateMapQueue:FireAll({
-            CurrentMap = currentMap,
-            NextMap = nextMap,
-            --Boosted = boostedMap,
-        });
-
-        Cooldown = {};
-        PartTouchCooldown = {};
-        PartTouchConnections = {};
-        self.PlayersTracked = {};
-
-        self.Intermission = Intermission.new(INTERMISSION_TIME, numOfIntermissions);
-        numOfIntermissions += 1;
-        
-        --// Intermission Ended
-        print("[GameService]: Intermission Ended")
-
-        task.wait(3)
-
-        self:SetState(GAMESTATE.GAMEPLAY)
-        print("[GameService]: Gameplay Starting soon")
-
-        for _, player : Player in pairs(CollectionService:GetTagged(Knit.Config.ALIVE_TAG)) do
-            self.PlayersTracked[player.UserId] = PlayerTrack.new(player);
-        end
-
-        if customMap ~= nil then
-            currentMap = customMap
-            nextMap = customMap
-        else
-            currentMap = nextMap;
-            nextMap = getRandomMap();
-        end 
-
-        self.Client.UpdateMapQueue:FireAll({
-            CurrentMap = currentMap,
-            NextMap = nextMap,
-            Boosted = boostedMap,
-        });
-
-        boostedMap = false
-        
-        print("[GameService]: Gameplay Started")
-
-        if tostring(currentMode) == "Round" then
-            self.GameRound = RoundMode.new(ROUND_TIME, numOfIntermissions, currentMap);
-        else
-            self.GameRound = SandboxMode.new(SANDBOX_TIME, numOfIntermissions, currentMap);
-        end
-
-        --// Game Round Ended
-        print("[GameService]: Gameplay Ended")
-        self:SetState(GAMESTATE.ENDED)
-
-        GameService:SetLighting("Lobby")
-
-        Players.RespawnTime = 1.3;
-        --// @todo: Display Winner goes here after map cutscene ends
-        --Knit.Services.WinService:DisplayWinner();
-
-        -- Fire results UI
-        print("[GameService]: Firing results UI")
-        for _, player : Player in pairs(CollectionService:GetTagged(Knit.Config.ALIVE_TAG)) do
-            if self.PlayersTracked[player.UserId] then
-                self.PlayersTracked[player.UserId]:UpdateResults(player)
-                self.Client.ResultSignal:Fire(player, self.PlayersTracked[player.UserId]:GetPlayerStats(player))
-                local profile = Knit.DataService:GetProfile(player)
-                if profile then
-                    RewardService:GiveReward(profile, {
-                        Coins = self.PlayersTracked[player.UserId]:GetPlayerStats(player).CoinsEarned;
-                    })
-                end
-                self.PlayersTracked[player.UserId]:Destroy();
-                self.PlayersTracked[player.UserId] = nil;
-            end
-        end
-
-        self.PlayersTracked = {};
-
-        -- Award Winners
-        print("[GameService]: Awarding winners a win")
-        
-        task.wait(3)
+function GameService:StartGame(gamemode : string)
+    if gamemode == "Round" then
+        self.GameMode = RoundMode:StartMode();
+    else
+        self.GameMode = SandboxMode:StartMode();
     end
 end
 
@@ -375,12 +314,12 @@ function GameService:KnitInit()
         --print(player, SettingName, Option)
         self:ChangeSetting(player, SettingName, Option);
     end)
-
 end
 
 
 function GameService:KnitStart()
-    self:StartGame(false);
+    task.wait(5)
+    self:StartGame();
 end
 
 return GameService
