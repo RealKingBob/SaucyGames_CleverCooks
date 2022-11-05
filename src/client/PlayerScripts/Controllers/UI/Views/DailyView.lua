@@ -230,7 +230,7 @@ end
 
 function DailyView:KnitInit()
     local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
-    local viewsUI = PlayerGui:WaitForChild("Views")
+    local viewsUI = PlayerGui:WaitForChild("Main"):WaitForChild("Views")
 
     self.DailyView = viewsUI:WaitForChild("Daily")
 

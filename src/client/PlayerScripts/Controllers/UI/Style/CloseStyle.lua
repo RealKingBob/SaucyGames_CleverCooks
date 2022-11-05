@@ -6,7 +6,7 @@ local CollectionService = game:GetService("CollectionService")
 
 function CloseStyle:StyleButton(Container)
     Container.MouseButton1Click:Connect(function()
-        if Container.Parent.Parent:IsA("ScreenGui") then
+        if Container.Parent.Parent:IsA("ScreenGui") or Container.Parent.Parent:IsA("Frame") then
             local CurrentController = tostring(Container.Parent.Parent.Name .. "UI")
             --print(CurrentController)
             Knit.GetController(CurrentController):CloseView(nil, true);

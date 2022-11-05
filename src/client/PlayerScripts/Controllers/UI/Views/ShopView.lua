@@ -11,7 +11,7 @@ local MarketplaceService = game:GetService("MarketplaceService")
 local LocalPlayer = Players.LocalPlayer;
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local viewsUI = PlayerGui:WaitForChild("Views")
+local viewsUI = PlayerGui:WaitForChild("Main"):WaitForChild("Views")
 
 local ShopGui = viewsUI:WaitForChild("Shop")
 local ScrollingFrame = ShopGui:WaitForChild("Book"):WaitForChild("Page"):WaitForChild("Page"):WaitForChild("ScrollingFrame")

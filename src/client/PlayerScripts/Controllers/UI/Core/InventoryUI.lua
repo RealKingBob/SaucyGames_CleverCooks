@@ -68,7 +68,7 @@ function InventoryUI:AddItem(ItemName, Type)
 
 
         local InventoryItemPrefab = PlayerGui:WaitForChild("Prefabs"):WaitForChild("InventoryItem");
-        local InventoryView = PlayerGui:WaitForChild("Views"):WaitForChild("Inventory");
+        local InventoryView = PlayerGui:WaitForChild("Main"):WaitForChild("Views"):WaitForChild("Inventory");
         local MainContainer = InventoryView:WaitForChild("Book"):WaitForChild("Page"):WaitForChild("Page"):WaitForChild("ContentHolder"):WaitForChild("Contents"):WaitForChild("Main"):WaitForChild("Frame"):WaitForChild("MainInventory"):WaitForChild("Main"):WaitForChild("Inner"):WaitForChild("MainContainer");
 
         local Clone = InventoryItemPrefab:Clone() do
@@ -140,7 +140,7 @@ function InventoryUI:AddItem(ItemName, Type)
 end
 
 function InventoryUI:GetItem(ItemName, Type)
-    local InventoryView = PlayerGui:WaitForChild("Views"):WaitForChild("Inventory");
+    local InventoryView = PlayerGui:WaitForChild("Main"):WaitForChild("Views"):WaitForChild("Inventory");
     local MainContainer = InventoryView:WaitForChild("Book"):WaitForChild("Page"):WaitForChild("Page"):WaitForChild("ContentHolder"):WaitForChild("Contents"):WaitForChild("Main"):WaitForChild("Frame"):WaitForChild("MainInventory"):WaitForChild("Main"):WaitForChild("Inner"):WaitForChild("MainContainer");
 
     if ItemName and Type then
@@ -159,7 +159,7 @@ function InventoryUI:SelectItem(ItemName, Type)
 
         if ItemData == nil then return end
 
-        local InventoryView = PlayerGui:WaitForChild("Views"):WaitForChild("Inventory");
+        local InventoryView = PlayerGui:WaitForChild("Main"):WaitForChild("Views"):WaitForChild("Inventory");
         local SelectionStats = InventoryView:WaitForChild("Book"):WaitForChild("Page"):WaitForChild("Page"):WaitForChild("ContentHolder"):WaitForChild("Contents"):WaitForChild("Main"):WaitForChild("Frame"):WaitForChild("SelectionStats"):WaitForChild("Main");
 
         SelectionStats.ImageInfo:WaitForChild("ImageLabel").Image = ItemData.DecalId;
@@ -213,7 +213,7 @@ function InventoryUI:SelectCategory(CategoryName)
     if CategoryName then
         CategorySelected = CategoryName;
 
-        local InventoryView = PlayerGui:WaitForChild("Views"):WaitForChild("Inventory");
+        local InventoryView = PlayerGui:WaitForChild("Main"):WaitForChild("Views"):WaitForChild("Inventory");
 
         local ButtonContainer = InventoryView:WaitForChild("Book"):WaitForChild("Page"):WaitForChild("Page"):WaitForChild("ContentHolder"):WaitForChild("Buttons");
 
@@ -245,7 +245,7 @@ function InventoryUI:UpdateInventory(Inventory)
 
         LastInventory = Inventory
 
-        local InventoryView = PlayerGui:WaitForChild("Views"):WaitForChild("Inventory");
+        local InventoryView = PlayerGui:WaitForChild("Main"):WaitForChild("Views"):WaitForChild("Inventory");
 
         local MainContainer = InventoryView:WaitForChild("Book"):WaitForChild("Page"):WaitForChild("Page"):WaitForChild("ContentHolder"):WaitForChild("Contents"):WaitForChild("Main"):WaitForChild("Frame"):WaitForChild("MainInventory"):WaitForChild("Main"):WaitForChild("Inner"):WaitForChild("MainContainer");
 
@@ -294,7 +294,7 @@ end
 
 function InventoryUI:KnitStart()
     local equipButtonDeb = false
-    local InventoryView = PlayerGui:WaitForChild("Views"):WaitForChild("Inventory");
+    local InventoryView = PlayerGui:WaitForChild("Main"):WaitForChild("Views"):WaitForChild("Inventory");
 
     local ButtonContainer = InventoryView:WaitForChild("Book"):WaitForChild("Page"):WaitForChild("Page"):WaitForChild("ContentHolder"):WaitForChild("Buttons");
 

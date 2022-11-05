@@ -16,14 +16,13 @@ local ReplicatedModules = Shared:WaitForChild("Modules")
 local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 
 local mainGui = PlayerGui:WaitForChild("GUI")
-local viewsUI = PlayerGui:WaitForChild("Views")
+local viewsUI = PlayerGui:WaitForChild("Main"):WaitForChild("Views")
 
 local RecipesGui = viewsUI:WaitForChild("Recipes")
 
-local mainScreen = PlayerGui:WaitForChild("GUI"):WaitForChild("MainScreen")
-local IngredientsTab = mainScreen:WaitForChild("IngredientsTab")
-local foodNameDisplayed = mainScreen:FindFirstChild("FoodName")
-
+local BottomFrame = PlayerGui:WaitForChild("Main"):WaitForChild("BottomFrame")
+local IngredientsTab = BottomFrame:WaitForChild("IngredientsTab")
+local foodNameDisplayed = BottomFrame:FindFirstChild("FoodName")
 
 local recipeSection = RecipesGui:WaitForChild("RecipeFrame")
 local recipeList = recipeSection:WaitForChild("RecipeList")

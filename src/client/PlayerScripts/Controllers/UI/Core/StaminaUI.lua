@@ -178,7 +178,7 @@ function StaminaUI:SetupStamina(Character)
             AvatarService.BoostEffect:Fire(true)
 
             local MainUI = PlayerGui:WaitForChild("Main")
-            local BarsFrame = MainUI:WaitForChild("BarsFrame");
+            local BarsFrame = MainUI:WaitForChild("BottomFrame"):WaitForChild("BarsFrame");
             local StaminaFrame = BarsFrame:WaitForChild("Stamina")
             local StaminaBar = StaminaFrame:WaitForChild("Bar")
             local StaminaTitle = StaminaFrame:WaitForChild("Title")
@@ -186,7 +186,7 @@ function StaminaUI:SetupStamina(Character)
             repeat
                 task.wait(ReductionDelay)
                 Stamina = Stamina - ReductionRate
-                PlayerGui:WaitForChild("Main"):WaitForChild("BarsFrame"):WaitForChild("Stamina"):WaitForChild("Bar"):TweenSize(UDim2.new(Stamina / MaxStamina, 0, 1, 0), 'Out', 'Quint', .1, true)
+                PlayerGui:WaitForChild("Main"):WaitForChild("BottomFrame"):WaitForChild("BarsFrame"):WaitForChild("Stamina"):WaitForChild("Bar"):TweenSize(UDim2.new(Stamina / MaxStamina, 0, 1, 0), 'Out', 'Quint', .1, true)
                 if (sprinting == true) then
                     StaminaBar.BackgroundColor3 = boostStaminaColor;
                 end
@@ -256,7 +256,7 @@ function StaminaUI:SetupStamina(Character)
                 --print(PrevAnim)
 
                 local MainUI = PlayerGui:WaitForChild("Main")
-                local BarsFrame = MainUI:WaitForChild("BarsFrame");
+                local BarsFrame = MainUI:WaitForChild("BottomFrame"):WaitForChild("BarsFrame");
                 local StaminaFrame = BarsFrame:WaitForChild("Stamina")
                 local StaminaBar = StaminaFrame:WaitForChild("Bar")
 
@@ -296,7 +296,7 @@ function StaminaUI:KnitInit()
             if cooldownStamina == true and (Stamina > percentageToUseAgain) then
                 cooldownStamina = false;
                 local MainUI = PlayerGui:WaitForChild("Main")
-                local BarsFrame = MainUI:WaitForChild("BarsFrame");
+                local BarsFrame = MainUI:WaitForChild("BottomFrame"):WaitForChild("BarsFrame");
                 local StaminaFrame = BarsFrame:WaitForChild("Stamina")
                 local StaminaBar = StaminaFrame:WaitForChild("Bar")
                 StaminaBar.BackgroundColor3 = regularStaminaColor;
@@ -304,12 +304,12 @@ function StaminaUI:KnitInit()
     
             if (sprinting == false) and (Stamina < 100) then
                 local MainUI = PlayerGui:WaitForChild("Main")
-                local BarsFrame = MainUI:WaitForChild("BarsFrame");
+                local BarsFrame = MainUI:WaitForChild("BottomFrame"):WaitForChild("BarsFrame");
                 local StaminaFrame = BarsFrame:WaitForChild("Stamina")
                 local StaminaBar = StaminaFrame:WaitForChild("Bar")
                 local StaminaTitle = StaminaFrame:WaitForChild("Title")
                 Stamina += RegenAmount
-                PlayerGui:WaitForChild("Main"):WaitForChild("BarsFrame"):WaitForChild("Stamina"):WaitForChild("Bar"):TweenSize(UDim2.new(Stamina / MaxStamina, 0, 1, 0), 'Out', 'Quint', .1, true)
+                PlayerGui:WaitForChild("Main"):WaitForChild("BottomFrame"):WaitForChild("BarsFrame"):WaitForChild("Stamina"):WaitForChild("Bar"):TweenSize(UDim2.new(Stamina / MaxStamina, 0, 1, 0), 'Out', 'Quint', .1, true)
                 if (sprinting == true) then
                     StaminaBar.BackgroundColor3 = regularStaminaColor;
                 end

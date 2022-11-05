@@ -5,7 +5,7 @@ local ViewsUI = Knit.CreateController { Name = "ViewsUI" }
 local plr = game.Players.LocalPlayer;
 
 local PlayerGui = plr:WaitForChild("PlayerGui");
-local Views = PlayerGui:WaitForChild("Views");
+local Views = PlayerGui:WaitForChild("Main"):WaitForChild("Views");
 local BottomFrame = Views:WaitForChild("BottomFrame");
 local LeftBar = PlayerGui:WaitForChild("LeftBar");
 local LeftContainer = LeftBar:WaitForChild("LeftContainer");
@@ -56,10 +56,10 @@ end
 
 
 --//Public Methods
-function ViewsUI:OpenView(ViewName, ButtonEnabled)
+function ViewsUI:OpenView(ViewName, ButtonEnabled, DisableTween)
 	if (CurrentView and CurrentView.Name == ViewName) then return; end
 	
-	self:CloseView();
+	self:CloseView(nil, nil, DisableTween);
 	
 	CurrentView = Views[ViewName];
     
@@ -81,7 +81,11 @@ function ViewsUI:OpenView(ViewName, ButtonEnabled)
 	CurrentView.Visible = true;
 	CurrentView.Position = UDim2.fromScale(OriginalPosition.X.Scale, 1.6);
 	CurrentView.Size = ViewOriginalSizes[CurrentView.Name]:Lerp(UDim2.fromScale(0, 0), .5);
-	CurrentView:TweenSizeAndPosition(ViewOriginalSizes[CurrentView.Name], OriginalPosition, Enum.EasingDirection.Out, Enum.EasingStyle.Quart, .4, true);
+    if DisableTween == true then
+        CurrentView.Size = ViewOriginalSizes[CurrentView.Name];
+    else
+        CurrentView:TweenSizeAndPosition(ViewOriginalSizes[CurrentView.Name], OriginalPosition, Enum.EasingDirection.Out, Enum.EasingStyle.Quart, .4, true);
+    end
 end
 
 function ViewsUI:GetView(ItemName)
@@ -90,7 +94,7 @@ end
 
 local deselectDeb = false;
 
-function ViewsUI:CloseView(ItemName, ButtonEnabled)
+function ViewsUI:CloseView(ItemName, ButtonEnabled, DisableTween)
     if (not CurrentView) then return; end
 
     if (ItemName and CurrentView.Name ~= ItemName) then return; end
@@ -107,9 +111,16 @@ function ViewsUI:CloseView(ItemName, ButtonEnabled)
         
         local OriginalPosition = ViewOriginalPositions[TargetView.Name];
         
-        TargetView:TweenSizeAndPosition(UDim2.new(), UDim2.fromScale(OriginalPosition.X.Scale, 1.6), Enum.EasingDirection.In, Enum.EasingStyle.Quart, .25, true);
+        if DisableTween == true then
+            --
+        else
+            TargetView:TweenSizeAndPosition(UDim2.new(), UDim2.fromScale(OriginalPosition.X.Scale, 1.6), Enum.EasingDirection.In, Enum.EasingStyle.Quart, .25, true);
+        end
     end
-    
+    if not DisableTween then
+        task.wait(.25)
+    end
+    TargetView.Visible = false;
 end
 
 function ViewsUI:GetCurrentView()
@@ -118,8 +129,10 @@ end
 
 function ViewsUI:KnitStart()
     for _,v in pairs(Views:GetChildren()) do
-        ViewOriginalSizes[v.Name] = v.Size;
-        ViewOriginalPositions[v.Name] = v.Position;
+        if v:IsA("Frame") then
+            ViewOriginalSizes[v.Name] = v.Size;
+            ViewOriginalPositions[v.Name] = v.Position;
+        end
     end
 
     local leftContainerDeb = false;
@@ -151,7 +164,7 @@ function ViewsUI:KnitStart()
                     if (CurrentView and CurrentView.Name == v.Name) then
                         --self:CloseView();
                     else		
-                        self:OpenView(v.Name);
+                        self:OpenView(v.Name, nil, true);
                     end
                 end
             end)
