@@ -5,9 +5,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 ----- Loaded Modules -----
 local Knit = require(ReplicatedStorage.Packages.Knit)
-local Intermission = require(Knit.ServerModules.Intermission);
+local Intermission = require(Knit.Modules.Intermission);
 local TableUtil = require(Knit.Util.TableUtil);
-local RewardService = require(Knit.Services.RewardService);
+--local RewardService = require(Knit.Services.RewardService);
 
 ----- Settings -----
 local GAMESTATE = Knit.Config.GAME_STATES;
@@ -66,7 +66,8 @@ local nightStartShift, nightEndShift = Knit.Config.NIGHT_START_SHIFT, Knit.Confi
 -- f(x)=b(x−min)+a(max−x) / max−min
 
 local function dayShiftHours(time)
-    return endPercent(time - dayStartShift) + startPercent(dayEndShift - time) / dayEndShift - dayStartShift;
+    print(time)
+    return (endPercent*(time - dayStartShift)) + (startPercent*(dayEndShift - time)) / dayEndShift - dayStartShift;
 end
 
 local function nightShiftHours(time)
@@ -127,7 +128,7 @@ function SandboxMode:StartMode()
         task.wait(5)
 
         --// Intermission Started
-        self.Intermission = Intermission.new(INTERMISSION_TIME, self.numOfDays);
+        --self.Intermission = Intermission.new(INTERMISSION_TIME, self.numOfDays);
         self.numOfDays += 1;
 
         --// Intermission Ended

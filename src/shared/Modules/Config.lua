@@ -21,6 +21,12 @@ return {
         FREEPLAY = 4;
     }; --// GAMESTATES FOR THE GAME
 
+    MAPS = {
+        {MapName = "Map1", Chance = 10};
+        {MapName = "Map2", Chance = 10};
+        {MapName = "Map3", Chance = 10};
+    }; --// CURRENT MAPS IN PLAY, [MapName : String, Chance : Number]
+
     WHITELIST = true; --// ALLOWS ONLY QA TEAM WHITELIST TO THE GAME
 
     SINGLE_PLAYER = false; --// ALLOWS YOU TO BE THE HUNTER AS A SINGLE PLAYER [STUDIO TESTING ONLY]

@@ -1,27 +1,18 @@
 ----- Services -----
 local ReplicatedStorage = game:GetService("ReplicatedStorage");
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local ServerStorage = game:GetService("ServerStorage")
-local Debris = game:GetService("Debris")
 local CollectionService = game:GetService("CollectionService");
 
 ----- Loaded Modules -----
 local Knit = require(ReplicatedStorage.Packages.Knit)
 local Signal = require(Knit.Util.Signal);
-local TableUtil = require(Knit.Util.TableUtil);
-local Intermission = require(Knit.ServerModules.Intermission);
-local RewardService = require(Knit.Services.RewardService);
-local PlayerTrack = require(Knit.ServerModules.PlayerTrack);
 local PlayerSettings = require(Knit.ReplicatedModules.SettingsUtil);
 local SystemInfo = require(Knit.ReplicatedAssets.SystemInfo);
 
 ----- Tournament Modes -----
-local SandboxMode = require(Knit.ServerModules.GameModes.SandboxMode);
-local RoundMode = require(Knit.ServerModules.GameModes.RoundMode);
+local SandboxMode = require(Knit.Modules.GameModes.SandboxMode);
+--local RoundMode = require(Knit.Modules.GameModes.RoundMode);
 
 ----- Settings -----
-local GAMESTATE = Knit.Config.GAME_STATES;
 
 ----- GameService -----
 local GameService = Knit.CreateService {
@@ -90,8 +81,6 @@ local boostedMode = false;
 
 local customMap = nil;
 local customMode = nil;
-
-local numOfIntermissions = 0;
 
 customMap = Knit.Config.CUSTOM_MAP;
 customMode = Knit.Config.CUSTOM_MODE;
@@ -194,10 +183,6 @@ function GameService:ClearTracked(player)
     self.PlayersTracked = {};
 end
 
-function GameService:AddTracker(player)
-    self.PlayersTracked[player.UserId] = PlayerTrack.new(player);
-end
-
 function GameService:GetPlayerTracked(player)
     if player and self.PlayersTracked[player.UserId] then
         return self.PlayersTracked[player.UserId];
@@ -221,12 +206,6 @@ function GameService:SetLighting(MapName, Player)
     else
         for _, player : Player in pairs(CollectionService:GetTagged(Knit.Config.ALIVE_TAG)) do
             self.Client.SetLighting:Fire(player, LightingInfo)
-        end
-
-        for _, player : Player in pairs(game.Players:GetPlayers()) do
-            if PAdmins[player.Name] == true then
-                self.Client.SetLighting:Fire(player, LightingInfo)
-            end
         end
     end
 end
@@ -282,7 +261,7 @@ end
 
 function GameService:StartGame(gamemode : string)
     if gamemode == "Round" then
-        self.GameMode = RoundMode:StartMode();
+        --self.GameMode = RoundMode:StartMode();
     else
         self.GameMode = SandboxMode:StartMode();
     end

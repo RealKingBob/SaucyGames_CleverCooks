@@ -6,8 +6,6 @@ local RunService = game:GetService("RunService")
 local ServerStorage = game:GetService("ServerStorage");
 
 ----- Variables -----
-local LibraryAudios = ReplicatedStorage:WaitForChild("Audios");
-local AudioMusic = LibraryAudios:WaitForChild("Music");
 
 ----- Loaded Modules -----
 local Knit = require(ReplicatedStorage.Packages.Knit)
@@ -31,17 +29,13 @@ end
 function Intermission.new(length, tournamentEnabled)
     print("[Intermission]: Intermission Started")
     local GameService = Knit.GetService("GameService")
-    local MapProgessService = Knit.GetService("MapProgessService")
-    local AudioService = Knit.GetService("AudioService");
     local self = setmetatable({}, Intermission)
 
     self._maid = Maid.new()
 
-    local musicDirectory = AudioMusic:FindFirstChild("Lobby").Intro; -- AudioMusic:FindFirstChild(tostring(self.Map)).Background 
 
     task.wait(1)
     --// NOTE: Play music and sound effects for map
-    AudioService:StartMusic(musicDirectory);
 
     if ((#Players:GetPlayers()) >= Knit.Config.MINIMUM_PLAYERS) or RunService:IsStudio() then
         GameService:SetState(Knit.Config.GAME_STATES.INTERMISSION, "Intermission Started")
@@ -50,16 +44,6 @@ function Intermission.new(length, tournamentEnabled)
         self.TimeLeft = length;
         self.InProgress = true;
 
-        for _,player in pairs(Players:GetPlayers()) do
-            if player.Character then
-                if not player.Character:FindFirstChild("Sphere") then
-                    --print("uh")
-                    player:LoadCharacter()
-                end
-            end
-        end
-  
-        MapProgessService:TimerStart(true, tournamentEnabled)
         self:Update();
     else
         warn("[GameService]: Not enough players")
@@ -74,7 +58,6 @@ end
 
 function Intermission:Update()
     local GameService = Knit.GetService("GameService")
-    local MapProgessService = Knit.GetService("MapProgessService")
     
     for timeLeft = self.TimeLeft, 0, -1 do
         if ((#Players:GetPlayers()) < Knit.Config.MINIMUM_PLAYERS) then
@@ -87,7 +70,6 @@ function Intermission:Update()
         task.wait(1)
     end
     --print('Intermission finished')
-    MapProgessService:TimerEnd()
     self.Finished:Fire()
 end
 
