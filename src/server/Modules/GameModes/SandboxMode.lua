@@ -61,13 +61,13 @@ end
 table.sort(sortedMaps, function(itemA, itemB) return itemA.chance > itemB.chance end)
 
 -- Private Functions
-local startPercent, endPercent, dayStartShift, dayEndShift = 0, 1, Knit.Config.DAY_START_SHIFT, Knit.Config.DAY_END_SHIFT; -- 9 am to 5 pm
+local startPercent, endPercent, dayStartShift, dayEndShift = 0, 100, Knit.Config.DAY_START_SHIFT, Knit.Config.DAY_END_SHIFT; -- 9 am to 5 pm
 local nightStartShift, nightEndShift = Knit.Config.NIGHT_START_SHIFT, Knit.Config.NIGHT_END_SHIFT; -- 12 am to 6 am
 -- f(x)=b(x−min)+a(max−x) / max−min
 
 local function dayShiftHours(time)
     print(time)
-    return (endPercent*(time - dayStartShift)) + (startPercent*(dayEndShift - time)) / dayEndShift - dayStartShift;
+    return (((endPercent * (time - dayStartShift)) + (startPercent * (dayEndShift - time))) / (dayEndShift - dayStartShift));
 end
 
 local function nightShiftHours(time)
@@ -160,7 +160,7 @@ function SandboxMode:StartMode()
         -- change map and spawn players 
 
         for i = 0, GAMEPLAY_TIME do
-            local currentTime = dayShiftHours(i / GAMEPLAY_TIME);
+            local currentTime = dayShiftHours((i / GAMEPLAY_TIME) * 100);
             print("currentTime", currentTime)
             task.wait(1)
         end
