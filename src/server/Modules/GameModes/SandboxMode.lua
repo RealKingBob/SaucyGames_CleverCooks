@@ -15,16 +15,6 @@ local GAMEPLAY_TIME = Knit.Config.DEFAULT_SANDBOX_TIME;
 local INTERMISSION_TIME = Knit.Config.DEFAULT_INTERMISSION_TIME;
 local MAPS = Knit.Config.MAPS;
 
------ Team Based Modes -----
-local TeamModes = Knit.ServerModules.ModeAssets.TeamModes;
-local T_DominationRound = require(TeamModes.DominationRound);
-
-
------ Final Modes -----
-local FinalModes = Knit.ServerModules.ModeAssets.FinalModes;
-local F_TileFallingRound = require(FinalModes.TileFallingRound);
-
-
 -- Tables
 local Cooldown = {};
 local PartTouchCooldown = {};
@@ -46,18 +36,21 @@ local customMode = nil;
 customMap = Knit.Config.CUSTOM_MAP;
 customMode = Knit.Config.CUSTOM_MODE;
 
-local NormalMode = Knit.CreateService {
-    Name = "NormalMode",
+local SandboxMode = Knit.CreateService {
+    Name = "SandboxMode",
     Client = {},
 }
 
------ Normal Mode -----
-NormalMode.numOfDays = 0;
+----- Sandbox Mode -----
+SandboxMode.numOfDays = 0;
 
-NormalMode.Intermission = nil;
-NormalMode.PreviousMap = nil;
-NormalMode.PreviousMode = nil;
-NormalMode.GameMode = nil;
+SandboxMode.Intermission = nil;
+SandboxMode.PreviousMap = nil;
+SandboxMode.PreviousMode = nil;
+SandboxMode.GameMode = nil;
+
+SandboxMode.percentageTillNight = 0;
+
 
 -- Initialize the maps and modes in sorted Tables
 
@@ -68,6 +61,18 @@ end
 table.sort(sortedMaps, function(itemA, itemB) return itemA.chance > itemB.chance end)
 
 -- Private Functions
+local startPercent, endPercent, dayStartShift, dayEndShift = 0, 1, Knit.Config.DAY_START_SHIFT, Knit.Config.DAY_END_SHIFT; -- 9 am to 5 pm
+local nightStartShift, nightEndShift = Knit.Config.NIGHT_START_SHIFT, Knit.Config.NIGHT_END_SHIFT; -- 12 am to 6 am
+-- f(x)=b(x−min)+a(max−x) / max−min
+
+local function dayShiftHours(time)
+    return endPercent(time - dayStartShift) + startPercent(dayEndShift - time) / dayEndShift - dayStartShift;
+end
+
+local function nightShiftHours(time)
+    return endPercent(time - nightStartShift) + startPercent(nightEndShift - time) / nightEndShift - nightStartShift;
+end
+
 local function getRandomMap()
     local random = math.random();
     local selectedMap = nil;
@@ -100,7 +105,7 @@ else
     nextMap = getRandomMap();
 end
 
-function NormalMode:StartMode()
+function SandboxMode:StartMode()
     print("SANDBOX MODE STARTED")
 
     local GameService = Knit.GetService("GameService");
@@ -133,11 +138,11 @@ function NormalMode:StartMode()
         GameService:SetState(GAMESTATE.GAMEPLAY)
         print("[GameService]: Gameplay Starting soon, getting map mode")
 
-        for _, player : Player in pairs(CollectionService:GetTagged(Knit.Config.ALIVE_TAG)) do
+        --[[for _, player : Player in pairs(CollectionService:GetTagged(Knit.Config.ALIVE_TAG)) do
             GameService:AddTracker(player)
-        end
+        end]]
 
-        currentMap = getRandomMap();
+        --currentMap = getRandomMap();
 
         print("MAP;", currentMap, nextMap)
 
@@ -153,11 +158,17 @@ function NormalMode:StartMode()
 
         -- change map and spawn players 
 
+        for i = 0, GAMEPLAY_TIME do
+            local currentTime = dayShiftHours(i / GAMEPLAY_TIME);
+            print("currentTime", currentTime)
+            task.wait(1)
+        end
+
         --// Game Round Ended
         print("[GameService]: Gameplay Ended")
         GameService:SetState(GAMESTATE.ENDED)
 
-        GameService:SetLighting("Lobby")
+        --[[GameService:SetLighting("Lobby")
 
         -- Fire results UI
         print("[GameService]: Firing results UI")
@@ -205,18 +216,18 @@ function NormalMode:StartMode()
                     end
                 end
             end
-        end
+        end]]
     end
 end
 
-function NormalMode:KnitStart()
+function SandboxMode:KnitStart()
     
 end
 
 
-function NormalMode:KnitInit()
+function SandboxMode:KnitInit()
     
 end
 
 
-return NormalMode
+return SandboxMode
