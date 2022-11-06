@@ -61,13 +61,32 @@ end
 table.sort(sortedMaps, function(itemA, itemB) return itemA.chance > itemB.chance end)
 
 -- Private Functions
-local startPercent, endPercent, dayStartShift, dayEndShift = 0, 100, Knit.Config.DAY_START_SHIFT, Knit.Config.DAY_END_SHIFT; -- 9 am to 5 pm
+local startPercent, endPercent, dayStartShift, dayEndShift = 0, 1, Knit.Config.DAY_START_SHIFT, Knit.Config.DAY_END_SHIFT; -- 9 am to 5 pm
 local nightStartShift, nightEndShift = Knit.Config.NIGHT_START_SHIFT, Knit.Config.NIGHT_END_SHIFT; -- 12 am to 6 am
 -- f(x)=b(x−min)+a(max−x) / max−min
+-- m+t/10(M−m)
 
-local function dayShiftHours(time)
-    print(time)
-    return (((endPercent * (time - dayStartShift)) + (startPercent * (dayEndShift - time))) / (dayEndShift - dayStartShift));
+local function formatTime(timeVal)
+    local split = tostring(timeVal):split('.')
+    local hour = (tonumber(split[1]) ~= nil and tonumber(split[1])) or timeVal;
+    local min = (tonumber(split[2]) ~= nil and tonumber(split[2])) or 0;
+
+    min = (min / 100) * 60;
+
+    local period = "AM"
+
+    if hour >= 12 then
+        period = "PM"
+        hour = hour ~= 12 and hour - 12 or hour
+    end
+
+    return string.format("%.2d:%.2d %s", hour, min, period)
+end
+
+local function dayShiftHours(timeVal)
+    --print(timeVal, startPercent, endPercent, dayStartShift, dayEndShift)
+    return (dayStartShift + (timeVal / endPercent) * (dayEndShift - dayStartShift));
+    --return (((endPercent * (timeVal - dayStartShift)) + (startPercent * (dayEndShift - timeVal))) / (dayEndShift - dayStartShift));
 end
 
 local function nightShiftHours(time)
@@ -159,11 +178,15 @@ function SandboxMode:StartMode()
 
         -- change map and spawn players 
 
-        for i = 0, GAMEPLAY_TIME do
-            local currentTime = dayShiftHours((i / GAMEPLAY_TIME) * 100);
-            print("currentTime", currentTime)
-            task.wait(1)
-        end
+        local RiseTween = TweenInfo.new(GAMEPLAY_TIME, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut);
+        local TweenModule = require(Knit.ReplicatedModules.TweenUtil);
+
+        local TimeTween = TweenModule.new(RiseTween, function(Alpha)
+            local currentTime = dayShiftHours((Alpha))
+            print("currentTime", formatTime(string.format("%.2f", currentTime)))
+        end)
+        
+        TimeTween:Play();
 
         --// Game Round Ended
         print("[GameService]: Gameplay Ended")
