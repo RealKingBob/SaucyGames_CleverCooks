@@ -12,6 +12,7 @@ local TableUtil = require(Knit.Util.TableUtil);
 ----- Settings -----
 local GAMESTATE = Knit.Config.GAME_STATES;
 local GAMEPLAY_TIME = Knit.Config.DEFAULT_SANDBOX_TIME;
+local NIGHT_TIME = Knit.Config.DEFAULT_NIGHT_TIME;
 local INTERMISSION_TIME = Knit.Config.DEFAULT_INTERMISSION_TIME;
 local MAPS = Knit.Config.MAPS;
 
@@ -49,7 +50,7 @@ SandboxMode.PreviousMap = nil;
 SandboxMode.PreviousMode = nil;
 SandboxMode.GameMode = nil;
 
-SandboxMode.percentageTillNight = 0;
+SandboxMode.percentageTillNight = 90; --// 10%
 
 
 -- Initialize the maps and modes in sorted Tables
@@ -80,6 +81,10 @@ local function formatTime(timeVal)
         hour = hour ~= 12 and hour - 12 or hour
     end
 
+    if hour == 0 then
+        hour = 12
+    end
+
     return string.format("%.2d:%.2d %s", hour, min, period)
 end
 
@@ -89,8 +94,8 @@ local function dayShiftHours(timeVal)
     --return (((endPercent * (timeVal - dayStartShift)) + (startPercent * (dayEndShift - timeVal))) / (dayEndShift - dayStartShift));
 end
 
-local function nightShiftHours(time)
-    return endPercent(time - nightStartShift) + startPercent(nightEndShift - time) / nightEndShift - nightStartShift;
+local function nightShiftHours(timeVal)
+    return (nightStartShift + (timeVal / endPercent) * (nightEndShift - nightStartShift));
 end
 
 local function getRandomMap()
@@ -148,7 +153,6 @@ function SandboxMode:StartMode()
 
         --// Intermission Started
         --self.Intermission = Intermission.new(INTERMISSION_TIME, self.numOfDays);
-        self.numOfDays += 1;
 
         --// Intermission Ended
         print("[GameService]: Intermission Ended")
@@ -178,19 +182,56 @@ function SandboxMode:StartMode()
 
         -- change map and spawn players 
 
-        local RiseTween = TweenInfo.new(GAMEPLAY_TIME, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut);
+        --[[local RiseTween = TweenInfo.new(GAMEPLAY_TIME, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut);
         local TweenModule = require(Knit.ReplicatedModules.TweenUtil);
 
         local TimeTween = TweenModule.new(RiseTween, function(Alpha)
+            print(Alpha)
             local currentTime = dayShiftHours((Alpha))
             print("currentTime", formatTime(string.format("%.2f", currentTime)))
-        end)
+        end)]]
+
+        for i = 0, GAMEPLAY_TIME do
+            local currentTime = dayShiftHours((i / GAMEPLAY_TIME))
+            GameService.Client.AdjustTimeSignal:FireAll({
+                Day = self.numOfDays,
+                Time = formatTime(string.format("%.2f", currentTime)),
+            });
+            print("Day:", self.numOfDays ,"| Time:", formatTime(string.format("%.2f", currentTime)))
+            task.wait(1)
+        end
+
+        local Synced = require(Knit.ReplicatedModules.Synced);
+        local DailyShopOffset = (60 * 60 * Knit.Config.DAILY_SHOP_OFFSET); 
+        local Day = math.floor((Synced.time() + DailyShopOffset) / (60 * 60 * 24))
+        local seed = Random.new(Day);
+
+        local weightNumber = seed:NextNumber(0, 100);
+
+        if weightNumber <= self.percentageTillNight then
+            warn("OOO SPOOKY NIGHT")
+            self.percentageTillNight = 2;
+            for i = 0, NIGHT_TIME do
+                local currentTime = nightShiftHours((i / NIGHT_TIME))
+                GameService.Client.AdjustTimeSignal:FireAll({
+                    Day = self.numOfDays,
+                    Time = formatTime(string.format("%.2f", currentTime)),
+                });
+                print("Night:", self.numOfDays ,"| Time:", formatTime(string.format("%.2f", currentTime)))
+                task.wait(1)
+            end
+        else
+            self.percentageTillNight += 10;
+        end
         
-        TimeTween:Play();
+        --TimeTween:Play();
+        --TimeTween.Completed:Wait();
 
         --// Game Round Ended
         print("[GameService]: Gameplay Ended")
         GameService:SetState(GAMESTATE.ENDED)
+
+        self.numOfDays += 1;
 
         --[[GameService:SetLighting("Lobby")
 
