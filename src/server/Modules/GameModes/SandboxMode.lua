@@ -85,7 +85,8 @@ local function formatTime(timeVal)
         hour = 12
     end
 
-    return string.format("%.2d:%.2d %s", hour, min, period)
+    return string.format("%d:%02d %s", hour, min, period)
+    --return string.format("%.2d:%.2d %s", hour, min, period)
 end
 
 local function dayShiftHours(timeVal)
@@ -196,6 +197,7 @@ function SandboxMode:StartMode()
             GameService.Client.AdjustTimeSignal:FireAll({
                 Day = self.numOfDays,
                 Time = formatTime(string.format("%.2f", currentTime)),
+                IsNight = false,
             });
             print("Day:", self.numOfDays ,"| Time:", formatTime(string.format("%.2f", currentTime)))
             task.wait(1)
@@ -216,6 +218,7 @@ function SandboxMode:StartMode()
                 GameService.Client.AdjustTimeSignal:FireAll({
                     Day = self.numOfDays,
                     Time = formatTime(string.format("%.2f", currentTime)),
+                    IsNight = true,
                 });
                 print("Night:", self.numOfDays ,"| Time:", formatTime(string.format("%.2f", currentTime)))
                 task.wait(1)

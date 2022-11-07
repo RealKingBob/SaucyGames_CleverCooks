@@ -2,15 +2,33 @@ local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local ClockUI = Knit.CreateController { Name = "ClockUI" }
 
-function ClockUI:AdjustTime(Day, Time)
-    
+local plr = game.Players.LocalPlayer;
+
+local PlayerGui = plr:WaitForChild("PlayerGui");
+
+function ClockUI:AdjustTime(Day, Time, IsNight)
+    local LeftBar = PlayerGui:WaitForChild("LeftBar");
+    local MainContainer = LeftBar:WaitForChild("MainContainer");
+
+    local DayFrame = MainContainer:WaitForChild("Day");
+    local TimeFrame = MainContainer:WaitForChild("Time");
+
+    DayFrame.TextLabel.Text = "Day " .. tostring(Day);
+
+    if IsNight then
+        
+    else
+
+    end
+    TimeFrame.TextLabel.Text = tostring(Time);
 end
 
 function ClockUI:KnitStart()
     local GameService = Knit.GetService("GameService")
 
-    GameService.AdjustTimeSignal:Connect(function(Day, Time)
-        self:AdjustTime(Day, Time)
+    GameService.AdjustTimeSignal:Connect(function(Package)
+        local Day, Time, IsNight = Package["Day"], Package["Time"], Package["IsNight"];
+        self:AdjustTime(Day, Time, IsNight);
     end)
     
 end
