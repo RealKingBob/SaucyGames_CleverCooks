@@ -15,11 +15,11 @@ function ClockUI:AdjustTime(Day, Time, IsNight)
 
     DayFrame.TextLabel.Text = "Day " .. tostring(Day);
 
-    if IsNight then
-        TimeFrame.TextLabel.TextColor = Color3.fromRGB(160, 35, 185)
+    --[[if IsNight then
+        TimeFrame.TextLabel.TextColor3 = Color3.fromRGB(160, 35, 185)
     else
-        TimeFrame.TextLabel.TextColor = Color3.fromRGB(255, 255, 255)
-    end
+        TimeFrame.TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end]]
     TimeFrame.TextLabel.Text = tostring(Time);
 end
 

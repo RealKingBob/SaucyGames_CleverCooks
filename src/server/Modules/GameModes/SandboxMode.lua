@@ -199,7 +199,7 @@ function SandboxMode:StartMode()
                 Time = formatTime(string.format("%.2f", currentTime)),
                 IsNight = false,
             });
-            print("Day:", self.numOfDays ,"| Time:", formatTime(string.format("%.2f", currentTime)))
+            --print("Day:", self.numOfDays ,"| Time:", formatTime(string.format("%.2f", currentTime)))
             task.wait(1)
         end
 
@@ -220,7 +220,7 @@ function SandboxMode:StartMode()
                     Time = formatTime(string.format("%.2f", currentTime)),
                     IsNight = true,
                 });
-                print("Night:", self.numOfDays ,"| Time:", formatTime(string.format("%.2f", currentTime)))
+                --print("Night:", self.numOfDays ,"| Time:", formatTime(string.format("%.2f", currentTime)))
                 task.wait(1)
             end
         else

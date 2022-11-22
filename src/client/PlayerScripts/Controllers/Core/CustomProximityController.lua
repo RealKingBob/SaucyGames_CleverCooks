@@ -17,6 +17,7 @@ local Status = {
 	PickUp = "Pickup";
 	Drop = "Drop";
 	Cook = "Cook";
+	Click = "Click";
 }
 
 local currentStatus = Status.PickUp;
@@ -274,7 +275,14 @@ function CustomProximityController:KnitStart()
 
 		local Character = game.Players:GetPlayerFromCharacter(prompt.Parent.Parent);
 
-		if CollectionService:HasTag(prompt.Parent, "Pan") then
+		if CollectionService:HasTag(prompt.Parent, "Button") then
+			currentStatus = Status.Click;
+			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "Click");
+
+			prompt.PromptHidden:Wait();
+		
+        	cleanupFunction();
+		elseif CollectionService:HasTag(prompt.Parent, "Pan") then
 			currentStatus = Status.Cook;
 			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "Cook");
 
