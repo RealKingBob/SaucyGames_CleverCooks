@@ -80,9 +80,12 @@ local PlayersInServers = {};
 local CurrentIngredients = {};
 local CurrentIngredientObjects = {};
 
+local blenderArray = {};
+
 local playerIngredients = {};
 local prevIngredients = {};
 local cookingPansQueue = {};
+local blendingFoodQueue = {};
 local deliverQueues = {};
 
 local function PlayerAdded(player)
@@ -182,6 +185,23 @@ function CookingService:CanCookOnPan(player, pan)
 	return false;
 end
 
+function CookingService:CanBlendOnBlender(player, blender)
+	if not blendingFoodQueue[player.UserId] then 
+		blendingFoodQueue[player.UserId] = {};
+		return true; 
+	end
+	if #blendingFoodQueue[player.UserId] == 0 then return true; end
+
+	if table.find(blendingFoodQueue[player.UserId], blender) then return false; end
+
+	if #blendingFoodQueue[player.UserId] > 1 then
+		print("needs gamepass to cook blend foods")
+		-- check if has gamepass
+		return true;
+	end
+	return false;
+end
+
 function CookingService:Recipe(player, recipe)
 	print('[CookingService]: Finding recipe: '.. tostring(recipe));
 	--[[if player and recipe then
@@ -195,6 +215,37 @@ function CookingService:Recipe(player, recipe)
 			end;
 		end;
 	end;]]
+end;
+
+function CookingService:Blend(player,Character,recipe, blender)
+	print('[CookingService]: Cooking Food: '.. tostring(recipe));
+
+	if self:CanBlendOnBlender(player, blender) == false then return false; end
+
+	local DataService = Knit.GetService("DataService")
+	local profile = DataService.GetProfile(player);
+	if not profile then
+		local getRadius = function(part)
+			return (part.Size.Z<part.Size.Y and part.Size.Z or part.Size.Y)/2
+			--[[In the above we are returning the smallest, first we check if Z is smaller
+			than Y, if so then we return Z or else we return Y.]]
+		end;
+
+		for _,hitbox in pairs(CollectionService:GetTagged("Pan")) do
+			local radiusOfPan = getRadius(hitbox)
+
+			local overlapParams = OverlapParams.new()
+			overlapParams.FilterDescendantsInstances = CollectionService:GetTagged("IgnoreParts");
+			overlapParams.FilterType = Enum.RaycastFilterType.Blacklist;
+
+			local parts = workspace:GetPartBoundsInRadius(hitbox.Position, radiusOfPan, overlapParams)
+			for _, part in pairs(parts) do
+				table.insert(blenderArray, part)
+			end
+		end
+	else
+		warn("Could not find user["..tostring(player.UserId).."] profile to cook the food, please retry")
+	end;
 end;
 
 function CookingService:Cook(player,Character,recipe, pan)
@@ -471,6 +522,7 @@ function CookingService:KnitInit()
 			local tCurrentIngredients = {};
 			local tCurrentIngredientObjects = {};
 			local partsArray = {};
+			local blenderArray = {};
 
 			for _, deliverHitbox in pairs(CollectionService:GetTagged("DeliverStation")) do
 				local radiusOfDeliverZone = getRadius(deliverHitbox)

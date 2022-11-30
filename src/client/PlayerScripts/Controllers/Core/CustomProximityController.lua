@@ -275,9 +275,15 @@ function CustomProximityController:KnitStart()
 
 		local Character = game.Players:GetPlayerFromCharacter(prompt.Parent.Parent);
 
-		if CollectionService:HasTag(prompt.Parent, "Button") then
+		if CollectionService:HasTag(prompt.Parent, "ButtonClick") then
 			currentStatus = Status.Click;
-			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "Click");
+			local cleanupFunction;
+
+			if prompt.Parent:GetAttribute("Enabled") == true then
+				cleanupFunction = self:createPrompt(prompt, inputType, gui, "Turn Off");
+			else
+				cleanupFunction = self:createPrompt(prompt, inputType, gui, "Turn On");
+			end
 
 			prompt.PromptHidden:Wait();
 		
