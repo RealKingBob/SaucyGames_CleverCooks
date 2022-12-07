@@ -174,6 +174,19 @@ function StaminaUI:SetupStamina(Character)
             camShake:ShakeOnce(3, 3, 0.2, 1.5)
             --camShake:Shake(CameraShaker.Presets.Earthquake)
 
+            if not SprintAnim then
+                if Humanoid then
+                    local animator = Humanoid:FindFirstChildOfClass("Animator")
+                    if animator then
+                        local Anim = Instance.new('Animation',animator)
+                        Anim.AnimationId = "rbxassetid://8028996064"
+                        Anim.Name = "SprintAnim"
+                        SprintAnim = animator:LoadAnimation(Anim)
+                        SprintAnim.Priority = Enum.AnimationPriority.Movement
+                    end
+                end
+            end
+
             SprintAnim:Play()
             AvatarService.BoostEffect:Fire(true)
 

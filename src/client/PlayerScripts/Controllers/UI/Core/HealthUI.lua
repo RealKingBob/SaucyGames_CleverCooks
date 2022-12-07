@@ -13,7 +13,8 @@ function HealthUI:Update(Humanoid)
     local health = math.clamp(Humanoid.Health / Humanoid.MaxHealth, 0, 1)
 
     local MainUI = PlayerGui:WaitForChild("Main")
-    local BarsFrame = MainUI:WaitForChild("BarsFrame");
+    local BottomFrame = MainUI:WaitForChild("BottomFrame")
+    local BarsFrame = BottomFrame:WaitForChild("BarsFrame");
     local HealthFrame = BarsFrame:WaitForChild("Health")
     local HealthBar = HealthFrame:WaitForChild("Bar")
     local HealthTitle = HealthFrame:WaitForChild("Title")

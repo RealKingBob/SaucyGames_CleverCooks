@@ -164,6 +164,10 @@ function InventoryUI:SelectItem(ItemName, Type)
 
         SelectionStats.ImageInfo:WaitForChild("ImageLabel").Image = ItemData.DecalId;
 
+        Item = self:GetItem(ItemName, Type);
+
+        if Item == nil then return end
+
         if (Item:GetAttribute("Locked")) then
             SelectionStats:WaitForChild("ImageInfo").Locked.Visible = true;
             SelectionStats.ImageInfo.Equipped.Visible = false;
