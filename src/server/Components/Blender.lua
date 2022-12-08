@@ -1,9 +1,13 @@
+local CollectionService = game:GetService("CollectionService")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 local Maid = require(Knit.Util.Maid);
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local TweenModule = require(Knit.ReplicatedModules.TweenUtil);
 local NumberUtil = require(Knit.ReplicatedModules.NumberUtil);
+
+local ServerModules = Knit.Modules;
+local SpawnItemsAPI = require(ServerModules:FindFirstChild("SpawnItems"));
 
 local Blender = {};
 Blender.__index = Blender;
@@ -18,12 +22,24 @@ function Blender.new(instance)
     self._maid = Maid.new();
 
     self.Object = instance
-    self.BlenderEnabled = false;
+    self.BlenderEnabled = true;
     self.playersDebounces = {};
     self.ObjectsInBlender = {};
     self.MaxNumOfObjects = 5;
-    self.NumOfObjects = 0;
-    self.NumOfObjectsTextLabel = self.Object.Glass.NumOfObjects.TextLabel;
+    self.NumOfObjects = {};
+    self.NumOfObjectsTextLabel = self.Object.Glass.Glass.NumOfObjects.TextLabel;
+
+    local function PlayerAdded(player)
+        self.playersDebounces[player.UserId] = {};
+        self.ObjectsInBlender[player.UserId] = {};
+        self.NumOfObjects[player.UserId] = 0
+    end;
+    
+    local function PlayerRemoving(player)
+        self.playersDebounces[player.UserId] = nil;
+        self.ObjectsInBlender[player.UserId] = nil;
+        self.NumOfObjects[player.UserId] = nil;
+    end;
 
     local function TemporaryDisableButton(seconds)
         self.Object.Button.ProximityPrompt.RequiresLineOfSight = true;
@@ -34,16 +50,22 @@ function Blender.new(instance)
     end
 
     local function BlenderFluidChange(percentage)
-        local blenderFluid = self.Object.BlenderLiquid;
-        local maxSize = 11.635;
+        local blenderFluid = self.Object.Flood;
+        local maxSize = 11.47;
+        local currentSize = blenderFluid.Size.Y
         local newSize = maxSize * percentage;
+        local difference = newSize - currentSize
 
-        local endSize = Vector3.new(newSize, blenderFluid.Size.Y, blenderFluid.Size.Z)
-        local endPosition = blenderFluid.Position + Vector3.new(0,(blenderFluid.Size.Y/2) - (newSize/2), 0)
+        difference /= 2
+
+        local endSize = Vector3.new(blenderFluid.Size.X, newSize, blenderFluid.Size.Z)
+        local endCFrame = blenderFluid.CFrame * CFrame.new(0, (newSize/2), 0)
+        local endPosition = blenderFluid.Position + Vector3.new(0,difference, 0)
 
         local goal = {
             Size = endSize,
-            Position = endPosition
+            Position = endPosition,
+            --CFrame = endCFrame
         }
 
         local timeInSeconds = 3
@@ -51,6 +73,34 @@ function Blender.new(instance)
         local tweenInfo = TweenInfo.new(timeInSeconds)
         local powerBlender = TweenService:Create(blenderFluid, tweenInfo, goal)
         powerBlender:Play()
+        powerBlender.Completed:Wait();
+        blenderFluid.Size = endSize;
+        --blenderFluid.CFrame = endCFrame;
+    end
+
+    local function InsertObjToBlender(Obj)
+        local FoodSpawnPoints = CollectionService:GetTagged("FoodSpawnPoints");
+        if Obj:IsA("Model") and Obj.PrimaryPart then
+            Obj.PrimaryPart.ProximityPrompt.Enabled = false;
+        else
+            Obj.ProximityPrompt.Enabled = false;
+        end
+        local RandomFoodLocation = FoodSpawnPoints[math.random(1, #FoodSpawnPoints)];
+        if RandomFoodLocation then
+            if Obj:IsA("Model") and Obj.PrimaryPart then
+                Obj:SetPrimaryPartCFrame(CFrame.new(RandomFoodLocation.Position + Vector3.new(math.random(-5,5) ,5, math.random(-5,5))))
+            else
+                Obj.Position = RandomFoodLocation.Position + Vector3.new(math.random(-5,5) ,5, math.random(-5,5));
+            end
+        end
+
+        task.wait(0.1)
+
+        if Obj:IsA("Model") and Obj.PrimaryPart then
+            Obj.PrimaryPart.ProximityPrompt.Enabled = true;
+        else
+            Obj.ProximityPrompt.Enabled = true;
+        end
     end
 
     local function SpinBlade(enabled)
@@ -71,7 +121,7 @@ function Blender.new(instance)
 
 
 
-            self.Object.Blade.PrimaryPart.HingeConstraint.AngularVelocity = 100;
+            self.Object.Blade.PrimaryPart.HingeConstraint.AngularVelocity = 70;
         else
 
             local FadeTween = TweenInfo.new(3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut);
@@ -125,28 +175,60 @@ function Blender.new(instance)
                 humanoid.Health = -1;
             end
             local function tablefind(tab,el) for index, value in pairs(tab) do if value == el then	return index end end end
+            if hit:GetAttribute("Owner") then
+                local player = game.Players:FindFirstChild(hit:GetAttribute("Owner"));
+                if not self.ObjectsInBlender[player.UserId] then self.ObjectsInBlender[player.UserId] = {} end
+                if not self.NumOfObjects[player.UserId] then self.NumOfObjects[player.UserId] = 0 end
+            end
             if hit:GetAttribute("Type") then
-                
-                if table.find(self.ObjectsInBlender, hit) == nil then
-                    table.insert(self.ObjectsInBlender, hit)
-                    self.NumOfObjects += 1;
-                    BlenderFluidChange(self.NumOfObjects / self.MaxNumOfObjects)
+                local player = game.Players:FindFirstChild(hit:GetAttribute("Owner"));
+                if table.find(self.ObjectsInBlender[player.UserId], hit) == nil then
+                    table.insert(self.ObjectsInBlender[player.UserId], hit)
+                    self.NumOfObjects[player.UserId] += 1;
+                    InsertObjToBlender(hit)
+                    task.spawn(BlenderFluidChange, self.NumOfObjects[player.UserId] / self.MaxNumOfObjects)
+                    self.NumOfObjectsTextLabel.Text = tostring(self.NumOfObjects[player.UserId].."/"..self.MaxNumOfObjects);
+                    print("BLADE HIT", hit, hit.Parent, self.ObjectsInBlender[player.UserId])
                 end
             elseif hit.Parent:GetAttribute("Type") then
-                if table.find(self.ObjectsInBlender, hit.Parent) == nil then
-                    table.insert(self.ObjectsInBlender, hit.Parent)
-                    self.NumOfObjects += 1;
-                    BlenderFluidChange(self.NumOfObjects / self.MaxNumOfObjects)
+                local player = game.Players:FindFirstChild(hit.Parent:GetAttribute("Owner"));
+                if table.find(self.ObjectsInBlender[player.UserId], hit.Parent) == nil then
+                    table.insert(self.ObjectsInBlender[player.UserId], hit.Parent)
+                    self.NumOfObjects[player.UserId] += 1;
+                    InsertObjToBlender(hit)
+                    task.spawn(BlenderFluidChange, self.NumOfObjects[player.UserId] / self.MaxNumOfObjects)
+                    self.NumOfObjectsTextLabel.Text = tostring(self.NumOfObjects[player.UserId].."/"..self.MaxNumOfObjects);
+                    print("BLADE HIT", hit, hit.Parent, self.ObjectsInBlender[player.UserId])
                 end
             end
-            --print("BLADE HIT", hit, hit.Parent, self.ObjectsInBlender)
         end
     end))
 
-    self._maid:GiveTask(self.Object.Button.ProximityPrompt.Triggered:Connect(function(plr)
-        task.spawn(TemporaryDisableButton, 5)
-        print("BLENDER", self.BlenderEnabled)
-		self.BlenderEnabled = not self.BlenderEnabled;
+    self._maid:GiveTask(self.Object.Button.ProximityPrompt.Triggered:Connect(function(player)
+        --task.spawn(TemporaryDisableButton, 3)
+        print("BLENDER", self.BlenderEnabled);
+
+        if self.playersDebounces[player.UserId] == nil then
+            self.playersDebounces[player.UserId] = true;
+
+            print("NumOfObjects", self.NumOfObjects[player.UserId])
+
+            if not self.ObjectsInBlender[player.UserId] then self.ObjectsInBlender[player.UserId] = {} end
+            if not self.NumOfObjects[player.UserId] then self.NumOfObjects[player.UserId] = 0 end
+            if self.NumOfObjects[player.UserId] == 0 then
+                Knit.GetService("NotificationService"):Message(false, player, "Blender is empty!")
+            else
+                --/ TODO: FIX IT
+                local blendedFood = SpawnItemsAPI:Spawn(player.UserId, player, recipe, FoodObjects, FoodAvailable, pan.Position + Vector3.new(0,5,0));
+
+                Knit.GetService("NotificationService"):Message(false, player, "Blended food is dropped!")
+            end
+
+            task.wait(1);
+            self.playersDebounces[player.UserId] = nil;
+        end
+
+		--[[self.BlenderEnabled = not self.BlenderEnabled;
         self.Object.Button:SetAttribute("Enabled", self.BlenderEnabled)
 
         if self.BlenderEnabled == true then
@@ -164,12 +246,27 @@ function Blender.new(instance)
             PlayEffects(false);
             self.Object.Button.SurfaceGui.Frame.BackgroundColor3 = Color3.fromRGB(166, 0, 0)
             self.Object.Button.ProximityPrompt.ActionText = "Turn On"
-        end
+        end]]
 	end));
+
+    --// TODO, GET BLENDED FOOD BUTTON, DONT CAHNGE TO CLIENT BESIDES THEEFFECTS AND SPAWN FOOD ON SERVER, REPLICATE TO CLIENT AND DELETE TO OTHER CLIENTS
 
     --// Initialize Contents
     --BlenderFluidChange(0);
-    self.NumOfObjectsTextLabel.Text = tostring(self.NumOfObjects.."/"..self.MaxNumOfObjects);
+    --self.NumOfObjectsTextLabel.Text = tostring(self.NumOfObjects.."/"..self.MaxNumOfObjects);
+
+    self.BlenderEnabled = true;
+
+    self.Object.Lid.Transparency = 1;
+    self.Object.Lid.CanCollide =  false;
+
+    task.spawn(SpinBlade, true);
+    PlayEffects(true);
+    self.Object.Button.SurfaceGui.Frame.BackgroundColor3 = Color3.fromRGB(0, 166, 0)
+    self.Object.Button.ProximityPrompt.ActionText = "Get Blended Food"
+
+    Players.PlayerAdded:Connect(PlayerAdded);
+    Players.PlayerRemoving:Connect(PlayerRemoving);
 
     return self;
 end

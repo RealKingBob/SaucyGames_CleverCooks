@@ -279,10 +279,14 @@ function CustomProximityController:KnitStart()
 			currentStatus = Status.Click;
 			local cleanupFunction;
 
-			if prompt.Parent:GetAttribute("Enabled") == true then
-				cleanupFunction = self:createPrompt(prompt, inputType, gui, "Turn Off");
+			if prompt.Parent:GetAttribute("Enabled") then
+				if prompt.Parent:GetAttribute("Enabled") == true then
+					cleanupFunction = self:createPrompt(prompt, inputType, gui, "Turn Off");
+				else
+					cleanupFunction = self:createPrompt(prompt, inputType, gui, "Turn On");
+				end
 			else
-				cleanupFunction = self:createPrompt(prompt, inputType, gui, "Turn On");
+				cleanupFunction = self:createPrompt(prompt, inputType, gui, prompt.ActionText);
 			end
 
 			prompt.PromptHidden:Wait();
