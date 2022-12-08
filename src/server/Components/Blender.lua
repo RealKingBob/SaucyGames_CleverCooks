@@ -20,6 +20,10 @@ function Blender.new(instance)
     self.Object = instance
     self.BlenderEnabled = false;
     self.playersDebounces = {};
+    self.ObjectsInBlender = {};
+    self.MaxNumOfObjects = 5;
+    self.NumOfObjects = 0;
+    self.NumOfObjectsTextLabel = self.Object.Glass.NumOfObjects.TextLabel;
 
     local function TemporaryDisableButton(seconds)
         self.Object.Button.ProximityPrompt.RequiresLineOfSight = true;
@@ -27,6 +31,26 @@ function Blender.new(instance)
         task.wait(seconds)
         self.Object.Button.ProximityPrompt.Enabled = true;
         self.Object.Button.ProximityPrompt.RequiresLineOfSight = false;
+    end
+
+    local function BlenderFluidChange(percentage)
+        local blenderFluid = self.Object.BlenderLiquid;
+        local maxSize = 11.635;
+        local newSize = maxSize * percentage;
+
+        local endSize = Vector3.new(newSize, blenderFluid.Size.Y, blenderFluid.Size.Z)
+        local endPosition = blenderFluid.Position + Vector3.new(0,(blenderFluid.Size.Y/2) - (newSize/2), 0)
+
+        local goal = {
+            Size = endSize,
+            Position = endPosition
+        }
+
+        local timeInSeconds = 3
+
+        local tweenInfo = TweenInfo.new(timeInSeconds)
+        local powerBlender = TweenService:Create(blenderFluid, tweenInfo, goal)
+        powerBlender:Play()
     end
 
     local function SpinBlade(enabled)
@@ -100,6 +124,22 @@ function Blender.new(instance)
                 humanoid.BreakJointsOnDeath = true
                 humanoid.Health = -1;
             end
+            local function tablefind(tab,el) for index, value in pairs(tab) do if value == el then	return index end end end
+            if hit:GetAttribute("Type") then
+                
+                if table.find(self.ObjectsInBlender, hit) == nil then
+                    table.insert(self.ObjectsInBlender, hit)
+                    self.NumOfObjects += 1;
+                    BlenderFluidChange(self.NumOfObjects / self.MaxNumOfObjects)
+                end
+            elseif hit.Parent:GetAttribute("Type") then
+                if table.find(self.ObjectsInBlender, hit.Parent) == nil then
+                    table.insert(self.ObjectsInBlender, hit.Parent)
+                    self.NumOfObjects += 1;
+                    BlenderFluidChange(self.NumOfObjects / self.MaxNumOfObjects)
+                end
+            end
+            --print("BLADE HIT", hit, hit.Parent, self.ObjectsInBlender)
         end
     end))
 
@@ -126,6 +166,10 @@ function Blender.new(instance)
             self.Object.Button.ProximityPrompt.ActionText = "Turn On"
         end
 	end));
+
+    --// Initialize Contents
+    --BlenderFluidChange(0);
+    self.NumOfObjectsTextLabel.Text = tostring(self.NumOfObjects.."/"..self.MaxNumOfObjects);
 
     return self;
 end
