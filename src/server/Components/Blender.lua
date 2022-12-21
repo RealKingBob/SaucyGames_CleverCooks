@@ -1,10 +1,19 @@
 local CollectionService = game:GetService("CollectionService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 local Maid = require(Knit.Util.Maid);
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local TweenModule = require(Knit.ReplicatedModules.TweenUtil);
 local NumberUtil = require(Knit.ReplicatedModules.NumberUtil);
+
+----- Directories -----
+
+local IngredientsAvailable = workspace:WaitForChild("IngredientAvailable");
+local FoodAvailable = workspace:WaitForChild("FoodAvailable");
+
+local GameLibrary = ReplicatedStorage:FindFirstChild("GameLibrary");
+local IngredientObjects = GameLibrary:FindFirstChild("IngredientObjects");
 
 local ServerModules = Knit.Modules;
 local SpawnItemsAPI = require(ServerModules:FindFirstChild("SpawnItems"));
@@ -206,26 +215,34 @@ function Blender.new(instance)
 
     self._maid:GiveTask(self.Object.Button.ProximityPrompt.Triggered:Connect(function(player)
         --task.spawn(TemporaryDisableButton, 3)
-        print("BLENDER", self.BlenderEnabled);
+        print("BLENDER", self.BlenderEnabled, self.playersDebounces[player.UserId]);
 
         if self.playersDebounces[player.UserId] == nil then
+            print("p1")
             self.playersDebounces[player.UserId] = true;
 
             print("NumOfObjects", self.NumOfObjects[player.UserId])
+            print("p2")
+            local NotificationService = Knit.GetService("NotificationService")
 
             if not self.ObjectsInBlender[player.UserId] then self.ObjectsInBlender[player.UserId] = {} end
+            print("p3")
             if not self.NumOfObjects[player.UserId] then self.NumOfObjects[player.UserId] = 0 end
+            print("p4")
             if self.NumOfObjects[player.UserId] == 0 then
-                Knit.GetService("NotificationService"):Message(false, player, "Blender is empty!")
+                print("p4a")
+                NotificationService:Message(false, player, "Blender is empty!")
             else
                 --/ TODO: FIX IT
-                local blendedFood = SpawnItemsAPI:Spawn(player.UserId, player, recipe, FoodObjects, FoodAvailable, pan.Position + Vector3.new(0,5,0));
+                print("p4b")
+                local blendedFood = SpawnItemsAPI:SpawnBlenderFood(player.UserId, player, self.ObjectsInBlender[player.UserId], IngredientObjects, IngredientsAvailable, self.Object.ReturnObj.Position + Vector3.new(0,5,0));
 
-                Knit.GetService("NotificationService"):Message(false, player, "Blended food is dropped!")
+                NotificationService:Message(false, player, "Blended food is dropped!")
             end
-
+            print("p5")
             task.wait(1);
             self.playersDebounces[player.UserId] = nil;
+            print("p6")
         end
 
 		--[[self.BlenderEnabled = not self.BlenderEnabled;

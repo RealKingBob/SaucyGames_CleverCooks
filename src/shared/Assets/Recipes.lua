@@ -23,11 +23,11 @@ local Recipes = {
 		Name = "Macaron",
 		Image = "rbxassetid://8019675976",
 		Ingredients = {
-			"Sugar Bag [Blended]",
-			"Egg [Blended]",
+			"Sugar Bag-[Blended]",
+			"Egg-[Blended]",
 			"Lemon",
 			"Salt",
-			"Wheat Bag [Blended]"
+			"Wheat Bag-[Blended]"
 		},
 		Unlockable = false, 
 		Difficulty = "Hard"	
@@ -39,7 +39,7 @@ local Recipes = {
 			"Red Onion",
 			"Garlic",
 			"Courgette",
-			"Tomato [Blended]",
+			"Tomato-[Blended]",
 			"Yellow Bell Pepper",
 			"Red Bell Pepper",
 			"Lemon"
@@ -51,10 +51,10 @@ local Recipes = {
 		Name = "Chocolate Mousse",
 		Image = "rbxassetid://8019447207",
 		Ingredients = {
-			"Chocolate [Blended]",
-			"Sugar Bag [Blended]",
+			"Chocolate-[Blended]",
+			"Sugar Bag-[Blended]",
 			"Salt",
-			"Milk [Blended]"
+			"Milk-[Blended]"
 		},
 		Unlockable = false, 
 		Difficulty = "Medium"	
@@ -73,11 +73,11 @@ local Recipes = {
 		Name = "Croissant",
 		Image = "rbxassetid://8019446376",
 		Ingredients = {
-			"Wheat Bag [Blended]",
-			"Sugar Bag [Blended]",
+			"Wheat Bag-[Blended]",
+			"Sugar Bag-[Blended]",
 			"Salt",
-			"Butter [Blended]",
-			"Egg [Blended]"
+			"Butter-[Blended]",
+			"Egg-[Blended]"
 		},
 		Unlockable = false, 
 		Difficulty = "Hard"	
@@ -86,11 +86,11 @@ local Recipes = {
 		Name = "Madeleine",
 		Image = "rbxassetid://8019445863",
 		Ingredients = {
-			"Egg [Blended]",
-			"Sugar Bag [Blended]",
-			"Wheat Bag [Blended]",
+			"Egg-[Blended]",
+			"Sugar Bag-[Blended]",
+			"Wheat Bag-[Blended]",
 			"Lemon",
-			"Butter [Blended]"
+			"Butter-[Blended]"
 		},
 		Unlockable = false, 
 		Difficulty = "Hard"

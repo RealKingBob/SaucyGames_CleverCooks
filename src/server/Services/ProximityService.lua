@@ -66,6 +66,7 @@ end
 function ProximityService:LinkItemToPlayer(Character,Object)
     if Character and Object then
         if Object:IsA("Model") and Object.PrimaryPart then
+            print(Object.PrimaryPart:GetAttribute("i1"))
             local _PrimaryPart = Object.PrimaryPart;
             for _,b in pairs(Object:GetChildren()) do
                 if b:IsA("MeshPart") then
@@ -77,6 +78,9 @@ function ProximityService:LinkItemToPlayer(Character,Object)
             Object:SetPrimaryPartCFrame(Character:FindFirstChild("HumanoidRootPart").CFrame)
             _PrimaryPart.HandJoint.Attachment1 = Character:FindFirstChild("Head").RightGripAttachment;
             _PrimaryPart.FaceJoint.Attachment1 = Character:FindFirstChild("Head").FaceFrontAttachment;
+
+
+
             Character.PrimaryPart.ProximityPrompt.Enabled = true;
             _PrimaryPart.ProximityPrompt.Enabled = false;
             --print("FALSE")
@@ -97,6 +101,7 @@ end;
 function ProximityService:UnlinkItemToPlayer(Character,Object)
 	if Character and Object then
 		if Object:IsA("Model") and Object.PrimaryPart then
+            print(Object.PrimaryPart:GetAttribute("i1"))
 			local _PrimaryPart = Object.PrimaryPart;
 			_PrimaryPart:SetAttribute("Owner", PlayerService:GetPlayerFromCharacter(Character).Name);
 			_PrimaryPart.HandJoint.Attachment1 = nil;
@@ -151,6 +156,8 @@ function ProximityService:PickUpIngredient(Character, Ingredient)
         for _, track in pairs (AnimationTracks) do
             track:Stop();
         end;
+
+        --print(Ingredient, Ingredient:GetAttribute("i1"), Ingredient.PrimaryPart:GetAttribute("i1"))
 
 		self.Client.SetAnimations:Fire(Player, {"rbxassetid://8029004455","rbxassetid://8028996064","rbxassetid://8029001222"}); -- idle, walk, jump animation for standing up
         self:LinkItemToPlayer(Character,Ingredient);

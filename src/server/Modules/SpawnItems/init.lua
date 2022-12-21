@@ -119,6 +119,54 @@ function SpawnItems:SpawnAll(RootFolder, Directory, Location) -- [IngredientOjec
     return false;
 end;
 
+function SpawnItems:SpawnBlenderFood(UserId, Owner, Ingredients, RootFolder, Directory, Location)
+    PrintL(UserId,"[SpawnItemsAPI]: Spawned items [".. tostring(Ingredients) .."] for user[".. tostring(Owner) .."] from RootFolder[".. tostring(RootFolder) .."]");
+    if Ingredients and RootFolder and Directory then
+        local ItemClone = RootFolder:FindFirstChild("Blender Cup"):Clone();
+        if Owner then
+            if ItemClone:IsA("Model") then
+                ItemClone.PrimaryPart:SetAttribute("Owner", tostring(Owner));
+                
+                for index, value in Ingredients do
+                    ItemClone.PrimaryPart:SetAttribute("i"..tostring(index), tostring(value));
+                    print(index, value);
+                end
+            elseif ItemClone:IsA("MeshPart") then
+                ItemClone:SetAttribute("Owner", tostring(Owner));
+
+                for index, value in Ingredients do
+                    ItemClone:SetAttribute("i"..tostring(index), tostring(value));
+                    print(index, value);
+                end
+            end;
+            if Location then
+                if ItemClone:IsA("Model") and ItemClone.PrimaryPart then
+                    ItemClone:SetPrimaryPartCFrame(CFrame.new(Location))
+                    --ItemClone.PrimaryPart.Position = Location;
+                else
+                    ItemClone.Position = Location;
+                end
+            end
+            ItemClone.Parent = Directory;
+
+            if ItemClone:IsA("Model") and ItemClone.PrimaryPart then
+                return ItemClone.PrimaryPart;
+            else
+                return ItemClone;
+            end
+            
+        else
+            ItemClone.Parent = Directory;
+            if ItemClone:IsA("Model") and ItemClone.PrimaryPart then
+                return ItemClone.PrimaryPart;
+            else
+                return ItemClone;
+            end
+        end;
+    end;
+    return nil;
+end;
+
 function SpawnItems:Spawn(UserId, Owner, ItemName, RootFolder, Directory, Location) -- [UserId, Owner, ItemName, [Name]Ojects, [Name]Available, Position]
     PrintL(UserId,"[SpawnItemsAPI]: Spawned item [".. tostring(ItemName) .."] for user[".. tostring(Owner) .."] from RootFolder[".. tostring(RootFolder) .."]");
     if ItemName and RootFolder and Directory then

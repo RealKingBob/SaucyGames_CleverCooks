@@ -111,7 +111,28 @@ function CookingService:PickUp(Player, Character, Item)
 			if Item:GetAttribute("Type") == "Ingredient"
 			or (Item:IsA("Model") and Item.PrimaryPart:GetAttribute("Type") == "Ingredient") then
 
+				local blendedItems = {};
+
+				if CollectionService:HasTag(Item, "IngredientsTable") 
+				or (Item:IsA("Model") and CollectionService:HasTag(Item.PrimaryPart, "IngredientsTable")) then
+					for i = 1, 5 do
+						if Item:IsA("Model") then
+							table.insert(blendedItems, i, Item.PrimaryPart:GetAttribute("i"..tostring(i)))
+						else
+							table.insert(blendedItems, i, Item:GetAttribute("i"..tostring(i)))
+						end
+					end
+				end
+
 				local ClonedItem = IngredientObjects:FindFirstChild(Item.Name):Clone();
+
+				for i = 1, 5 do
+					if ClonedItem:IsA("Model") then
+						ClonedItem.PrimaryPart:SetAttribute("i"..tostring(i), blendedItems[i])
+					else
+						ClonedItem:SetAttribute("i"..tostring(i), blendedItems[i])
+					end
+				end
 
 				ProximityService:PickUpIngredient(Character, ClonedItem);
 				--StatTrackService:AddIngredient(Player, 1);

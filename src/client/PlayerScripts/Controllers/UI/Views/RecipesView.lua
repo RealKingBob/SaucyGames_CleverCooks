@@ -186,13 +186,28 @@ function setupRecipeButtons()
 		CookButton.Visible = false;
 
 		for _,ingredient in pairs(RecipeModule[recipeSelected]["Ingredients"]) do
-			local foundIngredient = IngredientModule[ingredient]
+			local originalVal = ingredient
+			local foundIngredient = IngredientModule[originalVal]
+			local foundBlendedIngredient, replaced = string.gsub(originalVal, "%[", "");
+				foundBlendedIngredient = string.gsub(foundBlendedIngredient, "%]", "")
+				foundBlendedIngredient = string.gsub(foundBlendedIngredient, "-", "")
+				foundBlendedIngredient = string.gsub(foundBlendedIngredient, "Blended", "")
+
+			print(foundIngredient, tostring(ingredient):find("[Blended]"), foundBlendedIngredient, IngredientModule[originalVal] , IngredientModule[foundBlendedIngredient])
+
+			if IngredientModule[originalVal] == nil then
+				foundIngredient = IngredientModule[foundBlendedIngredient]
+			end
+
 			local Prefabs = LocalPlayer.PlayerGui:WaitForChild("Prefabs")
 			local HoverIngredientTemplate = Prefabs:WaitForChild("HoverIngredientTemplate")
 			local clonedIngredientFrame = HoverIngredientTemplate:Clone()
 			clonedIngredientFrame.Size = UDim2.fromScale(0,0)
-			clonedIngredientFrame.Name = tostring(ingredient)
-			if foundIngredient then
+			clonedIngredientFrame.Name = tostring(originalVal)
+			if string.find(ingredient, "[Blended]") then
+				clonedIngredientFrame.Icon.IconImage.Image = foundIngredient["BlendedImage"]
+				clonedIngredientFrame.Icon.IconImageShadow.Image = foundIngredient["BlendedImage"]
+			elseif foundIngredient then
 				clonedIngredientFrame.Icon.IconImage.Image = foundIngredient["Image"]
 				clonedIngredientFrame.Icon.IconImageShadow.Image = foundIngredient["Image"]
 			else
@@ -327,13 +342,29 @@ function setupRecipeButtons()
 			end
 			
 			for _, value in pairs(selectedRecipe["Ingredients"]) do
-				local foundIngredient = IngredientModule[value]
+
+				local originalVal = value
+				local foundIngredient = IngredientModule[originalVal]
+
+				local foundBlendedIngredient, replaced = string.gsub(originalVal, "%[", "");
+				foundBlendedIngredient = string.gsub(foundBlendedIngredient, "%]", "")
+				foundBlendedIngredient = string.gsub(foundBlendedIngredient, "-", "")
+				foundBlendedIngredient = string.gsub(foundBlendedIngredient, "Blended", "")
+				
+				print("DATA", tostring(value):match("[Blended]"), tostring(originalVal), foundIngredient, foundBlendedIngredient, IngredientModule[value] , IngredientModule[foundBlendedIngredient])
+
+				if IngredientModule[originalVal] == nil then
+					foundIngredient = IngredientModule[foundBlendedIngredient]
+				end
+				
 				local Prefabs = LocalPlayer.PlayerGui:WaitForChild("Prefabs")
 				local IngredientTemplate = Prefabs:WaitForChild("IngredientTemplate")
 				local clonedIngredientFrame = IngredientTemplate:Clone()
-				clonedIngredientFrame.Name = tostring(value)
-				clonedIngredientFrame.IngredientTitle.Text = tostring(value)
-				if foundIngredient then
+				clonedIngredientFrame.Name = tostring(originalVal)
+				clonedIngredientFrame.IngredientTitle.Text = tostring(originalVal)
+				if string.find(value, "[Blended]") then
+					clonedIngredientFrame.ImageFrame.Icon.IconImage.Image = foundIngredient["BlendedImage"]
+				elseif foundIngredient then
 					clonedIngredientFrame.ImageFrame.Icon.IconImage.Image = foundIngredient["Image"]
 				else
 					clonedIngredientFrame.ImageFrame.Icon.IconImage.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???

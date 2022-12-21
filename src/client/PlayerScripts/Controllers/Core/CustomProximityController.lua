@@ -18,6 +18,7 @@ local Status = {
 	Drop = "Drop";
 	Cook = "Cook";
 	Click = "Click";
+	IngredientsTable = "IngredientsTable";
 }
 
 local currentStatus = Status.PickUp;
@@ -28,6 +29,8 @@ local customHeadUI = ReplicatedBillboard:WaitForChild("HeadUI")
 
 local customBigPrompt = ReplicatedBillboard:WaitForChild("BigPrompt")
 local customCookHeadUI = ReplicatedBillboard:WaitForChild("CookHeadUI")
+
+local customTableHeadUI = ReplicatedBillboard:WaitForChild("TableHeadUI");
 
 local KeyMapping = require(ReplicatedModules.KeyCodeImages);
 local IngredientModule = require(ReplicatedAssets.Ingredients);
@@ -52,6 +55,9 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 	if customStatus == Status.Cook then
 		promptUI = customBigPrompt:Clone()
     	headUI = customCookHeadUI:Clone()
+	elseif customStatus == Status.IngredientsTable then
+		promptUI = customPrompt:Clone()
+    	headUI = customTableHeadUI:Clone()
 	else
 		promptUI = customPrompt:Clone()
     	headUI = customHeadUI:Clone()
@@ -66,12 +72,37 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 	local buttonImage = inputFrame:WaitForChild("ButtonImage")
 	local buttonText = inputFrame:WaitForChild("ButtonText")
 
-    local headFrame = headUI:WaitForChild("Frame")
-	local itemImage = headFrame:WaitForChild("ItemImage")
+    local headFrame, itemsFrame;
+	local itemImage, itemImage2, itemImage3, itemImage4, itemImage5;
+	if customStatus == Status.IngredientsTable then
+		headFrame = headUI:WaitForChild("Frame");
+		itemsFrame = headUI:WaitForChild("ItemsFrame");
+		itemImage = itemsFrame:WaitForChild("ItemImage1");
+		itemImage2 = itemsFrame:WaitForChild("ItemImage2");
+		itemImage3 = itemsFrame:WaitForChild("ItemImage3");
+		itemImage4 = itemsFrame:WaitForChild("ItemImage4");
+		itemImage5 = itemsFrame:WaitForChild("ItemImage5");
+	else
+		headFrame = headUI:WaitForChild("Frame")
+		itemImage = headFrame:WaitForChild("ItemImage");
+	end
 
 	if currentStatus == Status.Drop then
 		promptUI.StudsOffsetWorldSpace = Vector3.new(0, 0, -1.5);
 		headUI.StudsOffsetWorldSpace = Vector3.new(0, 0, -1.5);
+	end
+
+	local function getAmountOfItemImages()
+		local itemImages = {itemImage, itemImage2, itemImage3, itemImage4, itemImage5};
+		local itemCount = 0;
+
+		for index, item in itemImages do
+			if item.Image ~= "" then
+				itemCount += 1;
+			end
+		end
+
+		return itemCount;
 	end
 
 	-- Updates the cloned prompt to match the information in the ProximityPrompt in workspace
@@ -120,36 +151,43 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 			end
 		end
 
-		if prompt.Parent.Parent:IsA("Model") then
-			if IngredientModule[prompt.Parent.Parent.Name] then
-				itemImage.Image = IngredientModule[prompt.Parent.Parent.Name].Image
+		if CollectionService:HasTag(prompt.Parent, "IngredientsTable") then
+			print(prompt.Parent:GetAttribute("i1"))
+			if prompt.Parent:GetAttribute("i1") ~= "" then 
+				itemImage.Visible = true;
+				itemImage.Image = IngredientModule[prompt.Parent:GetAttribute("i1")].BlendedImage ~= nil and IngredientModule[prompt.Parent:GetAttribute("i1")].BlendedImage or "";
 			else
-				itemImage.Image = "http://www.roblox.com/asset/?id=4509163032" --???
-			end;
-		else
-			if IngredientModule[prompt.Parent.Name] then
-				itemImage.Image = IngredientModule[prompt.Parent.Name].Image
-			else
-				itemImage.Image = "http://www.roblox.com/asset/?id=4509163032" --???
-			end;
-		end
-
-		--print(prompt.Parent:GetAttribute("Type"))
-		if prompt.Parent:GetAttribute("Type") == "Food" then
-			if prompt.Parent.Parent:IsA("Model") then
-				if RecipeModule[prompt.Parent.Parent.Name] then
-					itemImage.Image = RecipeModule[prompt.Parent.Parent.Name].Image
-				else
-					itemImage.Image = "http://www.roblox.com/asset/?id=4509163032" --???
-				end;
-			else
-				if RecipeModule[prompt.Parent.Name] then
-					itemImage.Image = RecipeModule[prompt.Parent.Name].Image
-				else
-					itemImage.Image = "http://www.roblox.com/asset/?id=4509163032" --???
-				end;
+				itemImage.Visible = false;
 			end
-		elseif prompt.Parent:GetAttribute("Type") == "Ingredient" then
+
+			if prompt.Parent:GetAttribute("i2") ~= "" then 
+				itemImage2.Visible = true;
+				itemImage2.Image = IngredientModule[prompt.Parent:GetAttribute("i2")].BlendedImage ~= nil and IngredientModule[prompt.Parent:GetAttribute("i2")].BlendedImage or "";
+			else
+				itemImage2.Visible = false;
+			end
+			
+			if prompt.Parent:GetAttribute("i3") ~= "" then 
+				itemImage3.Visible = true;
+				itemImage3.Image = IngredientModule[prompt.Parent:GetAttribute("i3")].BlendedImage ~= nil and IngredientModule[prompt.Parent:GetAttribute("i3")].BlendedImage or "";
+			else
+				itemImage3.Visible = false;
+			end
+
+			if prompt.Parent:GetAttribute("i4") ~= "" then 
+				itemImage4.Visible = true;
+				itemImage4.Image = IngredientModule[prompt.Parent:GetAttribute("i4")].BlendedImage ~= nil and IngredientModule[prompt.Parent:GetAttribute("i4")].BlendedImage or "";
+			else
+				itemImage4.Visible = false;
+			end
+
+			if prompt.Parent:GetAttribute("i5") ~= "" then 
+				itemImage5.Visible = true;
+				itemImage5.Image = IngredientModule[prompt.Parent:GetAttribute("i5")].BlendedImage ~= nil and IngredientModule[prompt.Parent:GetAttribute("i5")].BlendedImage or "";
+			else
+				itemImage5.Visible = false;
+			end
+		else
 			if prompt.Parent.Parent:IsA("Model") then
 				if IngredientModule[prompt.Parent.Parent.Name] then
 					itemImage.Image = IngredientModule[prompt.Parent.Parent.Name].Image
@@ -162,6 +200,71 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 				else
 					itemImage.Image = "http://www.roblox.com/asset/?id=4509163032" --???
 				end;
+			end
+		end
+
+		--print(prompt.Parent:GetAttribute("Type"))
+		if CollectionService:HasTag(prompt.Parent, "IngredientsTable") then
+			print(prompt.Parent:GetAttribute("i1"))
+			if prompt.Parent:GetAttribute("i1") ~= "" then 
+				itemImage.Visible = true;
+				itemImage.Image = IngredientModule[prompt.Parent:GetAttribute("i1")].BlendedImage ~= nil and IngredientModule[prompt.Parent:GetAttribute("i1")].BlendedImage or "";
+			else
+				itemImage.Visible = false;
+			end
+
+			if prompt.Parent:GetAttribute("i2") ~= "" then 
+				itemImage2.Visible = true;
+				itemImage2.Image = IngredientModule[prompt.Parent:GetAttribute("i2")].BlendedImage ~= nil and IngredientModule[prompt.Parent:GetAttribute("i2")].BlendedImage or "";
+			else
+				itemImage2.Visible = false;
+			end
+			
+			if prompt.Parent:GetAttribute("i3") ~= "" then 
+				itemImage3.Visible = true;
+				itemImage3.Image = IngredientModule[prompt.Parent:GetAttribute("i3")].BlendedImage ~= nil and IngredientModule[prompt.Parent:GetAttribute("i3")].BlendedImage or "";
+			else
+				itemImage3.Visible = false;
+			end
+
+			if prompt.Parent:GetAttribute("i4") ~= "" then 
+				itemImage4.Visible = true;
+				itemImage4.Image = IngredientModule[prompt.Parent:GetAttribute("i4")].BlendedImage ~= nil and IngredientModule[prompt.Parent:GetAttribute("i4")].BlendedImage or "";
+			else
+				itemImage4.Visible = false;
+			end
+
+			if prompt.Parent:GetAttribute("i5") ~= "" then 
+				itemImage5.Visible = true;
+				itemImage5.Image = IngredientModule[prompt.Parent:GetAttribute("i5")].BlendedImage ~= nil and IngredientModule[prompt.Parent:GetAttribute("i5")].BlendedImage or "";
+			else
+				itemImage5.Visible = false;
+			end
+		else
+			if prompt.Parent:GetAttribute("Type") == "Food" then
+				if prompt.Parent.Parent:IsA("Model") then
+					itemImage.Image = IngredientModule[prompt.Parent.Parent.Name].Image
+				else
+					if RecipeModule[prompt.Parent.Name] then
+						itemImage.Image = RecipeModule[prompt.Parent.Name].Image
+					else
+						itemImage.Image = "http://www.roblox.com/asset/?id=4509163032" --???
+					end;
+				end
+			elseif prompt.Parent:GetAttribute("Type") == "Ingredient" then
+				if prompt.Parent.Parent:IsA("Model") then
+					if IngredientModule[prompt.Parent.Parent.Name] then
+						itemImage.Image = IngredientModule[prompt.Parent.Parent.Name].Image
+					else
+						itemImage.Image = "http://www.roblox.com/asset/?id=4509163032" --???
+					end;
+				else
+					if IngredientModule[prompt.Parent.Name] then
+						itemImage.Image = IngredientModule[prompt.Parent.Name].Image
+					else
+						itemImage.Image = "http://www.roblox.com/asset/?id=4509163032" --???
+					end;
+				end
 			end
 		end
 	end
@@ -177,14 +280,36 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 	table.insert(tweensForFadeIn, TweenService:Create(promptFrame, tweenInfoFast, { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 0, Visible = true }))
 
     -- Head Frame Tweens
-	table.insert(tweensForFadeOut, TweenService:Create(headFrame, tweenInfoFast, { Size = UDim2.fromScale(1,0), BackgroundTransparency = 1, Visible = false }))
-	table.insert(tweensForFadeIn, TweenService:Create(headFrame, tweenInfoFast, { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 0, Visible = true }))
+	local iSizeX, iSizeY;
+
+	if customStatus == Status.IngredientsTable then
+		--print(getAmountOfItemImages(), (0.20 * getAmountOfItemImages()))
+		iSizeX = (0.20 * getAmountOfItemImages()) + 0.05;
+	else
+		iSizeX = 1;
+	end
+
+	table.insert(tweensForFadeOut, TweenService:Create(headFrame, tweenInfoFast, { Size = UDim2.fromScale(iSizeX, 0), BackgroundTransparency = 1, Visible = false }))
+	table.insert(tweensForFadeIn, TweenService:Create(headFrame, tweenInfoFast, { Size = UDim2.fromScale(iSizeX, 1), BackgroundTransparency = 0, Visible = true }))
+
+	
+
+	if customStatus == Status.IngredientsTable then
+		table.insert(tweensForFadeOut, TweenService:Create(itemsFrame, tweenInfoFast, { Size = UDim2.fromScale(1, 0), Visible = false }))
+		table.insert(tweensForFadeIn, TweenService:Create(itemsFrame, tweenInfoFast, { Size = UDim2.fromScale(1, 1), Visible = true }))
+	end
+
 
 	-- Prompt Title Frame Tweens
 	table.insert(tweensForFadeOut, TweenService:Create(titleText, tweenInfoFast, { Position = UDim2.fromScale(1,0) }))
 	table.insert(tweensForFadeIn, TweenService:Create(titleText, tweenInfoFast, { Position = UDim2.fromScale(0, 0) }))
 
-	titleText.Text = customStatus;
+	if customStatus == Status.IngredientsTable then
+		titleText.Text = "Pickup blended food";
+	else
+		titleText.Text = customStatus;
+	end
+	
 	
 	-- Make the prompt work on mobile / clickable
 	if inputType == Enum.ProximityPromptInputType.Touch or prompt.ClickablePrompt then
@@ -237,7 +362,7 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 	promptUI.Adornee = prompt.Parent
 	promptUI.Parent = gui
 
-	if currentStatus == Status.PickUp then
+	if currentStatus == Status.PickUp or currentStatus == Status.IngredientsTable then
 		headUI.Adornee = prompt.Parent
 		headUI.Parent = gui
 	end
@@ -299,6 +424,13 @@ function CustomProximityController:KnitStart()
 			prompt.PromptHidden:Wait();
 		
         	cleanupFunction();
+		elseif CollectionService:HasTag(prompt.Parent, "IngredientsTable") then
+			currentStatus = Status.IngredientsTable;
+			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "IngredientsTable");
+
+			prompt.PromptHidden:Wait();
+		
+			cleanupFunction();
 		elseif Character then
 			currentStatus = Status.Drop;
 			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "Drop");
