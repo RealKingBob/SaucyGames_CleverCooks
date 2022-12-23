@@ -5,6 +5,20 @@ local OrderService = Knit.CreateService {
     Client = {};
 }
 
+--[[
+    -- Example usage: add 3 copies of each of 3 random recipes to player 1's dictionary
+    addRandomRecipes(player, serverAvailableRecipes, 3)
+
+    print("playerRecipes:",playerRecipes[player])
+
+    shuffle(playerRecipes[player])
+    
+    print("playerRecipes:",playerRecipes[player])
+    
+    -- Mark the first recipe as completed for player 1
+    completeRecipe(player, "Recipe 1")
+]]
+
 ----- Services -----
 
 local Players = game:GetService("Players");
@@ -134,8 +148,10 @@ local function updatePlayerRecipes(player)
             -- Add a random recipe to the player's table
             addRandomRecipe(player, serverAvailableRecipes)
 
-            playerRecipes[player].timer = 180 -- reset to 3 minutes
-            print("add recipe:", playerRecipes[player])
+            local CalculatedTime = 180 + ((#playerRecipes[player].storage * 60) - 90)
+
+            playerRecipes[player].timer = CalculatedTime; -- reset to 3 minutes
+            print("add recipe:", playerRecipes[player], "| adjusted CalculatedTime:", CalculatedTime)
         end
 
         -- Remove any expired recipes from the player's table
@@ -149,18 +165,6 @@ local function PlayerAdded(player)
         storage = {}, -- player storage
         timer = math.random(10,30), -- 10-30 seconds to automatically give one recipe
     };
-   --[[
-    -- Example usage: add 3 copies of each of 3 random recipes to player 1's dictionary
-    addRandomRecipes(player, serverAvailableRecipes, 3)
-
-    print("playerRecipes:",playerRecipes[player])
-
-    shuffle(playerRecipes[player])
-    
-    print("playerRecipes:",playerRecipes[player])
-    
-    -- Mark the first recipe as completed for player 1
-    completeRecipe(player, "Recipe 1")]]
 end;
 
 local function PlayerRemoving(player)
