@@ -42,6 +42,14 @@ function Blender.new(instance)
         self.playersDebounces[player.UserId] = {};
         self.ObjectsInBlender[player.UserId] = {};
         self.NumOfObjects[player.UserId] = 0
+
+        local CookingService = Knit.GetService("CookingService");
+        CookingService.Client.ChangeClientBlender:Fire(player,
+            self.Object, -- blender object
+            "bladeSpin", -- command
+            { -- data
+                true -- boolean
+            });
     end;
     
     local function PlayerRemoving(player)
@@ -58,7 +66,7 @@ function Blender.new(instance)
         self.Object.Button.ProximityPrompt.RequiresLineOfSight = false;
     end
 
-    local function BlenderFluidChange(percentage)
+    --[[local function BlenderFluidChange(percentage)
         local blenderFluid = self.Object.Flood;
         local maxSize = 11.47;
         local currentSize = blenderFluid.Size.Y
@@ -85,7 +93,7 @@ function Blender.new(instance)
         powerBlender.Completed:Wait();
         blenderFluid.Size = endSize;
         --blenderFluid.CFrame = endCFrame;
-    end
+    end]]
 
     local function InsertObjToBlender(Obj)
         local FoodSpawnPoints = CollectionService:GetTagged("FoodSpawnPoints");
@@ -127,8 +135,6 @@ function Blender.new(instance)
 
             SpinTween:Play();
             SpinTween.Completed:Wait();
-
-
 
             self.Object.Blade.PrimaryPart.HingeConstraint.AngularVelocity = 70;
         else
@@ -195,8 +201,18 @@ function Blender.new(instance)
                     table.insert(self.ObjectsInBlender[player.UserId], hit)
                     self.NumOfObjects[player.UserId] += 1;
                     InsertObjToBlender(hit)
-                    task.spawn(BlenderFluidChange, self.NumOfObjects[player.UserId] / self.MaxNumOfObjects)
-                    self.NumOfObjectsTextLabel.Text = tostring(self.NumOfObjects[player.UserId].."/"..self.MaxNumOfObjects);
+                    --task.spawn(BlenderFluidChange, self.NumOfObjects[player.UserId] / self.MaxNumOfObjects)
+                    --self.NumOfObjectsTextLabel.Text = tostring(self.NumOfObjects[player.UserId].."/"..self.MaxNumOfObjects);
+                   
+                    local CookingService = Knit.GetService("CookingService");
+                    CookingService.Client.ChangeClientBlender:Fire(player,
+                        self.Object, -- blender object
+                        "fluidPercentage", -- command
+                        { -- data
+                            (self.NumOfObjects[player.UserId] / self.MaxNumOfObjects), -- fluid 
+                            tostring(self.NumOfObjects[player.UserId].."/"..self.MaxNumOfObjects) -- blender text
+                        });
+
                     print("BLADE HIT", hit, hit.Parent, self.ObjectsInBlender[player.UserId])
                 end
             elseif hit.Parent:GetAttribute("Type") then
@@ -205,8 +221,18 @@ function Blender.new(instance)
                     table.insert(self.ObjectsInBlender[player.UserId], hit.Parent)
                     self.NumOfObjects[player.UserId] += 1;
                     InsertObjToBlender(hit)
-                    task.spawn(BlenderFluidChange, self.NumOfObjects[player.UserId] / self.MaxNumOfObjects)
-                    self.NumOfObjectsTextLabel.Text = tostring(self.NumOfObjects[player.UserId].."/"..self.MaxNumOfObjects);
+                    --task.spawn(BlenderFluidChange, self.NumOfObjects[player.UserId] / self.MaxNumOfObjects)
+                    --self.NumOfObjectsTextLabel.Text = tostring(self.NumOfObjects[player.UserId].."/"..self.MaxNumOfObjects);
+                    
+                    local CookingService = Knit.GetService("CookingService");
+                    CookingService.Client.ChangeClientBlender:Fire(player,
+                        self.Object, -- blender object
+                        "fluidPercentage", -- command
+                        { -- data
+                            (self.NumOfObjects[player.UserId] / self.MaxNumOfObjects), -- fluid 
+                            tostring(self.NumOfObjects[player.UserId].."/"..self.MaxNumOfObjects) -- blender text
+                        });
+                    
                     print("BLADE HIT", hit, hit.Parent, self.ObjectsInBlender[player.UserId])
                 end
             end
@@ -236,9 +262,18 @@ function Blender.new(instance)
                 NotificationService:Message(false, player, "Blended food is dropped!")
                 
                 self.ObjectsInBlender[player.UserId] = {};
+
+                local CookingService = Knit.GetService("CookingService");
+                CookingService.Client.ChangeClientBlender:Fire(player,
+                    self.Object, -- blender object
+                    "fluidPercentage", -- command
+                    { -- data
+                        (self.NumOfObjects[player.UserId] / self.MaxNumOfObjects), -- fluid 
+                        tostring(self.NumOfObjects[player.UserId].."/"..self.MaxNumOfObjects) -- blender text
+                    });
                 
-                task.spawn(BlenderFluidChange, self.NumOfObjects[player.UserId] / self.MaxNumOfObjects)
-                self.NumOfObjectsTextLabel.Text = tostring(self.NumOfObjects[player.UserId].."/"..self.MaxNumOfObjects);
+                --task.spawn(BlenderFluidChange, self.NumOfObjects[player.UserId] / self.MaxNumOfObjects)
+                --self.NumOfObjectsTextLabel.Text = tostring(self.NumOfObjects[player.UserId].."/"..self.MaxNumOfObjects);
             end
 
             task.wait(1);
@@ -281,6 +316,11 @@ function Blender.new(instance)
     PlayEffects(true);
     self.Object.Button.SurfaceGui.Frame.BackgroundColor3 = Color3.fromRGB(0, 166, 0)
     self.Object.Button.ProximityPrompt.ActionText = "Get Blended Food"
+
+    --// In case Players have joined the server earlier than this script ran:
+    for _, player in ipairs(Players:GetPlayers()) do
+        coroutine.wrap(PlayerAdded)(player);
+    end
 
     Players.PlayerAdded:Connect(PlayerAdded);
     Players.PlayerRemoving:Connect(PlayerRemoving);

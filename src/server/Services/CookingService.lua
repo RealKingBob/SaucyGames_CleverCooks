@@ -19,6 +19,8 @@ local CookingService = Knit.CreateService {
 		ParticlesSpawn = Knit.CreateSignal(),
 		SendIngredients = Knit.CreateSignal(),
 		ProximitySignal = Knit.CreateSignal();
+
+		ChangeClientBlender = Knit.CreateSignal();
 	};
 }
 
