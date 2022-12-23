@@ -67,30 +67,7 @@ local nightStartShift, nightEndShift = Knit.Config.NIGHT_START_SHIFT, Knit.Confi
 -- f(x)=b(x−min)+a(max−x) / max−min
 -- m+t/10(M−m)
 
-local function formatTime(timeVal)
-    local split = tostring(timeVal):split('.')
-    local hour = (tonumber(split[1]) ~= nil and tonumber(split[1])) or timeVal;
-    local min = (tonumber(split[2]) ~= nil and tonumber(split[2])) or 0;
-
-    min = (min / 100) * 60;
-
-    local period = "AM"
-
-    if hour >= 12 then
-        period = "PM"
-        hour = hour ~= 12 and hour - 12 or hour
-    end
-
-    if hour == 0 then
-        hour = 12
-    end
-
-    return string.format("%d:%02d %s", hour, min, period)
-    --return string.format("%.2d:%.2d %s", hour, min, period)
-end
-
 local function dayShiftHours(timeVal)
-    --print(timeVal, startPercent, endPercent, dayStartShift, dayEndShift)
     return (dayStartShift + (timeVal / endPercent) * (dayEndShift - dayStartShift));
     --return (((endPercent * (timeVal - dayStartShift)) + (startPercent * (dayEndShift - timeVal))) / (dayEndShift - dayStartShift));
 end
@@ -181,25 +158,14 @@ function SandboxMode:StartMode()
         
         print("[GameService]: Gameplay Started")
 
-        -- change map and spawn players 
-
-        --[[local RiseTween = TweenInfo.new(GAMEPLAY_TIME, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut);
-        local TweenModule = require(Knit.ReplicatedModules.TweenUtil);
-
-        local TimeTween = TweenModule.new(RiseTween, function(Alpha)
-            print(Alpha)
-            local currentTime = dayShiftHours((Alpha))
-            print("currentTime", formatTime(string.format("%.2f", currentTime)))
-        end)]]
-
         for i = 0, GAMEPLAY_TIME do
             local currentTime = dayShiftHours((i / GAMEPLAY_TIME))
             GameService.Client.AdjustTimeSignal:FireAll({
                 Day = self.numOfDays,
-                Time = formatTime(string.format("%.2f", currentTime)),
+                Time = currentTime, 
                 IsNight = false,
             });
-            --print("Day:", self.numOfDays ,"| Time:", formatTime(string.format("%.2f", currentTime)))
+            --print("Day:", self.numOfDays, i,  GAMEPLAY_TIME, i/GAMEPLAY_TIME, "| Time:", currentTime)
             task.wait(1)
         end
 
@@ -217,10 +183,10 @@ function SandboxMode:StartMode()
                 local currentTime = nightShiftHours((i / NIGHT_TIME))
                 GameService.Client.AdjustTimeSignal:FireAll({
                     Day = self.numOfDays,
-                    Time = formatTime(string.format("%.2f", currentTime)),
+                    Time = currentTime,
                     IsNight = true,
                 });
-                --print("Night:", self.numOfDays ,"| Time:", formatTime(string.format("%.2f", currentTime)))
+                --print("Night:", self.numOfDays, i,  NIGHT_TIME, i/NIGHT_TIME, "| Time:", currentTime)
                 task.wait(1)
             end
         else

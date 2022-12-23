@@ -45,6 +45,7 @@ Knit.NotificationService = require(Knit.Services.NotificationService);
 Knit.ProximityService = require(Knit.Services.ProximityService);
 Knit.InventoryService = require(Knit.Services.InventoryService);
 Knit.CookingService = require(Knit.Services.CookingService);
+Knit.OrderService = require(Knit.Services.OrderService);
 Knit.CrateService = require(Knit.Services.CrateService);
 Knit.NpcService = require(Knit.Services.NpcService);
 Knit.GameService = require(Knit.Services.GameService);

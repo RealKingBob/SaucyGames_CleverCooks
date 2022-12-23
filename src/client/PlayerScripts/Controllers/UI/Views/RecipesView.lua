@@ -193,7 +193,7 @@ function setupRecipeButtons()
 				foundBlendedIngredient = string.gsub(foundBlendedIngredient, "-", "")
 				foundBlendedIngredient = string.gsub(foundBlendedIngredient, "Blended", "")
 
-			print(foundIngredient, tostring(ingredient):find("[Blended]"), foundBlendedIngredient, IngredientModule[originalVal] , IngredientModule[foundBlendedIngredient])
+			--print(foundIngredient, tostring(ingredient):find("[Blended]"), foundBlendedIngredient, IngredientModule[originalVal] , IngredientModule[foundBlendedIngredient])
 
 			if IngredientModule[originalVal] == nil then
 				foundIngredient = IngredientModule[foundBlendedIngredient]
@@ -204,7 +204,7 @@ function setupRecipeButtons()
 			local clonedIngredientFrame = HoverIngredientTemplate:Clone()
 			clonedIngredientFrame.Size = UDim2.fromScale(0,0)
 			clonedIngredientFrame.Name = tostring(originalVal)
-			if string.find(ingredient, "[Blended]") then
+			if tostring(ingredient):match("Blended") then
 				clonedIngredientFrame.Icon.IconImage.Image = foundIngredient["BlendedImage"]
 				clonedIngredientFrame.Icon.IconImageShadow.Image = foundIngredient["BlendedImage"]
 			elseif foundIngredient then
@@ -351,7 +351,7 @@ function setupRecipeButtons()
 				foundBlendedIngredient = string.gsub(foundBlendedIngredient, "-", "")
 				foundBlendedIngredient = string.gsub(foundBlendedIngredient, "Blended", "")
 				
-				print("DATA", tostring(value):match("[Blended]"), tostring(originalVal), foundIngredient, foundBlendedIngredient, IngredientModule[value] , IngredientModule[foundBlendedIngredient])
+				--print("DATA", tostring(value):match("Blended"), tostring(originalVal), foundIngredient, foundBlendedIngredient, IngredientModule[value] , IngredientModule[foundBlendedIngredient])
 
 				if IngredientModule[originalVal] == nil then
 					foundIngredient = IngredientModule[foundBlendedIngredient]
@@ -362,7 +362,7 @@ function setupRecipeButtons()
 				local clonedIngredientFrame = IngredientTemplate:Clone()
 				clonedIngredientFrame.Name = tostring(originalVal)
 				clonedIngredientFrame.IngredientTitle.Text = tostring(originalVal)
-				if string.find(value, "[Blended]") then
+				if tostring(value):match("Blended") then
 					clonedIngredientFrame.ImageFrame.Icon.IconImage.Image = foundIngredient["BlendedImage"]
 				elseif foundIngredient then
 					clonedIngredientFrame.ImageFrame.Icon.IconImage.Image = foundIngredient["Image"]

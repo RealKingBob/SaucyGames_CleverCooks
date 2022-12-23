@@ -218,31 +218,31 @@ function Blender.new(instance)
         print("BLENDER", self.BlenderEnabled, self.playersDebounces[player.UserId]);
 
         if self.playersDebounces[player.UserId] == nil then
-            print("p1")
             self.playersDebounces[player.UserId] = true;
 
-            print("NumOfObjects", self.NumOfObjects[player.UserId])
-            print("p2")
+            --print("NumOfObjects", self.NumOfObjects[player.UserId])
             local NotificationService = Knit.GetService("NotificationService")
 
             if not self.ObjectsInBlender[player.UserId] then self.ObjectsInBlender[player.UserId] = {} end
-            print("p3")
             if not self.NumOfObjects[player.UserId] then self.NumOfObjects[player.UserId] = 0 end
-            print("p4")
+
             if self.NumOfObjects[player.UserId] == 0 then
-                print("p4a")
                 NotificationService:Message(false, player, "Blender is empty!")
             else
-                --/ TODO: FIX IT
-                print("p4b")
+                self.NumOfObjects[player.UserId] = 0;
+
                 local blendedFood = SpawnItemsAPI:SpawnBlenderFood(player.UserId, player, self.ObjectsInBlender[player.UserId], IngredientObjects, IngredientsAvailable, self.Object.ReturnObj.Position + Vector3.new(0,5,0));
 
                 NotificationService:Message(false, player, "Blended food is dropped!")
+                
+                self.ObjectsInBlender[player.UserId] = {};
+                
+                task.spawn(BlenderFluidChange, self.NumOfObjects[player.UserId] / self.MaxNumOfObjects)
+                self.NumOfObjectsTextLabel.Text = tostring(self.NumOfObjects[player.UserId].."/"..self.MaxNumOfObjects);
             end
-            print("p5")
+
             task.wait(1);
             self.playersDebounces[player.UserId] = nil;
-            print("p6")
         end
 
 		--[[self.BlenderEnabled = not self.BlenderEnabled;

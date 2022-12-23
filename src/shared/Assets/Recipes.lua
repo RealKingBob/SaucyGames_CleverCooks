@@ -153,6 +153,19 @@ local Recipes = {
 	},
 };
 
+function Recipes:GetAllRecipeNames()
+	local Array = {};
+	for k, v in pairs(self) do
+		if type(v) == "table" then
+			table.insert(Array, {
+				name = k,
+				value = 0,
+			});
+		end;
+	end;
+	return Array;
+end
+
 function Recipes:GetCookTime(recipeName : string)
 	local recipePackage = self[recipeName];
 
