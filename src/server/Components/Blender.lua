@@ -39,7 +39,7 @@ function Blender.new(instance)
     self.NumOfObjectsTextLabel = self.Object.Glass.Glass.NumOfObjects.TextLabel;
 
     local function PlayerAdded(player)
-        self.playersDebounces[player.UserId] = {};
+        self.playersDebounces[player.UserId] = nil;
         self.ObjectsInBlender[player.UserId] = {};
         self.NumOfObjects[player.UserId] = 0
 
