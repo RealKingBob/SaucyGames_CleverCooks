@@ -49,6 +49,10 @@ local ShortDistanceObject
 local CookDebounce = false;
 local CookButton = mainGui.Cook
 
+local prevFoodName = nil
+local prevIngredientTab = nil;
+local prevConnection = nil;
+
 -- setup
 
 function recipePageCreated(PageNumber,PageData)
@@ -151,174 +155,171 @@ function setupRecipes()
 	setupRecipeButtons()
 end
 
-
-function setupRecipeButtons()
-	local prevFoodName = nil
-	local prevIngredientTab = nil;
-	local prevConnection = nil;
-
-    local function displayIngredients()
-		if prevIngredientTab == recipeSelected then
-			return
+local function displayIngredients()
+	if prevIngredientTab == recipeSelected then
+		return
+	end
+	prevIngredientTab = recipeSelected
+	if prevConnection then
+		prevConnection:Disconnect()
+		prevConnection = nil;
+	end
+	for _, frame in pairs(IngredientsTab:GetChildren()) do
+		if frame:IsA("Frame") then
+			--frame:TweenSize(UDim2.fromScale(0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Elastic)
+			frame:Destroy()
 		end
-		prevIngredientTab = recipeSelected
-		if prevConnection then
-			prevConnection:Disconnect()
-			prevConnection = nil;
-		end
-		for _, frame in pairs(IngredientsTab:GetChildren()) do
-			if frame:IsA("Frame") then
-				--frame:TweenSize(UDim2.fromScale(0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Elastic)
-				frame:Destroy()
-			end
-		end;
+	end;
 
-		if recipeSelected == nil then
-			foodNameDisplayed.Text = ""
-			allIngredientsFound = false;
-			return
-		end
-
-		foodNameDisplayed.Text = recipeSelected
-
-		local greenIngredients = {};
+	if recipeSelected == nil then
+		foodNameDisplayed.Text = ""
 		allIngredientsFound = false;
-		CookButton.Visible = false;
+		return
+	end
 
-		for _,ingredient in pairs(RecipeModule[recipeSelected]["Ingredients"]) do
-			local originalVal = ingredient
-			local foundIngredient = IngredientModule[originalVal]
-			local foundBlendedIngredient, replaced = string.gsub(originalVal, "%[", "");
-				foundBlendedIngredient = string.gsub(foundBlendedIngredient, "%]", "")
-				foundBlendedIngredient = string.gsub(foundBlendedIngredient, "-", "")
-				foundBlendedIngredient = string.gsub(foundBlendedIngredient, "Blended", "")
+	foodNameDisplayed.Text = recipeSelected
 
-			--print(foundIngredient, tostring(ingredient):find("[Blended]"), foundBlendedIngredient, IngredientModule[originalVal] , IngredientModule[foundBlendedIngredient])
+	local greenIngredients = {};
+	allIngredientsFound = false;
+	CookButton.Visible = false;
 
-			if IngredientModule[originalVal] == nil then
-				foundIngredient = IngredientModule[foundBlendedIngredient]
-			end
+	for _,ingredient in pairs(RecipeModule[recipeSelected]["Ingredients"]) do
+		local originalVal = ingredient
+		local foundIngredient = IngredientModule[originalVal]
+		local foundBlendedIngredient, replaced = string.gsub(originalVal, "%[", "");
+			foundBlendedIngredient = string.gsub(foundBlendedIngredient, "%]", "")
+			foundBlendedIngredient = string.gsub(foundBlendedIngredient, "-", "")
+			foundBlendedIngredient = string.gsub(foundBlendedIngredient, "Blended", "")
 
-			local Prefabs = LocalPlayer.PlayerGui:WaitForChild("Prefabs")
-			local HoverIngredientTemplate = Prefabs:WaitForChild("HoverIngredientTemplate")
-			local clonedIngredientFrame = HoverIngredientTemplate:Clone()
-			clonedIngredientFrame.Size = UDim2.fromScale(0,0)
-			clonedIngredientFrame.Name = tostring(originalVal)
-			if tostring(ingredient):match("Blended") then
-				clonedIngredientFrame.Icon.IconImage.Image = foundIngredient["BlendedImage"]
-				clonedIngredientFrame.Icon.IconImageShadow.Image = foundIngredient["BlendedImage"]
-			elseif foundIngredient then
-				clonedIngredientFrame.Icon.IconImage.Image = foundIngredient["Image"]
-				clonedIngredientFrame.Icon.IconImageShadow.Image = foundIngredient["Image"]
+		--print(foundIngredient, tostring(ingredient):find("[Blended]"), foundBlendedIngredient, IngredientModule[originalVal] , IngredientModule[foundBlendedIngredient])
+
+		if IngredientModule[originalVal] == nil then
+			foundIngredient = IngredientModule[foundBlendedIngredient]
+		end
+
+		local Prefabs = LocalPlayer.PlayerGui:WaitForChild("Prefabs")
+		local HoverIngredientTemplate = Prefabs:WaitForChild("HoverIngredientTemplate")
+		local clonedIngredientFrame = HoverIngredientTemplate:Clone()
+		clonedIngredientFrame.Size = UDim2.fromScale(0,0)
+		clonedIngredientFrame.Name = tostring(originalVal)
+		if tostring(ingredient):match("Blended") then
+			clonedIngredientFrame.Icon.IconImage.Image = foundIngredient["BlendedImage"]
+			clonedIngredientFrame.Icon.IconImageShadow.Image = foundIngredient["BlendedImage"]
+		elseif foundIngredient then
+			clonedIngredientFrame.Icon.IconImage.Image = foundIngredient["Image"]
+			clonedIngredientFrame.Icon.IconImageShadow.Image = foundIngredient["Image"]
+		else
+			clonedIngredientFrame.Icon.IconImage.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
+			clonedIngredientFrame.Icon.IconImageShadow.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
+		end
+		
+		if myReplicatedIngredients then
+			if #myReplicatedIngredients == 0 then
+				clonedIngredientFrame.UIStroke.Color = notCompletedColors[2]
+				clonedIngredientFrame.BackgroundColor3 = notCompletedColors[2]
+				clonedIngredientFrame.Icon.BackgroundColor3 = notCompletedColors[1]
 			else
-				clonedIngredientFrame.Icon.IconImage.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
-				clonedIngredientFrame.Icon.IconImageShadow.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
-			end
-			
-			if myReplicatedIngredients then
-				if #myReplicatedIngredients == 0 then
-					clonedIngredientFrame.UIStroke.Color = notCompletedColors[2]
-					clonedIngredientFrame.BackgroundColor3 = notCompletedColors[2]
-					clonedIngredientFrame.Icon.BackgroundColor3 = notCompletedColors[1]
-				else
-					for _,v in pairs(myReplicatedIngredients) do
-						if clonedIngredientFrame.Name == tostring(v) then
-							clonedIngredientFrame.UIStroke.Color = completedColors[2]
-							clonedIngredientFrame.BackgroundColor3 = completedColors[2]
-							clonedIngredientFrame.Icon.BackgroundColor3 = completedColors[1]
-							break;
-						else
-							clonedIngredientFrame.UIStroke.Color = notCompletedColors[2]
-							clonedIngredientFrame.BackgroundColor3 = notCompletedColors[2]
-							clonedIngredientFrame.Icon.BackgroundColor3 = notCompletedColors[1]
-						end
+				for _,v in pairs(myReplicatedIngredients) do
+					if clonedIngredientFrame.Name == tostring(v) then
+						clonedIngredientFrame.UIStroke.Color = completedColors[2]
+						clonedIngredientFrame.BackgroundColor3 = completedColors[2]
+						clonedIngredientFrame.Icon.BackgroundColor3 = completedColors[1]
+						break;
+					else
+						clonedIngredientFrame.UIStroke.Color = notCompletedColors[2]
+						clonedIngredientFrame.BackgroundColor3 = notCompletedColors[2]
+						clonedIngredientFrame.Icon.BackgroundColor3 = notCompletedColors[1]
 					end
 				end
 			end
-			table.insert(greenIngredients, clonedIngredientFrame)
-			clonedIngredientFrame.Parent = IngredientsTab;
-			clonedIngredientFrame:TweenSize(UDim2.fromScale(0.081,1), Enum.EasingDirection.Out, Enum.EasingStyle.Elastic);
-			--task.wait(0.01)
 		end
+		table.insert(greenIngredients, clonedIngredientFrame)
+		clonedIngredientFrame.Parent = IngredientsTab;
+		clonedIngredientFrame:TweenSize(UDim2.fromScale(0.081,1), Enum.EasingDirection.Out, Enum.EasingStyle.Elastic);
+		--task.wait(0.01)
+	end
 
-		local checkIfAllGreen = true;
-		for _, v in pairs(greenIngredients) do
-			if v.BackgroundColor3 ~= completedColors[2] then
-				checkIfAllGreen = false
-				break;
-			end
+	local checkIfAllGreen = true;
+	for _, v in pairs(greenIngredients) do
+		if v.BackgroundColor3 ~= completedColors[2] then
+			checkIfAllGreen = false
+			break;
 		end
-		--print('checkIfAllGreen', checkIfAllGreen)
-		if checkIfAllGreen == true then
-			allIngredientsFound = true;
-			for _, pan in pairs(CollectionService:GetTagged("Pan")) do
-				if pan:FindFirstChild("CookHeadUI") then continue end;
-				pan.ProximityPrompt.Enabled = true;
-			end
-		else
-			for _, pan in pairs(CollectionService:GetTagged("Pan")) do
-				pan.ProximityPrompt.Enabled = false;
-			end
+	end
+	--print('checkIfAllGreen', checkIfAllGreen)
+	if checkIfAllGreen == true then
+		allIngredientsFound = true;
+		for _, pan in pairs(CollectionService:GetTagged("Pan")) do
+			if pan:FindFirstChild("CookHeadUI") then continue end;
+			pan.ProximityPrompt.Enabled = true;
 		end
+	else
+		for _, pan in pairs(CollectionService:GetTagged("Pan")) do
+			pan.ProximityPrompt.Enabled = false;
+		end
+	end
 
-		local CookingService = Knit.GetService("CookingService")
-		
-		prevConnection = CookingService.SendIngredients:Connect(function(args)
-			greenIngredients = {};
-			--print(args)
-			if args then
-				myReplicatedIngredients = args
-				if #myReplicatedIngredients == 0 then
-					for _, frame in pairs(IngredientsTab:GetChildren()) do
+	local CookingService = Knit.GetService("CookingService")
+	
+	prevConnection = CookingService.SendIngredients:Connect(function(args)
+		greenIngredients = {};
+		--print(args)
+		if args then
+			myReplicatedIngredients = args
+			if #myReplicatedIngredients == 0 then
+				for _, frame in pairs(IngredientsTab:GetChildren()) do
+					if frame:IsA("Frame") then
+						frame.UIStroke.Color = notCompletedColors[2]
+						frame.BackgroundColor3 = notCompletedColors[2]
+						frame.Icon.BackgroundColor3 = notCompletedColors[1]
+						table.insert(greenIngredients, frame)
+					end
+				end
+			else
+				for _, frame in pairs(IngredientsTab:GetChildren()) do
+					for _,v in pairs(myReplicatedIngredients) do
 						if frame:IsA("Frame") then
-							frame.UIStroke.Color = notCompletedColors[2]
-							frame.BackgroundColor3 = notCompletedColors[2]
-							frame.Icon.BackgroundColor3 = notCompletedColors[1]
+							if frame.Name == tostring(v) then
+								frame.UIStroke.Color = completedColors[2]
+								frame.BackgroundColor3 = completedColors[2]
+								frame.Icon.BackgroundColor3 = completedColors[1]
+								break;
+							else
+								frame.UIStroke.Color = notCompletedColors[2]
+								frame.BackgroundColor3 = notCompletedColors[2]
+								frame.Icon.BackgroundColor3 = notCompletedColors[1]
+							end
 							table.insert(greenIngredients, frame)
 						end
 					end
-				else
-					for _, frame in pairs(IngredientsTab:GetChildren()) do
-						for _,v in pairs(myReplicatedIngredients) do
-							if frame:IsA("Frame") then
-								if frame.Name == tostring(v) then
-									frame.UIStroke.Color = completedColors[2]
-									frame.BackgroundColor3 = completedColors[2]
-									frame.Icon.BackgroundColor3 = completedColors[1]
-									break;
-								else
-									frame.UIStroke.Color = notCompletedColors[2]
-									frame.BackgroundColor3 = notCompletedColors[2]
-									frame.Icon.BackgroundColor3 = notCompletedColors[1]
-								end
-								table.insert(greenIngredients, frame)
-							end
-						end
-					end
-				end
-
-				checkIfAllGreen = true;
-				for _, v in pairs(greenIngredients) do
-					if v.BackgroundColor3 ~= completedColors[2] then
-						checkIfAllGreen = false
-						break;
-					end
-				end
-				--print('checkIfAllGreen', checkIfAllGreen)
-				if checkIfAllGreen == true then
-					allIngredientsFound = true;
-					for _, pan in pairs(CollectionService:GetTagged("Pan")) do
-						if pan:FindFirstChild("CookHeadUI") then continue end;
-						pan.ProximityPrompt.Enabled = true;
-					end
-				else
-					for _, pan in pairs(CollectionService:GetTagged("Pan")) do
-						pan.ProximityPrompt.Enabled = false;
-					end
 				end
 			end
-		end)
-	end
+
+			checkIfAllGreen = true;
+			for _, v in pairs(greenIngredients) do
+				if v.BackgroundColor3 ~= completedColors[2] then
+					checkIfAllGreen = false
+					break;
+				end
+			end
+			--print('checkIfAllGreen', checkIfAllGreen)
+			if checkIfAllGreen == true then
+				allIngredientsFound = true;
+				for _, pan in pairs(CollectionService:GetTagged("Pan")) do
+					if pan:FindFirstChild("CookHeadUI") then continue end;
+					pan.ProximityPrompt.Enabled = true;
+				end
+			else
+				for _, pan in pairs(CollectionService:GetTagged("Pan")) do
+					pan.ProximityPrompt.Enabled = false;
+				end
+			end
+		end
+	end)
+end
+
+
+function setupRecipeButtons()
 
 	local function setupIngredients(foodName)
 		if foodName == prevFoodName then
@@ -432,6 +433,15 @@ function setupRecipeButtons()
 			debounce = false;
 		end;
 	end)
+end
+
+function RecipesView:GetRecipeIngredients(recipeName)
+	recipeSelected = recipeName
+	displayIngredients()
+end
+
+function RecipesView:ViewRecipe(recipeName)
+	
 end
 
 function RecipesView:Cook(pan)

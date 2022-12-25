@@ -177,6 +177,17 @@ function Recipes:GetCookTime(recipeName : string)
 	end
 end
 
+function Recipes:GetImage(recipeName : string)
+	local recipePackage = self[recipeName];
+
+	if not recipePackage then return "" end
+	if recipePackage.Image then 
+		return recipePackage.Image;
+	else
+		return "";
+	end
+end
+
 function Recipes:GetRecipeRewards(Difficulty)
 	return RecipeRewards[Difficulty];
 end;
