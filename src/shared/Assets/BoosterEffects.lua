@@ -121,7 +121,7 @@ BoosterEffects.ItemsTable = {
 		Visible = true;
 		Rarity = 1, -- Not obtainable
 		CrateId = -1, -- In no crates
-		DecalId = "",
+		DecalId = "rbxassetid://11936245132",
 		IndividualPrice = 0, -- If it were to go on daily shop, this would be displayed
 		Tradeable = false
 	},
@@ -134,7 +134,7 @@ BoosterEffects.ItemsTable = {
 		Visible = true;
 		Rarity = 1,
 		CrateId = 1,
-		DecalId = "",
+		DecalId = "rbxassetid://11936310432",
 		IndividualPrice = 2000, -- If it were to go on daily shop, this would be displayed
 		Tradeable = false
 	},
@@ -145,7 +145,7 @@ BoosterEffects.ItemsTable = {
 		Visible = true;
 		Rarity = 1,
 		CrateId = 1,
-		DecalId = "",
+		DecalId = "rbxassetid://11936310096",
 		IndividualPrice = 2000, -- If it were to go on daily shop, this would be displayed
 		Tradeable = false
 	},
@@ -156,7 +156,7 @@ BoosterEffects.ItemsTable = {
 		Visible = true;
 		Rarity = 1,
 		CrateId = 1,
-		DecalId = "rbxassetid://8305496152",
+		DecalId = "rbxassetid://11936310664",
 		IndividualPrice = 2000, -- If it were to go on daily shop, this would be displayed
 		Tradeable = false
 	},
@@ -167,7 +167,7 @@ BoosterEffects.ItemsTable = {
 		Visible = true;
 		Rarity = 2,
 		CrateId = 1,
-		DecalId = "rbxassetid://8305495847",
+		DecalId = "rbxassetid://11936310546",
 		IndividualPrice = 2520, -- If it were to go on daily shop, this would be displayed
 		Tradeable = false
 	},
@@ -178,7 +178,7 @@ BoosterEffects.ItemsTable = {
 		Visible = true;
 		Rarity = 2,
 		CrateId = 1,
-		DecalId = "",
+		DecalId = "rbxassetid://11936309944",
 		IndividualPrice = 2520, -- If it were to go on daily shop, this would be displayed
 		Tradeable = false
 	},
@@ -200,7 +200,7 @@ BoosterEffects.ItemsTable = {
 		Visible = true;
 		Rarity = 4,
 		CrateId = 1,
-		DecalId = "",
+		DecalId = "rbxassetid://11936310296",
 		IndividualPrice = 4500, -- If it were to go on daily shop, this would be displayed
 		Tradeable = false
 	},
@@ -211,7 +211,7 @@ BoosterEffects.ItemsTable = {
 		Visible = true;
 		Rarity = 5,
 		CrateId = 1,
-		DecalId = "rbxassetid://8305496299",
+		DecalId = "rbxassetid://11936310805",
 		IndividualPrice = 7500, -- If it were to go on daily shop, this would be displayed
 		Tradeable = false
 	},

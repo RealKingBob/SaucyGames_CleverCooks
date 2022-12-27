@@ -4,6 +4,7 @@ local OrderUI = Knit.CreateController { Name = "OrderUI" }
 
 --//Service
 local Players = game:GetService("Players")
+local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
 local MarketplaceService = game:GetService("MarketplaceService")
 
@@ -11,21 +12,44 @@ local MarketplaceService = game:GetService("MarketplaceService")
 local LocalPlayer = Players.LocalPlayer;
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
+local dingSound = "rbxassetid://9068539820";
+local swooshSound = "rbxassetid://9119737641";
+local itemClickSound = "rbxassetid://552900451";
+
+local ReplicatedModules = Knit.Shared.Modules;
+local GuiParticleEmitterModule = ReplicatedModules:FindFirstChild("GuiParticleEmitter");
+
 local MainGui = PlayerGui:WaitForChild("Main")
 local OrderFrame = MainGui:WaitForChild("TopFrame"):WaitForChild("Bottom")
+
+
+local function playLocalSound(soundId, volume)
+    local sound = Instance.new("Sound")
+    sound.SoundId = soundId;
+    sound.Volume = volume;
+    SoundService:PlayLocalSound(sound)
+    sound.Ended:Wait()
+    sound:Destroy()
+end
 
 function OrderUI:AddOrder(orderData)
     local name, id, image, timer, description = orderData.name, orderData.id, orderData.image, orderData.timer, orderData.name
 
     local StickyNotePrefab = PlayerGui:WaitForChild("Prefabs"):WaitForChild("StickyNote");
     local ItemClone = StickyNotePrefab:Clone() do
+        local MainFrame = ItemClone:WaitForChild("MainFrame")
         ItemClone.Name = "OrderItem_"..tostring(name);
-        ItemClone:WaitForChild("Icon").Image = image;
+        MainFrame:WaitForChild("Icon").Image = image;
         ItemClone.LayoutOrder = #OrderFrame:GetChildren() - 1;
         ItemClone:SetAttribute("orderId", id)
+        ItemClone:SetAttribute("maxTimer", timer)
+        ItemClone:SetAttribute("timer", timer)
+        MainFrame.Position = UDim2.new(10, 0, 0, 0)
         ItemClone.Parent = OrderFrame;
 
-        local TimerFrame = ItemClone:WaitForChild("Timer")
+        self:AnimateEnterOrder(ItemClone)
+
+        local TimerFrame = MainFrame:WaitForChild("Timer")
         local leftFrame = TimerFrame:WaitForChild("LeftBG"):WaitForChild("LeftFrame")
         local rightFrame = TimerFrame:WaitForChild("RightBG"):WaitForChild("RightFrame")
 
@@ -65,6 +89,20 @@ function OrderUI:AddOrder(orderData)
             progressTween:Play()
         end
 
+        local function pulseTimer(pulseSpeed)
+            local tweenInfo = TweenInfo.new(pulseSpeed, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+            if TimerFrame and TimerFrame:FindFirstChild("ImageLabel") then
+                local tween = TweenService:Create(TimerFrame:FindFirstChild("ImageLabel"), tweenInfo, {ImageColor3 = Color3.fromRGB(236, 52, 52)})
+                tween:Play()
+                tween.Completed:Wait();
+            end
+            if TimerFrame and TimerFrame:FindFirstChild("ImageLabel") then
+                local tween2 = TweenService:Create(TimerFrame:FindFirstChild("ImageLabel"), tweenInfo, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
+                tween2:Play()
+                tween2.Completed:Wait();
+            end 
+        end
+
         progressBar(0,360,0)
 
         local startPercent, endPercent, startCircle, endCircle = 0, 1, 0, 360; -- 0 -> 360 degrees
@@ -73,42 +111,115 @@ function OrderUI:AddOrder(orderData)
         end
 
         task.spawn(function()
-            for i = timer, 0, -1 do
+            repeat
+                ItemClone:SetAttribute("timer", ItemClone:GetAttribute("timer") - 1)
                 --print(i-1, percentageInCircle((i-1)/timer))
-                task.spawn(progressBar, 1, percentageInCircle((i-1)/timer))
+                task.spawn(progressBar, 1, percentageInCircle((ItemClone:GetAttribute("timer")-1)/ItemClone:GetAttribute("maxTimer")))
+                if ItemClone:GetAttribute("maxTimer")/2.7 > ItemClone:GetAttribute("timer") then
+                    if MainFrame and MainFrame:FindFirstChild("Timer") then
+                        MainFrame:FindFirstChild("Timer").AddTimeLabel.Visible = true;
+                        MainFrame:FindFirstChild("Timer").AddTime.Visible = true;
+                    end
+
+                    task.spawn(pulseTimer, .5)
+                end
                 task.wait(1)
-            end
+            until ItemClone:GetAttribute("timer") <= 0;
         end)
 
         --task.spawn(progressBar, .4, 360, 0)
 
-        ItemClone:FindFirstChild("Timer").AddTime.MouseButton1Click:Connect(function()
-            print('add time')
-            
+        local deb = false;
+
+        MainFrame:FindFirstChild("Timer").AddTime.MouseButton1Click:Connect(function()
+            if deb == false then
+                deb = true;
+                Knit.GetService("OrderService").ResetTimePurchase:Fire(ItemClone:GetAttribute("orderId"))
+                task.wait(.5)
+                deb = false;
+            end
         end)
 
-        ItemClone:FindFirstChild("Icon").InspectRecipe.MouseButton1Click:Connect(function()
-            print('inspecting recipe')
-            Knit.GetController("RecipesView"):GetRecipeIngredients(name)
+        MainFrame:FindFirstChild("Icon").InspectRecipe.MouseButton1Click:Connect(function()
+            --print('inspecting recipe')
+            if deb == false then
+                deb = true;
+                task.spawn(playLocalSound, itemClickSound, 0.2)
+                Knit.GetController("RecipesView"):GetRecipeIngredients(name)
+                task.wait(.5)
+                deb = false;
+            end
         end)
     end 
 end
 
-function OrderUI:RemoveOrder(orderId)
-    print('ORDER REMOVED')
+function OrderUI:ChangeTime(orderId, newTime)
     for index, frame in pairs(OrderFrame:GetChildren()) do
         if frame:IsA("ImageLabel") then
-            print(frame:GetAttribute("orderId"), orderId )
+            --print(frame:GetAttribute("orderId"), orderId )
             if frame:GetAttribute("orderId") == orderId then
+                frame:WaitForChild("MainFrame"):FindFirstChild("Timer").AddTimeLabel.Visible = false;
+                frame:WaitForChild("MainFrame"):FindFirstChild("Timer").AddTime.Visible = false;
+                frame:SetAttribute("timer", newTime)
+            end
+        end
+    end
+    
+end
+
+function OrderUI:RemoveOrder(orderId)
+    --print('ORDER REMOVED')
+    for index, frame in pairs(OrderFrame:GetChildren()) do
+        if frame:IsA("ImageLabel") then
+            --print(frame:GetAttribute("orderId"), orderId )
+            if frame:GetAttribute("orderId") == orderId then
+                self:AnimateExitOrder(frame)
+                task.wait(0.4)
                 frame:Destroy();
             end
         end
     end
 end
 
-function OrderUI:AnimateOrder(orderFrame)
-    -- makes a big notepad and display in midle and tween to the order position and make original notepad visible
+function OrderUI:AnimateEnterOrder(orderFrame)
+    --[[local GuiParticleEmitter = require(GuiParticleEmitterModule)
+    local Vector2Range = require(GuiParticleEmitterModule:WaitForChild("Vector2Range"))
 
+    local guiParticleEmitter = GuiParticleEmitter.New()
+    guiParticleEmitter.AnchorPoint = Vector2.new(.5, .5)
+    guiParticleEmitter.LifeTime = NumberRange.new(1,1.2)
+    guiParticleEmitter.Parent = orderFrame
+    guiParticleEmitter.Position = UDim2.new(.5, 0, .5, 0)
+    guiParticleEmitter.Rate = 400
+    guiParticleEmitter.RotSpeed = 90
+    guiParticleEmitter.Size = UDim2.new(0.2, 0, .2, 0)
+    guiParticleEmitter.Speed = NumberRange.new(100,100)
+    guiParticleEmitter.Texture = "http://www.roblox.com/asset/?id=149185730"
+    guiParticleEmitter.SpreadAngle = 180
+    guiParticleEmitter.ZIndex = 1
+
+    guiParticleEmitter:SetEnabled(true)
+
+    task.wait(.27)
+    guiParticleEmitter:SetEnabled(false)]]
+
+    local MainFrame = orderFrame:WaitForChild("MainFrame");
+    MainFrame.Position = UDim2.new(10, 0, 0, 0)
+
+    local tweenInfo = TweenInfo.new(.4, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+    TweenService:Create(MainFrame, tweenInfo, {Position = UDim2.new(0,0,0,0)}):Play()
+    task.spawn(playLocalSound, dingSound, 0.03)
+    task.spawn(playLocalSound, swooshSound, 0.2)
+end
+
+function OrderUI:AnimateExitOrder(orderFrame)
+
+    local MainFrame = orderFrame:WaitForChild("MainFrame");
+    MainFrame.Position = UDim2.new(0, 0, 0, 0)
+
+    local tweenInfo = TweenInfo.new(.4, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+    TweenService:Create(MainFrame, tweenInfo, {Position = UDim2.new(-10,0,0,0)}):Play()
+    task.spawn(playLocalSound, swooshSound, 0.2)
 end
 
 function OrderUI:KnitStart()
@@ -120,6 +231,10 @@ function OrderUI:KnitStart()
 
     OrderService.RemoveOrder:Connect(function(orderId)
         self:RemoveOrder(orderId);
+    end)
+
+    OrderService.ResetTimePurchase:Connect(function(orderId, newTime)
+        self:ChangeTime(orderId, newTime);
     end)
 
 end

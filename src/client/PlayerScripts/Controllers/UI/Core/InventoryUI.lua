@@ -1,4 +1,4 @@
-local CollectionService = game:GetService("CollectionService")
+local SoundService = game:GetService("SoundService")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local InventoryUI = Knit.CreateController { Name = "InventoryUI" }
@@ -18,12 +18,22 @@ local onStart = false;
 --//Const
 local PlayerGui = plr:WaitForChild("PlayerGui");
 
+local inventoryItemClickSound = "rbxassetid://552900451";
 
 --//State
 local CategorySelected;
 local LastInventory;
 
 --//Private Function
+local function playLocalSound(soundId, volume)
+    local sound = Instance.new("Sound")
+    sound.SoundId = soundId;
+    sound.Volume = volume;
+    SoundService:PlayLocalSound(sound)
+    sound.Ended:Wait()
+    sound:Destroy()
+end
+
 function getRarityDataFromType(ItemName, Type)
     if ItemName and Type then
         return Rarities.getRarityDataFromItemName(ItemName, Type);
@@ -153,6 +163,7 @@ function InventoryUI:GetItem(ItemName, Type)
 end
 
 function InventoryUI:SelectItem(ItemName, Type)
+    task.spawn(playLocalSound, inventoryItemClickSound, 0.2)
     if ItemName and Type then
         local ItemData = getItemDataFromType(ItemName, Type);
         Item = self:GetItem(ItemName, Type);

@@ -4,6 +4,13 @@ local CookingTimes = {
 	["Easy"] = 10;
 }
 
+local DifficultyPercentages = {
+	["Hard"] = 20;
+	["Medium"] = 50;
+	["Easy"] = 100;
+}
+
+
 --[[
 	-- THIS IS OLD AND NOW IS SPLIT BETWEEN COOK AND DELIVER NOW
 local RecipeRewards = {
@@ -159,6 +166,7 @@ function Recipes:GetAllRecipeNames()
 		if type(v) == "table" then
 			table.insert(Array, {
 				name = k,
+				difficulty = v.Difficulty,
 				value = 0,
 			});
 		end;

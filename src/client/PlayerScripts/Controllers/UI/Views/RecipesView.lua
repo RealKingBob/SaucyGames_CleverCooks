@@ -1,11 +1,13 @@
-local CollectionService = game:GetService("CollectionService")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local RecipesView = Knit.CreateController { Name = "RecipesView" }
 
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+local SoundService = game:GetService("SoundService")
+local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local LocalPlayer = Players.LocalPlayer
 
 local GameLibrary = ReplicatedStorage:WaitForChild("GameLibrary")
 local Shared = ReplicatedStorage:WaitForChild("Common")
@@ -52,8 +54,20 @@ local CookButton = mainGui.Cook
 local prevFoodName = nil
 local prevIngredientTab = nil;
 local prevConnection = nil;
+local prevIngredientButton = nil;
+
+local pageRecipeSound = "rbxassetid://552900451";
 
 -- setup
+
+local function playLocalSound(soundId, volume)
+    local sound = Instance.new("Sound")
+    sound.SoundId = soundId;
+    sound.Volume = volume;
+    SoundService:PlayLocalSound(sound)
+    sound.Ended:Wait()
+    sound:Destroy()
+end
 
 function recipePageCreated(PageNumber,PageData)
 	local PageLimit = 6 -- 6 buttons per page
@@ -385,11 +399,9 @@ function setupRecipeButtons()
                 selectButton.StrokeBorder.Color = notSelectedColors[2]
 				selectButton.Text = "Select Recipe"
 			end;
-
 		end
 	end
 	
-	local prevIngredientButton = nil;
 	for _,page in pairs(recipeList:GetChildren()) do
 		if page:IsA("Frame") then
 			for _, frame in pairs(page:GetChildren()) do
@@ -400,6 +412,7 @@ function setupRecipeButtons()
 						end
 						prevIngredientButton = frame;
 						frame.FoodTitle.SelectedStroke.Enabled = true;
+						task.spawn(playLocalSound, pageRecipeSound, 0.2)
 						setupIngredients(frame.Name)
 					end)
 				end
@@ -437,6 +450,21 @@ end
 
 function RecipesView:GetRecipeIngredients(recipeName)
 	recipeSelected = recipeName
+	if prevIngredientButton ~= nil then
+		prevIngredientButton.FoodTitle.SelectedStroke.Enabled = false;
+	end
+	for _,page in pairs(recipeList:GetChildren()) do
+		if page:IsA("Frame") then
+			for _, frame in pairs(page:GetChildren()) do
+				if frame:IsA("Frame") then
+					if frame.Name == recipeName then
+						prevIngredientButton = frame;
+						frame.FoodTitle.SelectedStroke.Enabled = true;
+					end
+				end
+			end
+		end
+	end
 	displayIngredients()
 end
 

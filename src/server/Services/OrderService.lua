@@ -5,6 +5,8 @@ local OrderService = Knit.CreateService {
     Client = {
         AddOrder = Knit.CreateSignal();
         RemoveOrder = Knit.CreateSignal();
+
+        ResetTimePurchase = Knit.CreateSignal();
     };
 }
 
@@ -26,6 +28,7 @@ local OrderService = Knit.CreateService {
 
 local Players = game:GetService("Players");
 local ReplicatedStorage = game:GetService("ReplicatedStorage");
+local MarketplaceService = game:GetService("MarketplaceService");
 local ServerScriptService = game:GetService("ServerScriptService");
 
 ----- Directories -----
@@ -53,6 +56,18 @@ local serverAvailableRecipes = RecipeModule:GetAllRecipeNames()
 
 -- Create a flag variable to indicate whether the timer should be reset
 local resetTimer = false
+
+-- Create an empty table to store the resetTime orderIds for each player
+local resetTimeOrderIds = {};
+
+-- Create an empty table to store all product ids
+local productFunctions = {}
+
+-- Product ID for reset time on order
+local resetTimeProductId = 123456;
+
+local recipeTimer = 50; -- 300
+local playerTimer = 20; -- 180
 
 -- Create a count value to give a unique id for each recipe given to a user
 local countId = 0;
@@ -84,6 +99,21 @@ local function shuffle(list)
     return list
 end
 
+-- Function to check how many orders are in the player storage
+function OrderService:orderCount(player)
+    -- Counts the amount of times it sees the recipe
+    local count = 0;
+
+    -- Find the recipe in the player's list and count it
+    for _, r in ipairs(playerRecipes[player].storage) do
+        if r and r.id then
+            count += 1;
+        end
+    end
+    return count;
+end
+
+
 -- Function to check how many of the same recipe is in the player storage
 function OrderService:recipeCount(player, recipe)
     -- Counts the amount of times it sees the recipe
@@ -106,8 +136,12 @@ function OrderService:addRecipe(player, recipe, value)
         -- If not, create a new list for the player
         playerRecipes[player] = {
             storage = {}, -- player storage
-            timer = 180, -- 3 minute timer
+            timer = playerTimer, -- 3 minute timer
         };
+    end
+
+    if self:orderCount(player) >= 5 then
+        return;
     end
 
     countId += 1;
@@ -117,18 +151,50 @@ function OrderService:addRecipe(player, recipe, value)
         name = recipe, 
         id = tostring(toHex(recipe) .."_".. countId),
         image = RecipeModule:GetImage(tostring(recipe)),
-        timer = 40, 
+        timer = recipeTimer, 
         value = value, 
         completed = false
     }
     table.insert(playerRecipes[player].storage, recipeData)
     self.Client.AddOrder:Fire(player, recipeData)
+    Knit.GetService("NotificationService"):Message(false, player, "NEW ORDER ADDED!")
 end
 
 -- Function to add a random recipe to a player's list
 function OrderService:addRandomRecipe(player, recipes)
     -- Choose a random recipe from the list
-    local recipe = recipes[math.random(1, #recipes)]
+    --local recipe = recipes[math.random(1, #recipes)]
+    local recipe = nil;
+
+    local function getRecipe() -- gets random recipe
+        -- Calculate the cumulative probabilities
+        local cumulativeProbabilities = {}
+        local probabilitySum = 0
+        for _, item in ipairs(recipes) do
+            if item.difficulty == "Easy" then
+                probabilitySum = probabilitySum + 100
+            elseif item.difficulty == "Medium" then
+                probabilitySum = probabilitySum + 50
+            elseif item.difficulty == "Hard" then
+                probabilitySum = probabilitySum + 10
+            end
+            cumulativeProbabilities[#cumulativeProbabilities + 1] = probabilitySum
+        end
+
+        -- Generate a random number between 0 and the sum of the probabilities
+        local randomNumber = math.random(probabilitySum)
+
+        -- Iterate through the cumulative probabilities and return the corresponding item
+        for i, probability in ipairs(cumulativeProbabilities) do
+            if probability > randomNumber then
+                return recipes[i];
+            end
+        end
+    end
+
+    repeat
+        recipe = getRecipe();
+    until recipe ~= nil
 
     -- Add the recipe to the player's list
     self:addRecipe(player, recipe.name, recipe.value)
@@ -138,11 +204,31 @@ end
 function OrderService:removeRecipe(player, recipeId)
     -- Find the recipe in the player's list and remove it
     for i, r in ipairs(playerRecipes[player].storage) do
-        print(r.id, recipeId, r.id == recipeId)
+        --print(r.id, recipeId, r.id == recipeId)
         if r.id == recipeId then
             self.Client.RemoveOrder:Fire(player, r.id)
             table.remove(playerRecipes[player].storage, i) 
             break
+        end
+    end
+end
+
+-- Function to remove a recipe from a player's list
+function OrderService:getRecipe(player, recipeId)
+    -- Check if the player already has a list of recipes
+    if playerRecipes[player] == nil then
+        -- If not, create a new list for the player
+        playerRecipes[player] = {
+            storage = {}, -- player storage
+            timer = playerTimer, -- 3 minute timer
+        };
+    end
+    
+    -- Find the recipe in the player's list and remove it
+    for i, r in ipairs(playerRecipes[player].storage) do
+        --print(r.id, recipeId, r.id == recipeId)
+        if r.id == recipeId then
+            return r;
         end
     end
 end
@@ -196,7 +282,7 @@ function OrderService:updatePlayerRecipes(player)
             -- Add a random recipe to the player's table
             self:addRandomRecipe(player, serverAvailableRecipes)
 
-            local CalculatedTime = 30 --180 + ((#playerRecipes[player].storage * 60) - 90)
+            local CalculatedTime = playerTimer --180 + ((#playerRecipes[player].storage * 60) - 90)
 
             playerRecipes[player].timer = CalculatedTime; -- reset to 3 minutes
             print("add recipe:", playerRecipes[player], "| adjusted CalculatedTime:", CalculatedTime)
@@ -213,11 +299,44 @@ local function PlayerAdded(player)
         storage = {}, -- player storage
         timer = math.random(10,30), -- 10-30 seconds to automatically give one recipe
     };
+    resetTimeOrderIds[player] = 0;
 end;
 
 local function PlayerRemoving(player)
     playerRecipes[player] = nil;
+    resetTimeOrderIds[player] = nil;
 end;
+
+function OrderService:SetupProducts()
+    -- ProductId [resetTimeProductId] resets the time of the players order
+    productFunctions[resetTimeProductId] = function(receipt, player)
+        local returnedRecipe = self:getRecipe(player, resetTimeOrderIds[player]);
+        returnedRecipe.timer = recipeTimer
+        self.Client.ResetTimePurchase:Fire(player, returnedRecipe.id, recipeTimer)
+    end
+end
+
+local function processReceipt(receiptInfo)
+	local userId = receiptInfo.PlayerId
+	local productId = receiptInfo.ProductId
+	local player = Players:GetPlayerByUserId(userId)
+	if player then
+		-- Get the handler function associated with the product ID and attempt to run it
+		local handler = productFunctions[productId]
+		local success, result = pcall(handler, receiptInfo, player)
+		if success then
+			-- The player has received their benefits!
+			-- return PurchaseGranted to confirm the transaction.
+			return Enum.ProductPurchaseDecision.PurchaseGranted
+		else
+			warn("Failed to process receipt:", receiptInfo, result)
+		end
+	end
+	-- the player's benefits couldn't be awarded.
+	-- return NotProcessedYet to try again next time the player joins.
+	return Enum.ProductPurchaseDecision.NotProcessedYet
+end
+
 
 function OrderService:KnitStart()
     while true do
@@ -240,6 +359,24 @@ function OrderService:KnitInit()
 
     Players.PlayerAdded:Connect(PlayerAdded);
     Players.PlayerRemoving:Connect(PlayerRemoving);
+
+    -- Set the callback; this can only be done once by one script on the server!
+    MarketplaceService.ProcessReceipt = processReceipt
+
+    self.Client.ResetTimePurchase:Connect(function(player, orderId)
+        if resetTimeOrderIds[player] ~= nil then
+            resetTimeOrderIds[player] = orderId;
+
+            if game:GetService("RunService"):IsStudio() then -- if on studio
+                local returnedRecipe = self:getRecipe(player, orderId);
+                returnedRecipe.timer = recipeTimer
+                self.Client.ResetTimePurchase:Fire(player, returnedRecipe.id, recipeTimer)
+            else
+                MarketplaceService:PromptProductPurchase(player, resetTimeProductId)
+            end
+
+        end
+    end)
 end
 
 

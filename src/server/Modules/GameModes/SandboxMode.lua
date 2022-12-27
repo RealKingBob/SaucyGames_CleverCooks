@@ -116,7 +116,7 @@ function SandboxMode:StartMode()
     print("[GameService]: Intermission Started")
 
     while true do
-        GameService:SetState(GAMESTATE.INTERMISSION)
+        --GameService:SetState(GAMESTATE.INTERMISSION)
 
         GameService.Client.UpdateMapQueue:FireAll({
             CurrentMap = currentMap,
@@ -137,7 +137,7 @@ function SandboxMode:StartMode()
 
         task.wait(5)
 
-        GameService:SetState(GAMESTATE.GAMEPLAY)
+        --GameService:SetState(GAMESTATE.GAMEPLAY)
         print("[GameService]: Gameplay Starting soon, getting map mode")
 
         --[[for _, player : Player in pairs(CollectionService:GetTagged(Knit.Config.ALIVE_TAG)) do
@@ -198,7 +198,7 @@ function SandboxMode:StartMode()
 
         --// Game Round Ended
         print("[GameService]: Gameplay Ended")
-        GameService:SetState(GAMESTATE.ENDED)
+        --GameService:SetState(GAMESTATE.ENDED)
 
         self.numOfDays += 1;
 

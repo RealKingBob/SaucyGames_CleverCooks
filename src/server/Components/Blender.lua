@@ -197,10 +197,22 @@ function Blender.new(instance)
             end
             if hit:GetAttribute("Type") then
                 local player = game.Players:FindFirstChild(hit:GetAttribute("Owner"));
+                if player then
+                    if (self.NumOfObjects[player.UserId] >= 5 and self.playersDebounces[player.UserId] == nil)
+                    or CollectionService:HasTag(hit, "IngredientsTable") == true then
+                        if hit.Parent:IsA("Model") then
+                            hit.Parent:SetPrimaryPartCFrame(CFrame.new(self.Object.ReturnObj.Position + Vector3.new(0,5,0)))
+                        else
+                            hit.Position = self.Object.ReturnObj.Position + Vector3.new(0,5,0)
+                        end
+                        return
+                    end
+                end
                 if table.find(self.ObjectsInBlender[player.UserId], hit) == nil then
                     table.insert(self.ObjectsInBlender[player.UserId], hit)
-                    self.NumOfObjects[player.UserId] += 1;
+                    self.playersDebounces[player.UserId] = true;
                     InsertObjToBlender(hit)
+                    self.NumOfObjects[player.UserId] += 1;
                     --task.spawn(BlenderFluidChange, self.NumOfObjects[player.UserId] / self.MaxNumOfObjects)
                     --self.NumOfObjectsTextLabel.Text = tostring(self.NumOfObjects[player.UserId].."/"..self.MaxNumOfObjects);
                    
@@ -214,13 +226,26 @@ function Blender.new(instance)
                         });
 
                     print("BLADE HIT", hit, hit.Parent, self.ObjectsInBlender[player.UserId])
+                    self.playersDebounces[player.UserId] = nil;
                 end
             elseif hit.Parent:GetAttribute("Type") then
                 local player = game.Players:FindFirstChild(hit.Parent:GetAttribute("Owner"));
+                if player then
+                    if (self.NumOfObjects[player.UserId] >= 5 and self.playersDebounces[player.UserId] == nil)
+                    or CollectionService:HasTag(hit, "IngredientsTable") == true then
+                        if hit.Parent:IsA("Model") then
+                            hit.Parent:SetPrimaryPartCFrame(CFrame.new(self.Object.ReturnObj.Position + Vector3.new(0,5,0)))
+                        else
+                            hit.Position = self.Object.ReturnObj.Position + Vector3.new(0,5,0)
+                        end
+                        return
+                    end
+                end
                 if table.find(self.ObjectsInBlender[player.UserId], hit.Parent) == nil then
                     table.insert(self.ObjectsInBlender[player.UserId], hit.Parent)
-                    self.NumOfObjects[player.UserId] += 1;
+                    self.playersDebounces[player.UserId] = true;
                     InsertObjToBlender(hit)
+                    self.NumOfObjects[player.UserId] += 1;
                     --task.spawn(BlenderFluidChange, self.NumOfObjects[player.UserId] / self.MaxNumOfObjects)
                     --self.NumOfObjectsTextLabel.Text = tostring(self.NumOfObjects[player.UserId].."/"..self.MaxNumOfObjects);
                     
@@ -234,6 +259,7 @@ function Blender.new(instance)
                         });
                     
                     print("BLADE HIT", hit, hit.Parent, self.ObjectsInBlender[player.UserId])
+                    self.playersDebounces[player.UserId] = nil;
                 end
             end
         end
