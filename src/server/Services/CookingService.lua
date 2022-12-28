@@ -498,7 +498,7 @@ function CookingService:KnitStart()
 end
 
 
-function CookingService:KnitInit()
+function CookingService:KnitInit() --RMAKE THIS ???
     print('[CookingService]: Activated! [V2]')
 
 	task.spawn(function()
@@ -545,7 +545,6 @@ function CookingService:KnitInit()
 			local tCurrentIngredients = {};
 			local tCurrentIngredientObjects = {};
 			local partsArray = {};
-			local blenderArray = {};
 
 			for _, deliverHitbox in pairs(CollectionService:GetTagged("DeliverStation")) do
 				local radiusOfDeliverZone = getRadius(deliverHitbox)
@@ -627,6 +626,23 @@ function CookingService:KnitInit()
 						if table.find(tCurrentIngredients[touchedOwner],touchedPart.Name) == nil then
 							table.insert(tCurrentIngredientObjects[touchedOwner],touchedPart);
 							table.insert(tCurrentIngredients[touchedOwner],touchedPart.Name);
+
+							if CollectionService:HasTag(touchedPart, "IngredientsTable") then
+								for i = 1, 5 do
+									local blendedIngredient
+									if touchedPart.Parent:IsA("Model") then
+										blendedIngredient = touchedPart.Parent.PrimaryPart:GetAttribute("i"..tostring(i));
+									else
+										blendedIngredient = touchedPart:GetAttribute("i"..tostring(i));
+									end
+									if blendedIngredient ~= "" and blendedIngredient ~= nil then
+										table.insert(tempData,{touchedOwner,blendedIngredient.."-[Blended]"})
+										table.insert(tCurrentIngredientObjects[touchedOwner],blendedIngredient.."-[Blended]")
+										table.insert(tCurrentIngredients[touchedOwner],blendedIngredient.."-[Blended]")
+									end
+								end
+							end
+
 							for key,currentRecipe in pairs(RecipeModule) do
 								if type(currentRecipe) == "table" then
 									local valid = TableAPI.Equals(tCurrentIngredients[touchedOwner],currentRecipe["Ingredients"]);
@@ -656,7 +672,7 @@ function CookingService:KnitInit()
 				end;]]
 
 				if TableAPI.CheckTableEquality(oldFoodData, FoodData) ~= true then
-					--print("FOOD DATA:", FoodData)
+					print("FOOD DATA:", FoodData)
 					oldFoodData = FoodData;
 				else
 					if #FoodData ~= 0 then
