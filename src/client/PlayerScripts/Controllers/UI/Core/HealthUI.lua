@@ -48,6 +48,8 @@ function HealthUI:KnitInit()
             self:Update(Humanoid)
         end)
 
+        Humanoid.Health = Humanoid.MaxHealth
+        self:Update(Humanoid)
     end)
 
     local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait();

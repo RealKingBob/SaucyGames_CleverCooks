@@ -37,7 +37,7 @@ local Sfx = game.SoundService.Sfx;
 --//State
 local LastCheese = -1;
 
-function CurrencyCounterUI:CollectCheese(Amount, AmountAdded)
+function CurrencyCounterUI:CollectCheese(Amount, AmountAdded, Percentage)
 	--print(Amount)
     local CoinDrop = Sfx:WaitForChild("CheesePop"):Clone() do
 		CoinDrop.Parent = game.SoundService;
@@ -50,12 +50,17 @@ function CurrencyCounterUI:CollectCheese(Amount, AmountAdded)
 	end
 
 	if (AmountAdded) then		
-		AmountLabel.Position = UDim2.fromScale(0.4, -0.55);
+		AmountLabel.Position = UDim2.fromScale(-0.15, -0.55);
 		local amountString = "+"..AmountAdded;
 		if AmountAdded >= 10000 then
 			amountString = "+"..NumberSuffix(AmountAdded);
 		end
-		AmountLabel.Text = amountString
+		if Percentage then
+			AmountLabel.Text = Percentage
+		else
+			AmountLabel.Text = amountString
+		end
+		
 		AmountLabel.Visible = true;
 	end
 

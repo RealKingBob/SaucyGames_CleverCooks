@@ -63,11 +63,11 @@ task.spawn(function()
 	end)
 end)
 
-DataService.CurrencySignal:Connect(function(Coins, amount, disableEffect)
+DataService.CurrencySignal:Connect(function(Coins, amount, percentage, disableEffect)
 	if disableEffect then
 		CurrencyCounterUI:Update(Coins);
 	else
-		CurrencyCounterUI:CollectCheese(Coins, amount);
+		CurrencyCounterUI:CollectCheese(Coins, amount, percentage);
 	end;
 end)
 
@@ -75,9 +75,15 @@ local CookingService = Knit.GetService("CookingService");
 local CookingUI = Knit.GetController("CookingUI");
 
 CookingService.Cook:Connect(function(RecipeName, Pan, CookingTime)
-	print("CLIENT COOK",RecipeName,Pan, CookingTime)
-	CookingUI:StartCooking(RecipeName,Pan, CookingTime)
+	print("CLIENT COOK", RecipeName, Pan, CookingTime)
+	CookingUI:StartCooking(RecipeName, Pan, CookingTime)
 end)
+
+CookingService.Deliver:Connect(function(RecipeName, DeliveryZone, DeliverTime)
+	print("CLIENT DELIVER", RecipeName, DeliveryZone, DeliverTime)
+	CookingUI:StartDelivering(RecipeName, DeliveryZone, DeliverTime)
+end)
+
 
 CookingService.ParticlesSpawn:Connect(function(food, particleName)
 

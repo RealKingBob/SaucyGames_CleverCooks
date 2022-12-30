@@ -17,6 +17,7 @@ local Status = {
 	PickUp = "Pickup";
 	Drop = "Drop";
 	Cook = "Cook";
+	Deliver = "Deliver";
 	Click = "Click";
 	IngredientsTable = "IngredientsTable";
 }
@@ -29,6 +30,7 @@ local customHeadUI = ReplicatedBillboard:WaitForChild("HeadUI")
 
 local customBigPrompt = ReplicatedBillboard:WaitForChild("BigPrompt")
 local customCookHeadUI = ReplicatedBillboard:WaitForChild("CookHeadUI")
+local customDeliverHeadUI = ReplicatedBillboard:WaitForChild("DeliverHeadUI")
 
 local customTableHeadUI = ReplicatedBillboard:WaitForChild("TableHeadUI");
 
@@ -55,6 +57,9 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 	if customStatus == Status.Cook then
 		promptUI = customBigPrompt:Clone()
     	headUI = customCookHeadUI:Clone()
+	elseif customStatus == Status.Deliver then
+		promptUI = customPrompt:Clone()
+		headUI = customDeliverHeadUI:Clone()	
 	elseif customStatus == Status.IngredientsTable then
 		promptUI = customPrompt:Clone()
     	headUI = customTableHeadUI:Clone()
@@ -243,7 +248,11 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 		else
 			if prompt.Parent:GetAttribute("Type") == "Food" then
 				if prompt.Parent.Parent:IsA("Model") then
-					itemImage.Image = IngredientModule[prompt.Parent.Parent.Name].Image
+					if IngredientModule[prompt.Parent.Parent.Name] then
+						itemImage.Image = IngredientModule[prompt.Parent.Parent.Name].Image
+					else
+						itemImage.Image = "http://www.roblox.com/asset/?id=4509163032" --???
+					end
 				else
 					if RecipeModule[prompt.Parent.Name] then
 						itemImage.Image = RecipeModule[prompt.Parent.Name].Image
@@ -289,10 +298,13 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 		iSizeX = 1;
 	end
 
-	table.insert(tweensForFadeOut, TweenService:Create(headFrame, tweenInfoFast, { Size = UDim2.fromScale(iSizeX, 0), BackgroundTransparency = 1, Visible = false }))
-	table.insert(tweensForFadeIn, TweenService:Create(headFrame, tweenInfoFast, { Size = UDim2.fromScale(iSizeX, 1), BackgroundTransparency = 0, Visible = true }))
-
-	
+	if customStatus == Status.Cook then
+		table.insert(tweensForFadeOut, TweenService:Create(headFrame, tweenInfoFast, { Size = UDim2.fromScale(iSizeX, 0), Visible = false }))
+		table.insert(tweensForFadeIn, TweenService:Create(headFrame, tweenInfoFast, { Size = UDim2.fromScale(iSizeX, 0.25), Visible = true }))
+	else
+		table.insert(tweensForFadeOut, TweenService:Create(headFrame, tweenInfoFast, { Size = UDim2.fromScale(iSizeX, 0), BackgroundTransparency = 1, Visible = false }))
+		table.insert(tweensForFadeIn, TweenService:Create(headFrame, tweenInfoFast, { Size = UDim2.fromScale(iSizeX, 1), BackgroundTransparency = 0, Visible = true }))
+	end
 
 	if customStatus == Status.IngredientsTable then
 		table.insert(tweensForFadeOut, TweenService:Create(itemsFrame, tweenInfoFast, { Size = UDim2.fromScale(1, 0), Visible = false }))
@@ -424,6 +436,13 @@ function CustomProximityController:KnitStart()
 			prompt.PromptHidden:Wait();
 		
         	cleanupFunction();
+		elseif CollectionService:HasTag(prompt.Parent, "Delivering") then
+			currentStatus = Status.Deliver;
+			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "Deliver");
+
+			prompt.PromptHidden:Wait();
+		
+			cleanupFunction();
 		elseif CollectionService:HasTag(prompt.Parent, "IngredientsTable") then
 			currentStatus = Status.IngredientsTable;
 			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "IngredientsTable");

@@ -271,11 +271,11 @@ function NormalMode:StartMode()
     Players.RespawnTime = 1.3;
     GameService:SetState(GAMESTATE.INTERMISSION)
 
-    GameService.Client.UpdateMapQueue:FireAll({
+    --[[GameService.Client.UpdateMapQueue:FireAll({
         CurrentMap = currentMap,
         NextMap = nextMap,
         Boosted = boostedMap,
-    });
+    });]]
 
 
     GameService:ClearCooldowns()
@@ -352,11 +352,11 @@ function NormalMode:StartMode()
 
             print("MAP;", currentMap, nextMap)
 
-            GameService.Client.UpdateMapQueue:FireAll({
+            --[[GameService.Client.UpdateMapQueue:FireAll({
                 CurrentMap = currentMap,
                 NextMap = nextMap,
                 Boosted = boostedMap,
-            });
+            });]]
 
             boostedMap = false
             

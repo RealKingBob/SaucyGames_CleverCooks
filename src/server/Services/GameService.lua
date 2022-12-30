@@ -112,11 +112,11 @@ function GameService:ForceMap(mapName)
         boostedMap = true;
     end
 
-    self.Client.UpdateMapQueue:FireAll({
+    --[[self.Client.UpdateMapQueue:FireAll({
         CurrentMap = currentMap,
         NextMap = nextMap,
         Boosted = boostedMap,
-    });
+    });]]
 end
 
 function GameService:GetGameState()
@@ -281,11 +281,11 @@ function GameService:KnitInit()
                 boostedMap = true;
             end
     
-            self.Client.UpdateMapQueue:FireAll({
+            --[[self.Client.UpdateMapQueue:FireAll({
                 CurrentMap = currentMap,
                 NextMap = nextMap,
                 Boosted = boostedMap,
-            });
+            });]]
         end
     end)
 

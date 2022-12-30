@@ -118,12 +118,12 @@ function SandboxMode:StartMode()
     while true do
         --GameService:SetState(GAMESTATE.INTERMISSION)
 
-        GameService.Client.UpdateMapQueue:FireAll({
+        --[[GameService.Client.UpdateMapQueue:FireAll({
             CurrentMap = currentMap,
             NextMap = nextMap,
             Boosted = boostedMap,
-        });
-
+        });]]
+        
         GameService:ClearCooldowns()
         GameService:ClearTracked()
 
@@ -148,11 +148,11 @@ function SandboxMode:StartMode()
 
         print("MAP;", currentMap, nextMap)
 
-        GameService.Client.UpdateMapQueue:FireAll({
+        --[[GameService.Client.UpdateMapQueue:FireAll({
             CurrentMap = currentMap,
             NextMap = nextMap,
             Boosted = boostedMap,
-        });
+        });]]
 
         boostedMap = false
         

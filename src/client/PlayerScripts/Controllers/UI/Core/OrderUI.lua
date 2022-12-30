@@ -15,6 +15,7 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local dingSound = "rbxassetid://9068539820";
 local swooshSound = "rbxassetid://9119737641";
 local itemClickSound = "rbxassetid://552900451";
+local itemCompleteSound = "rbxassetid://3241682089";
 
 local ReplicatedModules = Knit.Shared.Modules;
 local GuiParticleEmitterModule = ReplicatedModules:FindFirstChild("GuiParticleEmitter");
@@ -153,6 +154,19 @@ function OrderUI:AddOrder(orderData)
     end 
 end
 
+function OrderUI:CompleteOrder(orderId)
+    for index, frame in pairs(OrderFrame:GetChildren()) do
+        if frame:IsA("ImageLabel") then
+            if frame:GetAttribute("orderId") == orderId then
+                frame:WaitForChild("MainFrame"):FindFirstChild("Completed").Visible = true;
+                task.spawn(playLocalSound, itemCompleteSound, 0.2)
+                task.wait(1)
+                self:RemoveOrder(orderId);
+            end
+        end
+    end
+end
+
 function OrderUI:ChangeTime(orderId, newTime)
     for index, frame in pairs(OrderFrame:GetChildren()) do
         if frame:IsA("ImageLabel") then
@@ -164,7 +178,6 @@ function OrderUI:ChangeTime(orderId, newTime)
             end
         end
     end
-    
 end
 
 function OrderUI:RemoveOrder(orderId)
@@ -231,6 +244,10 @@ function OrderUI:KnitStart()
 
     OrderService.RemoveOrder:Connect(function(orderId)
         self:RemoveOrder(orderId);
+    end)
+
+    OrderService.CompleteOrder:Connect(function(orderId)
+        self:CompleteOrder(orderId);
     end)
 
     OrderService.ResetTimePurchase:Connect(function(orderId, newTime)

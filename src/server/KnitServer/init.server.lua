@@ -43,6 +43,7 @@ Knit.DataService = require(Knit.Services.DataService);
 Knit.AvatarService = require(Knit.Services.AvatarService);
 Knit.NotificationService = require(Knit.Services.NotificationService);
 Knit.ProximityService = require(Knit.Services.ProximityService);
+Knit.CurrencySessionService = require(Knit.Services.CurrencySessionService)
 Knit.InventoryService = require(Knit.Services.InventoryService);
 Knit.CookingService = require(Knit.Services.CookingService);
 Knit.OrderService = require(Knit.Services.OrderService);
@@ -299,17 +300,5 @@ end
 
 Players.PlayerAdded:Connect(onPlayerAdded);
 Players.PlayerRemoving:Connect(onPlayerRemoving);
-
-local DropUtil = require(Knit.Shared.Modules.DropUtil);
-
---[[task.spawn(function()
-	for _, value in ipairs(CollectionService:GetTagged(Knit.Config.CHEESE_SPAWN)) do
-		while true do
-			task.wait(math.random(20,60))
-			--workspace.Spawnables.Cheese:ClearAllChildren()
-			--DropUtil.DropCheese(value.CFrame, game.ReplicatedStorage.Spawnables.Cheese, nil, math.random(10,15), math.random(5,10))
-		end
-	end
-end)]]
 
 ----------------------------------------------------------------------------------------------

@@ -221,7 +221,7 @@ local function PreloadData(Player, Profile, ProfileData)
 		end
 	end
     if Player then
-        DataService.Client.CurrencySignal:Fire(Player, Profile.Data.PlayerInfo.Currency, nil, true)
+        DataService.Client.CurrencySignal:Fire(Player, Profile.Data.PlayerInfo.Currency, nil, nil, true)
     end
 
     if Profile.Data.PlayerInfo.SecondsPlayed < 30 then
@@ -506,7 +506,7 @@ end
 
 local reset = {}
 
-function DataService:GiveCurrency(player, Amount)
+function DataService:GiveCurrency(player, Amount, disableEffect, Percentage)
 
     --print("give", player, Amount)
 
@@ -528,7 +528,11 @@ function DataService:GiveCurrency(player, Amount)
     profile.Data.PlayerInfo.Currency = profile.Data.PlayerInfo.Currency + Amount;
 
     if player then
-        DataService.Client.CurrencySignal:Fire(player, profile.Data.PlayerInfo.Currency, Amount, true)
+        if disableEffect == nil then
+            DataService.Client.CurrencySignal:Fire(player, profile.Data.PlayerInfo.Currency, Amount, Percentage, true)
+        else
+            DataService.Client.CurrencySignal:Fire(player, profile.Data.PlayerInfo.Currency, Amount, Percentage, disableEffect)
+        end
     end
 
 end;

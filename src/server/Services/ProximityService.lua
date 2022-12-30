@@ -11,7 +11,6 @@ local ProximityService = Knit.CreateService {
     };
 }
 
-local DropUtil = require(Knit.Shared.Modules.DropUtil);
 
 ----- Integers -----
 
@@ -66,7 +65,7 @@ end
 function ProximityService:LinkItemToPlayer(Character,Object)
     if Character and Object then
         if Object:IsA("Model") and Object.PrimaryPart then
-            print(Object.PrimaryPart:GetAttribute("i1"))
+            --print(Object.PrimaryPart:GetAttribute("i1"))
             local _PrimaryPart = Object.PrimaryPart;
             for _,b in pairs(Object:GetChildren()) do
                 if b:IsA("MeshPart") then
@@ -101,7 +100,7 @@ end;
 function ProximityService:UnlinkItemToPlayer(Character,Object)
 	if Character and Object then
 		if Object:IsA("Model") and Object.PrimaryPart then
-            print(Object.PrimaryPart:GetAttribute("i1"))
+            --print(Object.PrimaryPart:GetAttribute("i1"))
 			local _PrimaryPart = Object.PrimaryPart;
 			_PrimaryPart:SetAttribute("Owner", PlayerService:GetPlayerFromCharacter(Character).Name);
 			_PrimaryPart.HandJoint.Attachment1 = nil;
@@ -221,20 +220,8 @@ function ProximityService:DropItem( Character, Item)
     end;
 end;
 
-function ProximityService:CollectedCurrency(player, dropable, RootCFrame, DropAmount)
-    if dropable:GetAttribute("OwnerId") == player.UserId then
-        dropable:Destroy()
-        local DataService = Knit.GetService("DataService")
-        DataService:GiveCurrency(player, tonumber(DropAmount))
-        self.Client.CurrencyCollected:Fire(player, RootCFrame, DropAmount)
-        --DropUtil.DropCurrencyText(RootCFrame, DropAmount, player.UserId)
-    end
-end
-
 function ProximityService:KnitStart()
-    self.Client.CurrencyCollected:Connect(function(player, dropable, RootCFrame, DropAmount)
-        self:CollectedCurrency(player, dropable, RootCFrame, DropAmount)
-    end)
+    
 end
 
 

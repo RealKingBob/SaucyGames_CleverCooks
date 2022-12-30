@@ -12,13 +12,14 @@ local DifficultyPercentages = {
 
 
 --[[
-	-- THIS IS OLD AND NOW IS SPLIT BETWEEN COOK AND DELIVER NOW
+	-- THIS IS OLD 
 local RecipeRewards = {
 	["Hard"] = {1200, 1500}, -- [min, max]
 	["Medium"] = {600, 800},
 	["Easy"] = {200, 400}
 }]]
 
+--ITS SPLIT BETWEEN COOK AND DELIVER NOW SO BASICALLY 2X IF DO BOTH
 local RecipeRewards = {
 	["Hard"] = {600, 800}, -- [min, max]
 	["Medium"] = {300, 400},

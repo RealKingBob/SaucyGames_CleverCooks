@@ -188,6 +188,27 @@ end
 
 function GameController:KnitInit()
 
+	local function checkObject(object)
+		if object:IsA("Model") then
+			if object.PrimaryPart == nil 
+			or object.PrimaryPart:GetAttribute("Owner") == "Default" 
+			or object.PrimaryPart:GetAttribute("Owner") == nil 
+			or object.PrimaryPart:GetAttribute("Owner") == Players.LocalPlayer.Name then else
+				--print(object.PrimaryPart:GetAttribute("Owner"));
+				--print(object,"is getting destroyed in workspace");
+				object:Destroy();
+			end;
+		elseif object:IsA("MeshPart") then
+			if object:GetAttribute("Owner") == "Default" 
+			or object:GetAttribute("Owner") == nil 
+			or object:GetAttribute("Owner") == Players.LocalPlayer.Name then else
+				--print(object:GetAttribute("Owner"));
+				--print(object,"is getting destroyed in workspace");
+				object:Destroy();
+			end;
+		end;
+	end
+
     game:GetService("RunService").RenderStepped:Connect(function()
 
 		for _, player in pairs(Players:GetPlayers()) do
@@ -216,44 +237,10 @@ function GameController:KnitInit()
 		end
 
         for _,v in pairs(game.Workspace:FindFirstChild("FoodAvailable"):GetChildren()) do
-            if v:IsA("Model") then
-				if v.PrimaryPart == nil 
-                or v.PrimaryPart:GetAttribute("Owner") == "Default" 
-                or v.PrimaryPart:GetAttribute("Owner") == nil 
-                or v.PrimaryPart:GetAttribute("Owner") == Players.LocalPlayer.Name then else
-                    print(v.PrimaryPart:GetAttribute("Owner"));
-                    print(v,"is getting destroyed in workspace");
-                    v:Destroy();
-                end;
-            elseif v:IsA("MeshPart") then
-                if v:GetAttribute("Owner") == "Default" 
-                or v:GetAttribute("Owner") == nil 
-                or v:GetAttribute("Owner") == Players.LocalPlayer.Name then else
-                    print(v:GetAttribute("Owner"));
-                    print(v,"is getting destroyed in workspace");
-                    v:Destroy();
-                end;
-            end;
+            checkObject(v)
         end;
         for _,v in pairs(game.Workspace:FindFirstChild("IngredientAvailable"):GetChildren()) do
-            if v:IsA("Model") then
-				if v.PrimaryPart == nil
-				or v.PrimaryPart:GetAttribute("Owner") == "Default"
-				or v.PrimaryPart:GetAttribute("Owner") == nil 
-				or v.PrimaryPart:GetAttribute("Owner") == Players.LocalPlayer.Name then else
-					print(v.PrimaryPart:GetAttribute("Owner"));
-					print(v,"is getting destroyed in workspace");
-					v:Destroy();
-				end;
-            elseif v:IsA("MeshPart") then
-                if v:GetAttribute("Owner") == "Default" 
-                or v:GetAttribute("Owner") == nil 
-                or v:GetAttribute("Owner") == Players.LocalPlayer.Name then else
-                    print(v:GetAttribute("Owner"));
-                    print(v,"is getting destroyed in workspace");
-                    v:Destroy();
-                end;
-            end;
+            checkObject(v)
         end;
     end);
 end

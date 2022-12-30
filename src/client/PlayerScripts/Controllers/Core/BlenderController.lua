@@ -39,7 +39,7 @@ function BlenderController:SpinBlade(blenderObject, enabled)
     end
 end
 
-function BlenderController:FluidChange(blenderObject, percentage)
+function BlenderController:FluidChange(blenderObject, percentage, fluidColor)
     local blenderFluid = blenderObject.Flood;
     local maxSize = 11.47;
     local currentSize = blenderFluid.Size.Y
@@ -52,9 +52,12 @@ function BlenderController:FluidChange(blenderObject, percentage)
     local endCFrame = blenderFluid.CFrame * CFrame.new(0, (newSize/2), 0)
     local endPosition = blenderFluid.Position + Vector3.new(0,difference, 0)
 
+    print(fluidColor)
+
     local goal = {
         Size = endSize,
         Position = endPosition,
+        Color = fluidColor;
         --CFrame = endCFrame
     }
 
@@ -78,8 +81,8 @@ function BlenderController:KnitStart()
     CookingService.ChangeClientBlender:Connect(function(blenderObject, command, data)
         
         if command == "fluidPercentage" then
-            self:BlenderText(blenderObject, data[2]);
-            self:FluidChange(blenderObject, data[1]);
+            self:BlenderText(blenderObject, data.FluidText);
+            self:FluidChange(blenderObject, data.FluidPercentage, data.FluidColor);
         elseif command == "bladeSpin" then
             self:SpinBlade(blenderObject, data[1]);
         end

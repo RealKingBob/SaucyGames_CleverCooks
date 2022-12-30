@@ -26,6 +26,102 @@ local function PrintL(id, string, bool)
     return;
 end;
 
+local coldRangeVisuals = {min = 20, max = 50};
+local cookedRangeVisuals = {min = 51, max = 75};
+local burntRangeVisuals = {min = 76, max = 96};
+
+local function percentageInRange(currentNumber, startRange, endRange)
+	if startRange > endRange then startRange, endRange = endRange, startRange; end
+
+	local normalizedNum = (currentNumber - startRange) / (endRange - startRange);
+
+	normalizedNum = math.max(0, normalizedNum);
+	normalizedNum = math.min(1, normalizedNum);
+
+	return (math.floor(normalizedNum * 100) / 100); -- rounds to .2 decimal places
+end
+
+local function visualizeFood(foodObject, percentage)
+	if not foodObject or not percentage then return end
+	if percentage <= coldRangeVisuals.min then
+
+		if foodObject:GetAttribute("RawColor") ~= nil then
+			foodObject.Color = foodObject:GetAttribute("RawColor")
+		end
+
+		for _, item in pairs(foodObject:GetDescendants()) do
+			if item:IsA("Hightlight") and item.Name == "Burnt" then
+				item.FillTransparency = 1;
+			end
+
+			if item:IsA("SurfaceAppearance") and item.Name == "Texture" then
+				item:Destroy();
+			end
+
+			if item:IsA("Decal") and item.Name == "Texture" then
+				item:Destroy();
+			end
+		end
+
+	elseif percentage > coldRangeVisuals.min and percentage <= coldRangeVisuals.max then
+
+		if foodObject:GetAttribute("RawColor") ~= nil then
+			foodObject.Color = foodObject:GetAttribute("RawColor")
+		end
+
+		for _, item in pairs(foodObject:GetDescendants()) do
+			if item:IsA("Hightlight") and item.Name == "Burnt" then
+				item.FillTransparency = 1;
+			end
+
+			if item:IsA("SurfaceAppearance") and item.Name == "Texture" then
+				item:Destroy();
+			end
+
+			if item:IsA("Decal") and item.Name == "Texture" then
+				item.Transparency = (1 - percentageInRange(percentage, coldRangeVisuals.min, coldRangeVisuals.max));
+			end
+		end
+
+	elseif percentage > coldRangeVisuals.max and percentage <= cookedRangeVisuals.max then
+
+		for _, item in pairs(foodObject:GetDescendants()) do
+			if item:IsA("Hightlight") and item.Name == "Burnt" then
+				item.FillTransparency = 1;
+			end
+
+			if item:IsA("Decal") and item.Name == "Texture" then
+				item.Transparency = 0;
+			end
+		end
+		
+	elseif percentage > cookedRangeVisuals.max and percentage <= burntRangeVisuals.max then
+
+		for _, item in pairs(foodObject:GetDescendants()) do
+			if item:IsA("Hightlight") and item.Name == "Burnt" then
+				item.FillTransparency = (1 - percentageInRange(percentage, cookedRangeVisuals.min, burntRangeVisuals.max));
+			end
+
+			if item:IsA("Decal") and item.Name == "Texture" then
+				item.Transparency = 0;
+			end
+		end
+
+	else
+		
+		for _, item in pairs(foodObject:GetDescendants()) do
+			if item:IsA("Hightlight") and item.Name == "Burnt" then
+				item.FillTransparency = 0;
+			end
+
+			if item:IsA("Decal") and item.Name == "Texture" then
+				item.Transparency = 0;
+			end
+		end
+
+	end
+end
+
 ----- Public functions -----
 
 function SpawnItems:PrintLogs(UserId) -- Prints out a table of logs for that was made by AvatarService
@@ -119,19 +215,20 @@ function SpawnItems:SpawnAll(RootFolder, Directory, Location) -- [IngredientOjec
     return false;
 end;
 
-function SpawnItems:SpawnBlenderFood(UserId, Owner, Ingredients, RootFolder, Directory, Location)
+function SpawnItems:SpawnBlenderFood(UserId, Owner, Ingredients, RootFolder, Directory, Location, ColorOfBlendedFood)
     PrintL(UserId,"[SpawnItemsAPI]: Spawned items [".. tostring(Ingredients) .."] for user[".. tostring(Owner) .."] from RootFolder[".. tostring(RootFolder) .."]");
     if Ingredients and RootFolder and Directory then
         local ItemClone = RootFolder:FindFirstChild("Blender Cup"):Clone();
         if Owner then
             if ItemClone:IsA("Model") then
                 ItemClone.PrimaryPart:SetAttribute("Owner", tostring(Owner));
-                
+                ItemClone.PrimaryPart.Color = ColorOfBlendedFood;
                 for index, value in Ingredients do
                     ItemClone.PrimaryPart:SetAttribute("i"..tostring(index), tostring(value));
                     print(index, value);
                 end
             elseif ItemClone:IsA("MeshPart") then
+                ItemClone.Color = ColorOfBlendedFood;
                 ItemClone:SetAttribute("Owner", tostring(Owner));
 
                 for index, value in Ingredients do
@@ -167,7 +264,7 @@ function SpawnItems:SpawnBlenderFood(UserId, Owner, Ingredients, RootFolder, Dir
     return nil;
 end;
 
-function SpawnItems:Spawn(UserId, Owner, ItemName, RootFolder, Directory, Location) -- [UserId, Owner, ItemName, [Name]Ojects, [Name]Available, Position]
+function SpawnItems:Spawn(UserId, Owner, ItemName, RootFolder, Directory, Location, FoodPercentage) -- [UserId, Owner, ItemName, [Name]Ojects, [Name]Available, Position]
     PrintL(UserId,"[SpawnItemsAPI]: Spawned item [".. tostring(ItemName) .."] for user[".. tostring(Owner) .."] from RootFolder[".. tostring(RootFolder) .."]");
     if ItemName and RootFolder and Directory then
         local ItemClone = RootFolder:FindFirstChild(ItemName):Clone();
@@ -185,6 +282,11 @@ function SpawnItems:Spawn(UserId, Owner, ItemName, RootFolder, Directory, Locati
                     ItemClone.Position = Location;
                 end
             end
+
+            if FoodPercentage then
+                visualizeFood(ItemClone, FoodPercentage);
+            end
+
             ItemClone.Parent = Directory;
 
             if ItemClone:IsA("Model") and ItemClone.PrimaryPart then

@@ -6,6 +6,8 @@ local OrderService = Knit.CreateService {
         AddOrder = Knit.CreateSignal();
         RemoveOrder = Knit.CreateSignal();
 
+        CompleteOrder = Knit.CreateSignal();
+
         ResetTimePurchase = Knit.CreateSignal();
     };
 }
@@ -250,11 +252,19 @@ function OrderService:removeExpiredRecipes(player)
 end
 
 -- Function to mark a recipe as completed for a player
-function OrderService:completeRecipe(player, recipe)
+function OrderService:completeRecipe(player, recipe, reward)
     -- Find the recipe in the player's list and mark it as completed
     for _, r in ipairs(playerRecipes[player].storage) do
         if r.name == recipe and r.completed == false then
+            print("COMPLETE RECIPE:", player, recipe)
             r.completed = true
+
+            local bonusReward = (reward * 0.3) -- 30%
+
+            Knit.GetService("DataService"):GiveCurrency(player, bonusReward, false, "+BONUS %")
+
+            self.Client.CompleteOrder:Fire(player, r.id)
+            self:removeRecipe(player, recipe.id)
             break
         end
     end

@@ -295,6 +295,13 @@ end
 function StaminaUI:KnitInit()
     
     LocalPlayer.CharacterAdded:Connect(function(Character)
+        Stamina = MaxStamina;
+        local MainUI = PlayerGui:WaitForChild("Main")
+        local BarsFrame = MainUI:WaitForChild("BottomFrame"):WaitForChild("BarsFrame");
+        local StaminaFrame = BarsFrame:WaitForChild("Stamina")
+        local StaminaBar = StaminaFrame:WaitForChild("Bar")
+        StaminaBar.BackgroundColor3 = regularStaminaColor;
+        StaminaBar.Size = UDim2.new(1,0,1,0);
         self:SetupStamina(Character);
     end)
 
