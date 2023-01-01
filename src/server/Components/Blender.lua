@@ -156,6 +156,7 @@ function Blender.new(instance)
             local function tablefind(tab,el) for index, value in pairs(tab) do if value == el then	return index end end end
             if hit:GetAttribute("Owner") or hit.Parent:GetAttribute("Owner") then
                 local player = game.Players:FindFirstChild(hit:GetAttribute("Owner") or hit.Parent:GetAttribute("Owner"));
+                if not player then return end
                 if not self.ObjectsInBlender[player.UserId] then self.ObjectsInBlender[player.UserId] = {} end
                 if not self.NumOfObjects[player.UserId] then self.NumOfObjects[player.UserId] = 0 end
                 if not self.BlenderColors[player.UserId] then self.BlenderColors[player.UserId] = Color3.fromRGB(255,255,255) end
@@ -169,20 +170,20 @@ function Blender.new(instance)
                 
                 print(hit:GetAttribute("Owner") or hit.Parent:GetAttribute("Owner"), "isAModel:", isAModel)
                 local player = game.Players:FindFirstChild(hit:GetAttribute("Owner") or hit.Parent:GetAttribute("Owner"));
-                if player then
-                    if (self.NumOfObjects[player.UserId] >= 5 and self.playersDebounces[player.UserId] == nil)
-                    or CollectionService:HasTag(hit, "IngredientsTable") == true then
-                        local obj = (isAModel == true and hit.Parent) or hit;
-                        if isAModel == true then
-                            obj:SetPrimaryPartCFrame(CFrame.new(self.Object.ReturnObj.Position + Vector3.new(0,5,0)))
-                        else
-                            obj.Position = self.Object.ReturnObj.Position + Vector3.new(0,5,0);
-                        end
-
-                        local NotificationService = Knit.GetService("NotificationService")
-                        NotificationService:Message(false, player, "Blender is full!")
-                        return
+                if not player then return end
+                
+                if (self.NumOfObjects[player.UserId] >= 5 and self.playersDebounces[player.UserId] == nil)
+                or CollectionService:HasTag(hit, "IngredientsTable") == true then
+                    local obj = (isAModel == true and hit.Parent) or hit;
+                    if isAModel == true then
+                        obj:SetPrimaryPartCFrame(CFrame.new(self.Object.ReturnObj.Position + Vector3.new(0,5,0)))
+                    else
+                        obj.Position = self.Object.ReturnObj.Position + Vector3.new(0,5,0);
                     end
+
+                    local NotificationService = Knit.GetService("NotificationService")
+                    NotificationService:Message(false, player, "Blender is full!")
+                    return
                 end
 
                 local objToInsert = (isAModel == true and hit.Parent) or hit;

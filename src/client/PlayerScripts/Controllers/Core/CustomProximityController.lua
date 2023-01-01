@@ -22,6 +22,8 @@ local Status = {
 	IngredientsTable = "IngredientsTable";
 }
 
+local currentPansInUse = {};
+
 local currentStatus = Status.PickUp;
 
 local playerGui = localPlayer:WaitForChild("PlayerGui")
@@ -39,6 +41,15 @@ local IngredientModule = require(ReplicatedAssets.Ingredients);
 local RecipeModule = require(ReplicatedAssets.Recipes);
 
 local CustomProximityController = Knit.CreateController { Name = "CustomProximityController" }
+
+local function tablefind(tab,el) 
+	for index, value in pairs(tab) do
+		if value == el then
+			return index;
+		end
+	end
+	return nil;
+end
 
 local function getScreenGui()
 	local screenGui = playerGui:FindFirstChild("ProximityPrompts")
@@ -156,126 +167,47 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 			end
 		end
 
-		if CollectionService:HasTag(prompt.Parent, "IngredientsTable") then
-			print(prompt.Parent:GetAttribute("i1"))
-			if prompt.Parent:GetAttribute("i1") ~= "" then 
-				itemImage.Visible = true;
-				itemImage.Image = IngredientModule[prompt.Parent:GetAttribute("i1")].BlendedImage ~= nil and IngredientModule[prompt.Parent:GetAttribute("i1")].BlendedImage or "";
-			else
-				itemImage.Visible = false;
-			end
-
-			if prompt.Parent:GetAttribute("i2") ~= "" then 
-				itemImage2.Visible = true;
-				itemImage2.Image = IngredientModule[prompt.Parent:GetAttribute("i2")].BlendedImage ~= nil and IngredientModule[prompt.Parent:GetAttribute("i2")].BlendedImage or "";
-			else
-				itemImage2.Visible = false;
-			end
+		local ingredients = {
+			"i1",
+			"i2",
+			"i3",
+			"i4",
+			"i5"
+		}
 			
-			if prompt.Parent:GetAttribute("i3") ~= "" then 
-				itemImage3.Visible = true;
-				itemImage3.Image = IngredientModule[prompt.Parent:GetAttribute("i3")].BlendedImage ~= nil and IngredientModule[prompt.Parent:GetAttribute("i3")].BlendedImage or "";
-			else
-				itemImage3.Visible = false;
-			end
-
-			if prompt.Parent:GetAttribute("i4") ~= "" then 
-				itemImage4.Visible = true;
-				itemImage4.Image = IngredientModule[prompt.Parent:GetAttribute("i4")].BlendedImage ~= nil and IngredientModule[prompt.Parent:GetAttribute("i4")].BlendedImage or "";
-			else
-				itemImage4.Visible = false;
-			end
-
-			if prompt.Parent:GetAttribute("i5") ~= "" then 
-				itemImage5.Visible = true;
-				itemImage5.Image = IngredientModule[prompt.Parent:GetAttribute("i5")].BlendedImage ~= nil and IngredientModule[prompt.Parent:GetAttribute("i5")].BlendedImage or "";
-			else
-				itemImage5.Visible = false;
+		local images = {
+			itemImage,
+			itemImage2,
+			itemImage3,
+			itemImage4,
+			itemImage5
+		}
+			
+		if CollectionService:HasTag(prompt.Parent, "IngredientsTable") then
+			for i, ingredient in ipairs(ingredients) do
+				local ingredientValue = prompt.Parent:GetAttribute(ingredient)
+				if ingredientValue ~= "" then
+					images[i].Visible = true
+					images[i].Image = IngredientModule[ingredientValue].BlendedImage or ""
+				else
+					images[i].Visible = false
+				end
 			end
 		else
+			local object
 			if prompt.Parent.Parent:IsA("Model") then
-				if IngredientModule[prompt.Parent.Parent.Name] then
-					itemImage.Image = IngredientModule[prompt.Parent.Parent.Name].Image
-				else
-					itemImage.Image = "http://www.roblox.com/asset/?id=4509163032" --???
-				end;
+				object = prompt.Parent.Parent
 			else
-				if IngredientModule[prompt.Parent.Name] then
-					itemImage.Image = IngredientModule[prompt.Parent.Name].Image
-				else
-					itemImage.Image = "http://www.roblox.com/asset/?id=4509163032" --???
-				end;
-			end
-		end
-
-		--print(prompt.Parent:GetAttribute("Type"))
-		if CollectionService:HasTag(prompt.Parent, "IngredientsTable") then
-			print(prompt.Parent:GetAttribute("i1"))
-			if prompt.Parent:GetAttribute("i1") ~= "" then 
-				itemImage.Visible = true;
-				itemImage.Image = IngredientModule[prompt.Parent:GetAttribute("i1")].BlendedImage ~= nil and IngredientModule[prompt.Parent:GetAttribute("i1")].BlendedImage or "";
-			else
-				itemImage.Visible = false;
-			end
-
-			if prompt.Parent:GetAttribute("i2") ~= "" then 
-				itemImage2.Visible = true;
-				itemImage2.Image = IngredientModule[prompt.Parent:GetAttribute("i2")].BlendedImage ~= nil and IngredientModule[prompt.Parent:GetAttribute("i2")].BlendedImage or "";
-			else
-				itemImage2.Visible = false;
+				object = prompt.Parent
 			end
 			
-			if prompt.Parent:GetAttribute("i3") ~= "" then 
-				itemImage3.Visible = true;
-				itemImage3.Image = IngredientModule[prompt.Parent:GetAttribute("i3")].BlendedImage ~= nil and IngredientModule[prompt.Parent:GetAttribute("i3")].BlendedImage or "";
+			if IngredientModule[object.Name] or RecipeModule[object.Name] then
+				itemImage.Image = (IngredientModule[object.Name] ~= nil and IngredientModule[object.Name].Image) or RecipeModule[object.Name].Image
 			else
-				itemImage3.Visible = false;
-			end
-
-			if prompt.Parent:GetAttribute("i4") ~= "" then 
-				itemImage4.Visible = true;
-				itemImage4.Image = IngredientModule[prompt.Parent:GetAttribute("i4")].BlendedImage ~= nil and IngredientModule[prompt.Parent:GetAttribute("i4")].BlendedImage or "";
-			else
-				itemImage4.Visible = false;
-			end
-
-			if prompt.Parent:GetAttribute("i5") ~= "" then 
-				itemImage5.Visible = true;
-				itemImage5.Image = IngredientModule[prompt.Parent:GetAttribute("i5")].BlendedImage ~= nil and IngredientModule[prompt.Parent:GetAttribute("i5")].BlendedImage or "";
-			else
-				itemImage5.Visible = false;
-			end
-		else
-			if prompt.Parent:GetAttribute("Type") == "Food" then
-				if prompt.Parent.Parent:IsA("Model") then
-					if IngredientModule[prompt.Parent.Parent.Name] then
-						itemImage.Image = IngredientModule[prompt.Parent.Parent.Name].Image
-					else
-						itemImage.Image = "http://www.roblox.com/asset/?id=4509163032" --???
-					end
-				else
-					if RecipeModule[prompt.Parent.Name] then
-						itemImage.Image = RecipeModule[prompt.Parent.Name].Image
-					else
-						itemImage.Image = "http://www.roblox.com/asset/?id=4509163032" --???
-					end;
-				end
-			elseif prompt.Parent:GetAttribute("Type") == "Ingredient" then
-				if prompt.Parent.Parent:IsA("Model") then
-					if IngredientModule[prompt.Parent.Parent.Name] then
-						itemImage.Image = IngredientModule[prompt.Parent.Parent.Name].Image
-					else
-						itemImage.Image = "http://www.roblox.com/asset/?id=4509163032" --???
-					end;
-				else
-					if IngredientModule[prompt.Parent.Name] then
-						itemImage.Image = IngredientModule[prompt.Parent.Name].Image
-					else
-						itemImage.Image = "http://www.roblox.com/asset/?id=4509163032" --???
-					end;
-				end
+				itemImage.Image = "http://www.roblox.com/asset/?id=4509163032"
 			end
 		end
+
 	end
 	updateUIFromPrompt()
 	
@@ -318,6 +250,12 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 
 	if customStatus == Status.IngredientsTable then
 		titleText.Text = "Pickup blended food";
+	elseif customStatus == Status.Cook then
+		if tablefind(currentPansInUse, prompt.Parent) then
+			titleText.Text = "Grab";
+		else
+			titleText.Text = customStatus;
+		end
 	else
 		titleText.Text = customStatus;
 	end
@@ -402,6 +340,12 @@ end
 
 function CustomProximityController:KnitStart()
 	--print("CUSTOM")
+
+	local CookingService = Knit.GetService("CookingService");
+	CookingService.UpdatePans:Connect(function(currentPans)
+		currentPansInUse = currentPans
+	end)
+
     ProximityPromptService.PromptShown:Connect(function(prompt, inputType)
 
         if prompt.Style == Enum.ProximityPromptStyle.Default then

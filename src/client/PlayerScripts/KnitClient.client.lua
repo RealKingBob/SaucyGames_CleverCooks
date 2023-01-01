@@ -53,6 +53,10 @@ Knit.Start():andThen(function()
 	print("Client started");	
 end):catch(warn)
 
+task.spawn(function()
+	Players.LocalPlayer.PlayerGui:WaitForChild("KCoreUI").Enabled = false;
+end)
+
 local DataService = Knit.GetService("DataService")
 local CurrencyCounterUI = Knit.GetController("CurrencyCounterUI")
 
@@ -74,9 +78,15 @@ end)
 local CookingService = Knit.GetService("CookingService");
 local CookingUI = Knit.GetController("CookingUI");
 
-CookingService.Cook:Connect(function(RecipeName, Pan, CookingTime)
-	print("CLIENT COOK", RecipeName, Pan, CookingTime)
-	CookingUI:StartCooking(RecipeName, Pan, CookingTime)
+CookingService.Cook:Connect(function(Status, RecipeName, Pan, CookingPercentages)
+	--print("CLIENT COOK", Status, RecipeName, Pan, CookingPercentages)
+	if Status == "Initialize" then
+		CookingUI:StartCooking(RecipeName, Pan)
+	elseif Status == "CookUpdate" then
+		CookingUI:UpdatePanCook(RecipeName, Pan, CookingPercentages)
+	elseif Status == "Destroy" then
+		CookingUI:DestroyUI(RecipeName, Pan)
+	end
 end)
 
 CookingService.Deliver:Connect(function(RecipeName, DeliveryZone, DeliverTime)
@@ -96,8 +106,8 @@ end)
 local NotificationService = Knit.GetService("NotificationService");
 local NotificationUI = Knit.GetController("NotificationUI");
 
-NotificationService.NotifyMessage:Connect(function(messageText)
-	NotificationUI:Message(messageText);
+NotificationService.NotifyMessage:Connect(function(messageText, typeWriterEffect)
+	NotificationUI:Message(messageText, typeWriterEffect);
 end)
 
 local ProximityService = Knit.GetService("ProximityService")

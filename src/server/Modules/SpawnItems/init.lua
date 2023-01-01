@@ -26,9 +26,9 @@ local function PrintL(id, string, bool)
     return;
 end;
 
-local coldRangeVisuals = {min = 20, max = 50};
-local cookedRangeVisuals = {min = 51, max = 75};
-local burntRangeVisuals = {min = 76, max = 96};
+local coldRangeVisuals = {min = 0, max = 34};
+local cookedRangeVisuals = {min = 35, max = 66};
+local burntRangeVisuals = {min = 67, max = 96};
 
 local function percentageInRange(currentNumber, startRange, endRange)
 	if startRange > endRange then startRange, endRange = endRange, startRange; end
@@ -41,85 +41,60 @@ local function percentageInRange(currentNumber, startRange, endRange)
 	return (math.floor(normalizedNum * 100) / 100); -- rounds to .2 decimal places
 end
 
+--[[
+    print("\n\n\n\n\n\n\n\n\n\n\n")
+    print("VISUALZING FOOD", foodObject, percentage)
+]]
+
 local function visualizeFood(foodObject, percentage)
-	if not foodObject or not percentage then return end
-	if percentage <= coldRangeVisuals.min then
+    --print("\n\n\n\n\n\n\n\n\n\n\n")
+    --print("VISUALZING FOOD", foodObject, percentage)
+    if not foodObject or not percentage then return end
 
-		if foodObject:GetAttribute("RawColor") ~= nil then
-			foodObject.Color = foodObject:GetAttribute("RawColor")
-		end
+    local function destroyTexture()
+        for _, item in pairs(foodObject:GetDescendants()) do
+            if item:IsA("SurfaceAppearance") and item.Name == "Texture" then
+                item:Destroy()
+            end
 
-		for _, item in pairs(foodObject:GetDescendants()) do
-			if item:IsA("Hightlight") and item.Name == "Burnt" then
-				item.FillTransparency = 1;
-			end
+            if item:IsA("Decal") and item.Name == "Texture" then
+                item:Destroy()
+            end
+        end
+    end
 
-			if item:IsA("SurfaceAppearance") and item.Name == "Texture" then
-				item:Destroy();
-			end
+    local function setTransparency(transparency)
+        for _, item in pairs(foodObject:GetDescendants()) do
+            if item:IsA("Decal") and item.Name == "Texture" then
+                item.Transparency = transparency
+            end
+        end
+    end
 
-			if item:IsA("Decal") and item.Name == "Texture" then
-				item:Destroy();
-			end
-		end
+    local function setFillTransparency(transparency)
+        for _, item in pairs(foodObject:GetDescendants()) do
+            if item:IsA("Highlight") and item.Name == "Burnt" then
+                item.FillTransparency = transparency
+            end
+        end
+    end
 
-	elseif percentage > coldRangeVisuals.min and percentage <= coldRangeVisuals.max then
+    if foodObject:GetAttribute("RawColor") ~= nil then
+        foodObject.Color = foodObject:GetAttribute("RawColor")
+    end
 
-		if foodObject:GetAttribute("RawColor") ~= nil then
-			foodObject.Color = foodObject:GetAttribute("RawColor")
-		end
-
-		for _, item in pairs(foodObject:GetDescendants()) do
-			if item:IsA("Hightlight") and item.Name == "Burnt" then
-				item.FillTransparency = 1;
-			end
-
-			if item:IsA("SurfaceAppearance") and item.Name == "Texture" then
-				item:Destroy();
-			end
-
-			if item:IsA("Decal") and item.Name == "Texture" then
-				item.Transparency = (1 - percentageInRange(percentage, coldRangeVisuals.min, coldRangeVisuals.max));
-			end
-		end
-
-	elseif percentage > coldRangeVisuals.max and percentage <= cookedRangeVisuals.max then
-
-		for _, item in pairs(foodObject:GetDescendants()) do
-			if item:IsA("Hightlight") and item.Name == "Burnt" then
-				item.FillTransparency = 1;
-			end
-
-			if item:IsA("Decal") and item.Name == "Texture" then
-				item.Transparency = 0;
-			end
-		end
-		
-	elseif percentage > cookedRangeVisuals.max and percentage <= burntRangeVisuals.max then
-
-		for _, item in pairs(foodObject:GetDescendants()) do
-			if item:IsA("Hightlight") and item.Name == "Burnt" then
-				item.FillTransparency = (1 - percentageInRange(percentage, cookedRangeVisuals.min, burntRangeVisuals.max));
-			end
-
-			if item:IsA("Decal") and item.Name == "Texture" then
-				item.Transparency = 0;
-			end
-		end
-
-	else
-		
-		for _, item in pairs(foodObject:GetDescendants()) do
-			if item:IsA("Hightlight") and item.Name == "Burnt" then
-				item.FillTransparency = 0;
-			end
-
-			if item:IsA("Decal") and item.Name == "Texture" then
-				item.Transparency = 0;
-			end
-		end
-
-	end
+    if percentage <= coldRangeVisuals.min or (percentage > coldRangeVisuals.min and percentage <= coldRangeVisuals.max) then
+        destroyTexture()
+    elseif percentage > coldRangeVisuals.max and percentage <= cookedRangeVisuals.max then
+        --destroyTexture()
+        setTransparency(0)
+    elseif percentage > cookedRangeVisuals.max and percentage <= burntRangeVisuals.max then
+        setTransparency(0)
+        setFillTransparency((1 - percentageInRange(percentage, cookedRangeVisuals.min, burntRangeVisuals.max)))
+    else
+        setTransparency(0)
+        setFillTransparency(0)
+    end
 end
 
 ----- Public functions -----
@@ -284,6 +259,7 @@ function SpawnItems:Spawn(UserId, Owner, ItemName, RootFolder, Directory, Locati
             end
 
             if FoodPercentage then
+                ItemClone:SetAttribute("CookingPercentage", FoodPercentage)
                 visualizeFood(ItemClone, FoodPercentage);
             end
 

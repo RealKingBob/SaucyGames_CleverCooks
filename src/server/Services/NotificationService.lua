@@ -7,11 +7,11 @@ local NotificationService = Knit.CreateService {
     },
 }
 
-function NotificationService:Message(allPlayers, player, message)
+function NotificationService:Message(allPlayers, player, message, typeWriteEffect)
     if allPlayers == true then
-        self.Client.NotifyMessage:FireAll(message);
+        self.Client.NotifyMessage:FireAll(message, typeWriteEffect);
     else
-        self.Client.NotifyMessage:Fire(player, message);
+        self.Client.NotifyMessage:Fire(player, message, typeWriteEffect);
     end
 end
 

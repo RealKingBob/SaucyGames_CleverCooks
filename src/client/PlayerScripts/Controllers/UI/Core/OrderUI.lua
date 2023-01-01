@@ -135,6 +135,7 @@ function OrderUI:AddOrder(orderData)
         MainFrame:FindFirstChild("Timer").AddTime.MouseButton1Click:Connect(function()
             if deb == false then
                 deb = true;
+                task.spawn(playLocalSound, itemClickSound, 0.2)
                 Knit.GetService("OrderService").ResetTimePurchase:Fire(ItemClone:GetAttribute("orderId"))
                 task.wait(.5)
                 deb = false;

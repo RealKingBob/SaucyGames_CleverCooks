@@ -68,6 +68,7 @@ function CurrencySessionService:DropCheese(oCFrame, player, amount, value)
 
         --visualizePosition(finalPosition)
 
+        if not SessionStorage[player] then break end;
         if Length(SessionStorage[player].Cheese) > MaxCheeseStorage then continue end
         
         SessionStorage[player].Cheese["Cheese"..tostring(currentTime)] = {
@@ -87,11 +88,13 @@ function CurrencySessionService:DropCheese(oCFrame, player, amount, value)
         })
     end
     
+    if not player then return end
     self.Client.DropCurrency:Fire(player, "Cheese", localSessionStorage)
 end
 
 function CurrencySessionService:CollectedCurrency(player, objectId, objectType, rootCframe)
     if objectType == "Cheese" then
+        if not player and SessionStorage[player] then return end;
         if SessionStorage[player].Cheese[objectId] then
             local magnitude = (SessionStorage[player].Cheese[objectId].Position - rootCframe.Position).Magnitude;
             if magnitude < 64 then -- checks if within range

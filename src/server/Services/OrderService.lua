@@ -1,3 +1,11 @@
+--[[
+	Name: Order Service [V1]
+	Creator: Real_KingBob
+	Made in: 12/31/22
+    Updated: 12/31/22
+	Description: Handles Order Mechanics for rat players
+]]
+
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local OrderService = Knit.CreateService {
@@ -70,6 +78,10 @@ local resetTimeProductId = 123456;
 
 local recipeTimer = 50; -- 300
 local playerTimer = 20; -- 180
+
+local coldRange = {min = 0, max = 34};
+local cookedRange = {min = 35, max = 66};
+local burntRange = {min = 67, max = 96};
 
 -- Create a count value to give a unique id for each recipe given to a user
 local countId = 0;
@@ -252,16 +264,23 @@ function OrderService:removeExpiredRecipes(player)
 end
 
 -- Function to mark a recipe as completed for a player
-function OrderService:completeRecipe(player, recipe, reward)
+function OrderService:completeRecipe(player, recipe, reward, percentage)
+    if not player or not recipe then return end;
     -- Find the recipe in the player's list and mark it as completed
     for _, r in ipairs(playerRecipes[player].storage) do
         if r.name == recipe and r.completed == false then
-            print("COMPLETE RECIPE:", player, recipe)
+            --print("COMPLETE RECIPE:", player, recipe)
             r.completed = true
 
             local bonusReward = (reward * 0.3) -- 30%
 
-            Knit.GetService("DataService"):GiveCurrency(player, bonusReward, false, "+BONUS %")
+            --print("uh", percentage, (percentage >= cookedRange.min and percentage <= cookedRange.max))
+
+            if percentage then
+                if percentage >= cookedRange.min and percentage <= cookedRange.max then
+                    Knit.GetService("DataService"):GiveCurrency(player, bonusReward, false, "+BONUS %")
+                end
+            end
 
             self.Client.CompleteOrder:Fire(player, r.id)
             self:removeRecipe(player, recipe.id)

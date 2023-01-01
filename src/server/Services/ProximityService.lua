@@ -1,6 +1,7 @@
 local CollectionService = game:GetService("CollectionService")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 local PlayerService = game:GetService("Players");
+local ReplicatedStorage = game:GetService("ReplicatedStorage");
 
 local ProximityService = Knit.CreateService {
     Name = "ProximityService";
@@ -39,6 +40,72 @@ local function GetYOffset(object)
 		return size.Y/2;
 	end;
 end;
+
+local coldRangeVisuals = {min = 20, max = 50};
+local cookedRangeVisuals = {min = 51, max = 75};
+local burntRangeVisuals = {min = 76, max = 96};
+
+local function percentageInRange(currentNumber, startRange, endRange)
+	if startRange > endRange then startRange, endRange = endRange, startRange; end
+
+	local normalizedNum = (currentNumber - startRange) / (endRange - startRange);
+
+	normalizedNum = math.max(0, normalizedNum);
+	normalizedNum = math.min(1, normalizedNum);
+
+	return (math.floor(normalizedNum * 100) / 100); -- rounds to .2 decimal places
+end
+
+local function visualizeFood(foodObject, percentage)
+    print("\n\n\n\n\n\n\n\n\n\n\n")
+    print("VISUALZING FOOD", foodObject, percentage)
+    if not foodObject or not percentage then return end
+
+    local function destroyTexture()
+        for _, item in pairs(foodObject:GetDescendants()) do
+            if item:IsA("SurfaceAppearance") and item.Name == "Texture" then
+                item:Destroy()
+            end
+
+            if item:IsA("Decal") and item.Name == "Texture" then
+                item:Destroy()
+            end
+        end
+    end
+
+    local function setTransparency(transparency)
+        for _, item in pairs(foodObject:GetDescendants()) do
+            if item:IsA("Decal") and item.Name == "Texture" then
+                item.Transparency = transparency
+            end
+        end
+    end
+
+    local function setFillTransparency(transparency)
+        for _, item in pairs(foodObject:GetDescendants()) do
+            if item:IsA("Highlight") and item.Name == "Burnt" then
+                item.FillTransparency = transparency
+            end
+        end
+    end
+
+    if foodObject:GetAttribute("RawColor") ~= nil then
+        foodObject.Color = foodObject:GetAttribute("RawColor")
+    end
+
+    if percentage <= coldRangeVisuals.min or (percentage > coldRangeVisuals.min and percentage <= coldRangeVisuals.max) then
+        destroyTexture()
+    elseif percentage > coldRangeVisuals.max and percentage <= cookedRangeVisuals.max then
+        destroyTexture()
+        setTransparency(0)
+    elseif percentage > cookedRangeVisuals.max and percentage <= burntRangeVisuals.max then
+        setTransparency(0)
+        setFillTransparency((1 - percentageInRange(percentage, cookedRangeVisuals.min, burntRangeVisuals.max)))
+    else
+        setTransparency(0)
+        setFillTransparency(0)
+    end
+end
 
 function ProximityService:GetNearestPan(fromPosition)
 	local selectedPan, dist = nil, math.huge
@@ -97,6 +164,16 @@ function ProximityService:LinkItemToPlayer(Character,Object)
     end;
 end;
 
+function fixHighlight(obj)
+    for _, obj_item in pairs(obj:GetDescendants()) do
+        if obj_item:IsA("Highlight") then
+            obj_item.Parent = ReplicatedStorage:WaitForChild("HiddenObjects");
+            task.wait(0.001)
+            obj_item.Parent = obj;
+        end
+    end
+end
+
 function ProximityService:UnlinkItemToPlayer(Character,Object)
 	if Character and Object then
 		if Object:IsA("Model") and Object.PrimaryPart then
@@ -108,7 +185,10 @@ function ProximityService:UnlinkItemToPlayer(Character,Object)
 			if _PrimaryPart:GetAttribute("Type") == "Ingredient" then
 				Object.Parent = workspace.IngredientAvailable;
 			elseif _PrimaryPart:GetAttribute("Type") == "Food" then
+                --local cookingPercentage = _PrimaryPart:GetAttribute("CookingPercentage")
+                --visualizeFood(Object, cookingPercentage);
 				Object.Parent = workspace.FoodAvailable;
+                task.spawn(fixHighlight, Object)
 			end;
 
 			for _,part in pairs(Object:GetChildren()) do
@@ -130,7 +210,10 @@ function ProximityService:UnlinkItemToPlayer(Character,Object)
 			if Object:GetAttribute("Type") == "Ingredient" then
 				Object.Parent = workspace.IngredientAvailable;
 			elseif Object:GetAttribute("Type") == "Food" then
+                --local cookingPercentage = Object:GetAttribute("CookingPercentage")
+                --visualizeFood(Object, cookingPercentage);
 				Object.Parent = workspace.FoodAvailable;
+                task.spawn(fixHighlight, Object)
 			end;
 			Object.CanCollide = true;
 			Object.Massless = false;

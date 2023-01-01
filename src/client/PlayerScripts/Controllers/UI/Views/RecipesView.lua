@@ -47,6 +47,7 @@ local RecipeModule = require(ReplicatedAssets.Recipes)
 local IngredientModule = require(ReplicatedAssets.Ingredients)
 
 local myReplicatedIngredients = {}
+local currentPansInUse = {};
 local ShortDistanceObject
 local CookDebounce = false;
 local CookButton = mainGui.Cook
@@ -58,6 +59,9 @@ local prevIngredientButton = nil;
 
 local pageRecipeSound = "rbxassetid://552900451";
 
+local ZoneAPI = require(ReplicatedModules:FindFirstChild("Zone"));
+local panZone = ZoneAPI.new(CollectionService:GetTagged("Pan"));
+
 -- setup
 
 local function playLocalSound(soundId, volume)
@@ -67,6 +71,15 @@ local function playLocalSound(soundId, volume)
     SoundService:PlayLocalSound(sound)
     sound.Ended:Wait()
     sound:Destroy()
+end
+
+local function tablefind(tab,el) 
+	for index, value in pairs(tab) do
+		if value == el then
+			return index;
+		end
+	end
+	return nil;
 end
 
 function recipePageCreated(PageNumber,PageData)
@@ -145,6 +158,7 @@ function setupRecipes()
 	
 	RightButton.MouseButton1Click:Connect(function() -- Page click
 		PageOrganizer:Next()
+		task.spawn(playLocalSound, pageRecipeSound, 0.2)
 		local TotalPages = 0
 		for _,page in pairs(recipeList:GetChildren()) do
 			if page:IsA("Frame") then
@@ -155,6 +169,7 @@ function setupRecipes()
 
     LeftButton.MouseButton1Click:Connect(function()
 		PageOrganizer:Previous()
+		task.spawn(playLocalSound, pageRecipeSound, 0.2)
 		local TotalPages = 0
 		for _,page in pairs(recipeList:GetChildren()) do
 			if page:IsA("Frame") then
@@ -268,7 +283,9 @@ local function displayIngredients()
 			pan.ProximityPrompt.Enabled = true;
 		end
 	else
+		allIngredientsFound = false;
 		for _, pan in pairs(CollectionService:GetTagged("Pan")) do
+			if tablefind(currentPansInUse, pan) then continue end;
 			pan.ProximityPrompt.Enabled = false;
 		end
 	end
@@ -324,7 +341,9 @@ local function displayIngredients()
 					pan.ProximityPrompt.Enabled = true;
 				end
 			else
+				allIngredientsFound = false;
 				for _, pan in pairs(CollectionService:GetTagged("Pan")) do
+					if tablefind(currentPansInUse, pan) then continue end;
 					pan.ProximityPrompt.Enabled = false;
 				end
 			end
@@ -475,57 +494,144 @@ end
 function RecipesView:Cook(pan)
 	if CookDebounce == false then
 		CookDebounce = true
-		if recipeSelected then
-			--CookEvent:FireServer(recipename)
-			print(recipeSelected)
-			local CookingService = Knit.GetService("CookingService")
-			CookingService.Cook:Fire(recipeSelected, pan)
-		end	
+		local CookingService = Knit.GetService("CookingService")
+		CookingService.Cook:Fire(recipeSelected, pan)
 		task.wait(.5)
 		CookButton.Visible = false;
 		CookDebounce = false
 	end
 end
 
+-- Private functions
+local getRadius = function(part)
+	return (part.Size.Z<part.Size.Y and part.Size.Z or part.Size.Y)/2
+	--[[In the above we are returning the smallest, first we check if Z is smaller
+	than Y, if so then we return Z or else we return Y.]]
+end;
+
+local function checkPans(panHitbox) -- checks if any object is on the pans
+	local panArray = {};
+	local radiusOfPanZone = getRadius(panHitbox)
+
+	local overlapParams = OverlapParams.new()
+	overlapParams.FilterDescendantsInstances = CollectionService:GetTagged("IgnoreParts");
+	overlapParams.FilterType = Enum.RaycastFilterType.Blacklist;
+
+	local objectsInPanZone = workspace:GetPartBoundsInRadius(panHitbox.Position, radiusOfPanZone, overlapParams)
+	for _, object in pairs(objectsInPanZone) do
+		local touchedType, touchedOwner, touchedObject;
+
+		local tObject = nil;
+		if object then
+			if object.Parent then
+				if object.Parent:IsA("Model") then
+					if object.Parent.PrimaryPart then
+						tObject = object.Parent.PrimaryPart;
+						touchedObject = tObject.Parent;
+					end
+				else
+					tObject = object;
+					touchedObject = object;
+				end
+			end
+		end
+		
+		if tObject == nil then continue end;
+
+		touchedType = tObject:GetAttribute("Type");
+		touchedOwner = tObject:GetAttribute("Owner");
+
+		if touchedObject and touchedType and touchedOwner then
+			table.insert(panArray, object)
+		end
+	end
+
+	return panArray;
+end
 
 function RecipesView:KnitStart()
     
     setupRecipes()
 
-	for _, pan in pairs(CollectionService:GetTagged("Pan")) do
+	local CookingService = Knit.GetService("CookingService");
+	CookingService.UpdatePans:Connect(function(currentPans)
+		currentPansInUse = currentPans
+		for _, pan in pairs(CollectionService:GetTagged("Pan")) do
+			if tablefind(currentPansInUse, pan) then
+				pan.ProximityPrompt.Enabled = true;
+			end
+		end
+	end)
 
+	local debounce = false;
+
+	for _, pan in pairs(CollectionService:GetTagged("Pan")) do
 		pan.ProximityPrompt.Triggered:Connect(function(plr)
-			self:Cook(pan);
+			if not tablefind(currentPansInUse, pan) then
+				if debounce == false then
+					debounce = true;
+					local ProximityPrompts = PlayerGui:FindFirstChild("ProximityPrompts")
+					if ProximityPrompts then
+						local BigPrompt = ProximityPrompts:FindFirstChild("BigPrompt")
+						if BigPrompt then
+							BigPrompt.Frame.TitleFrame.TitleText.Text = "Grab"
+						end
+					end
+					self:Cook(pan);
+					pan.ProximityPrompt.Enabled = false;
+					task.wait(0.5)
+					pan.ProximityPrompt.Enabled = true;
+					debounce = false;
+				end
+			else
+				if debounce == false then
+					debounce = true;
+					local ProximityPrompts = PlayerGui:FindFirstChild("ProximityPrompts")
+					if ProximityPrompts then
+						local BigPrompt = ProximityPrompts:FindFirstChild("BigPrompt")
+						if BigPrompt then
+							BigPrompt.Frame.TitleFrame.TitleText.Text = ""
+						end
+					end
+					self:Cook(pan);
+					task.wait(0.5)
+					debounce = false;
+				end
+			end
 		end);
 	end
 
-    --[[game:GetService("RunService").RenderStepped:Connect(function()
-        for _, Pan in pairs (workspace:WaitForChild("Pans"):WaitForChild("PanHitboxes"):GetChildren()) do
-            if not Pan:IsA("Folder") then
-                local Mag = (Pan.Position - game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart").Position).magnitude
-                if Mag <= 11 then
-                    ShortDistanceObject = Pan
-                    local IngredientValue = LocalPlayer:FindFirstChild("Data").GameValues.Ingredient
-                    if IngredientValue.Value == nil and CookButton.Visible == false and recipeSelected ~= nil and allIngredientsFound == true then
-						Pan.ProximityPrompt.Enabled = true;
-                        --CookButton.Visible = true
-                        --break
-                    end
-                else
-                    if ShortDistanceObject then
-                        local IngredientValue = LocalPlayer:FindFirstChild("Data").GameValues.Ingredient
-                        local OldMag = (ShortDistanceObject.Position - game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart").Position).magnitude
-                        --print("OldMag",OldMag)
-                        if OldMag > 11 then -- and CookGUI.Visible == true or IngredientValue.Value ~= nil and CookGUI.Visible == true
-							Pan.ProximityPrompt.Enabled = false;
-                            --CookButton.Visible = false
-                            --break
-                        end
-                    end
-                end
-            end
+    game:GetService("RunService").RenderStepped:Connect(function()
+        for _, panHitbox in pairs (CollectionService:GetTagged("Pan")) do
+
+			local specificPanArray = checkPans(panHitbox)
+
+			if #specificPanArray > 0 then
+				for _, touchedPart in ipairs(specificPanArray) do
+					local tTouchedPart;
+	
+					if touchedPart.Parent:IsA("Model") and touchedPart.Parent.PrimaryPart then
+						tTouchedPart = touchedPart.Parent.PrimaryPart;
+					else
+						tTouchedPart = touchedPart
+					end
+	
+					local touchedType = tTouchedPart:GetAttribute("Type");
+					local touchedOwner = tTouchedPart:GetAttribute("Owner");
+	
+					if touchedType and touchedType == "Food" and panZone:findPart(touchedPart) == true then
+						panHitbox.ProximityPrompt.Enabled = true;
+					else
+						if allIngredientsFound == true or tablefind(currentPansInUse, panHitbox) then continue end;
+						panHitbox.ProximityPrompt.Enabled = false;
+					end;
+				end
+			else
+				if allIngredientsFound == true or tablefind(currentPansInUse, panHitbox) then continue end;
+				panHitbox.ProximityPrompt.Enabled = false;
+			end
         end
-    end);]]
+    end);
 end
 
 

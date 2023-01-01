@@ -22,21 +22,26 @@ local CookingUI = Knit.CreateController { Name = "CookingUI" }
 ]]
 
 --//Services
-local TweenService = game:GetService("TweenService")
-local SoundService = game:GetService("SoundService")
+local TweenService = game:GetService("TweenService");
+local SoundService = game:GetService("SoundService");
+local ReplicatedStorage = game:GetService("ReplicatedStorage");
 
 local plr = game.Players.LocalPlayer;
 
 --//Const
 local PlayerGui = plr:WaitForChild("PlayerGui");
 
-local PoofSound = "rbxassetid://9116406899";
-local SizzleSound = "rbxassetid://9119165933";
+local GoodMagicSound = "rbxassetid://9116394545";
+local GoodPoofSound = "rbxassetid://9125639499";
+local BadPoofSound = "rbxassetid://9116406899";
+local SizzleSound = "rbxassetid://9119165436";
 
 local ColdIcon = "rbxassetid://11961241221";
 local ReadyIcon = "rbxassetid://11961241690";
 local HotIcon = "rbxassetid://11961241536";
 local SkullIcon = "rbxassetid://11961241388";
+
+local PanUIs = {}
 
 local CookingPreviews = Knit.GameLibrary:WaitForChild("CookingPreviews"); --local ProgressBar = TierFrame:WaitForChild("InnerFrame"):WaitForChild("ProgressBar");
 
@@ -66,13 +71,126 @@ local roundDecimals = function(num, places) --num is your number or value and pl
     
 end
 
+local coldRangeIcons = {min = 0, max = 34};
+local cookedRangeIcons = {min = 35, max = 66};
+local burntRangeIcons = {min = 67, max = 96};
+
+local coldRangeVisuals = {min = 20, max = 50};
+local cookedRangeVisuals = {min = 51, max = 75};
+local burntRangeVisuals = {min = 76, max = 96};
+
+local function changeIcons(percentage, mainFrame)
+    if percentage >= coldRangeIcons.min and percentage <= coldRangeIcons.max then
+        mainFrame:WaitForChild("ItemImage").Image = ColdIcon;
+    elseif percentage > coldRangeIcons.max and percentage <= cookedRangeIcons.max then
+        mainFrame:WaitForChild("ItemImage").Image = ReadyIcon;
+    elseif percentage > cookedRangeIcons.max and percentage <= burntRangeIcons.max then
+        mainFrame:WaitForChild("ItemImage").Image = HotIcon;
+    else
+        mainFrame:WaitForChild("ItemImage").Image = SkullIcon;
+    end
+end
+
+local function rangeInPercentage(percentage, startPercent, endPercent, startRange, endRange)
+    return (startRange + (percentage / endPercent) * (endRange - startRange));
+end
+
+local function percentageInRange(currentNumber, startRange, endRange)
+    if startRange > endRange then startRange, endRange = endRange, startRange; end
+
+    local normalizedNum = (currentNumber - startRange) / (endRange - startRange);
+
+    normalizedNum = math.max(0, normalizedNum);
+    normalizedNum = math.min(1, normalizedNum);
+
+    return (math.floor(normalizedNum * 100) / 100); -- rounds to .2 decimal places
+end
+
+local function visualizeSizzle(pan, isEnabled)
+    if not pan or not isEnabled then return end
+    local obj;
+    
+    if pan:FindFirstChild("CookSmokes") then
+        obj = pan:FindFirstChild("CookSmokes")
+        local attachment1 = obj.LinkPoint
+        local attachment2 = pan.MidAttach
+        obj.CFrame = (attachment2.WorldCFrame * attachment1.CFrame:Inverse())
+    else
+        obj = Knit.GameLibrary.Effects.CookSmokes:Clone();
+        obj.Parent = pan
+        local attachment1 = obj.LinkPoint
+        local attachment2 = pan.MidAttach
+        obj.CFrame = (attachment2.WorldCFrame * attachment1.CFrame:Inverse())
+    end
+
+    if obj then
+        for _, v in pairs(obj:GetChildren()) do
+            if v:IsA("ParticleEmitter") then
+                v.Enabled = isEnabled;
+            end
+        end
+    end
+
+    return (obj == nil and Instance.new("Part")) or obj;
+end
+
+local function visualizeCookFood(foodObject, pan, percentage, fireEffect)
+    if not foodObject or not pan or not percentage then return end
+    
+    local cookedRangeMin = cookedRangeVisuals.min
+    local cookedRangeMax = cookedRangeVisuals.max
+    local burntRangeMax = burntRangeVisuals.max
+    local coldRangeMin = coldRangeVisuals.min
+    local coldRangeMax = coldRangeVisuals.max
+
+    foodObject.Cooked.Burnt.FillTransparency = 1
+    foodObject.Cooked.Transparency = 0
+
+    if percentage <= coldRangeMin then
+        foodObject.Raw.Transparency = 0
+
+    elseif percentage > coldRangeMin and percentage <= coldRangeMax then
+        if foodObject.Cooked:FindFirstChild("Decal") then
+            foodObject.Cooked:FindFirstChild("Decal").Transparency = (1 - percentageInRange(percentage, coldRangeMin, coldRangeMax))
+        end
+        foodObject.Raw.Transparency = percentageInRange(percentage, coldRangeMin, coldRangeMax)
+
+    elseif percentage > coldRangeMax and percentage <= cookedRangeMax then
+        foodObject.Raw.Transparency = 1
+
+    elseif percentage > cookedRangeMax and percentage <= burntRangeMax then
+        foodObject.Cooked.Burnt.FillTransparency = (1 - percentageInRange(percentage, cookedRangeMin, burntRangeMax))
+        foodObject.Raw.Transparency = 1
+
+    else
+        foodObject.Cooked.Burnt.FillTransparency = 0
+        foodObject.Raw.Transparency = 1
+
+        if not foodObject:FindFirstChild("Fire") then
+            fireEffect.Parent = foodObject
+            local attachment1 = fireEffect.LinkPoint
+            local attachment2 = pan.MidAttach
+            fireEffect.CFrame = (attachment2.WorldCFrame * attachment1.CFrame:Inverse())
+        end
+    end
+end
+
 --//Public Methods
 
 function CookingUI:SpawnCookedParticles(food)
     local MidAttachClone = Knit.Spawnables:WaitForChild("CookedParticle"):WaitForChild("MidAttach"):Clone()
     MidAttachClone.Parent = food;
 
-    task.spawn(playLocalSound, PoofSound, 0.4)
+    local cookingPercentage = (food:IsA("Model") and food.PrimaryPart ~= nil and food.PrimaryPart:GetAttribute("CookingPercentage")) or food:GetAttribute("CookingPercentage")
+
+    if cookingPercentage >= cookedRangeIcons.min 
+    and cookingPercentage <= cookedRangeIcons.max then
+        task.spawn(playLocalSound, GoodMagicSound, 0.4)
+        task.spawn(playLocalSound, GoodPoofSound, 0.4)
+    else
+        task.spawn(playLocalSound, BadPoofSound, 0.4)
+    end
+    
 
     for _, v in ipairs(MidAttachClone:GetChildren()) do
         if v:IsA("ParticleEmitter") then
@@ -84,6 +202,68 @@ function CookingUI:SpawnCookedParticles(food)
 
     MidAttachClone:Destroy()
 end
+
+function CookingUI:DestroyUI(RecipeName, Pan)
+    if PanUIs[Pan] == nil then return; end
+    local cookBillUI = PanUIs[Pan].cookBillUI;
+    --local fireEffect = PanUIs[Pan].fireEffect;
+    local returnedFood = PanUIs[Pan].returnedFood
+
+    for _, v in pairs(Pan:GetChildren()) do
+        if v:IsA("ParticleEmitter") then
+            v.Enabled = false;
+        end
+    end
+
+    local obj = visualizeSizzle(Pan, true);
+    
+    obj:Destroy();
+    returnedFood:Destroy();
+    cookBillUI:Destroy()
+end
+
+function CookingUI:UpdatePanCook(RecipeName, Pan, Percentages)
+    if PanUIs[Pan] == nil then return; end
+    local cookBillUI = PanUIs[Pan].cookBillUI;
+    local fireEffect = PanUIs[Pan].fireEffect;
+    --local recipeAssets = require(Knit.ReplicatedAssets.Recipes);
+
+    --local currentRecipeImage = recipeAssets[RecipeName].Image;
+
+    local mainFrame = cookBillUI:WaitForChild("Frame")
+
+    local numValue = Instance.new("NumberValue");
+
+    cookBillUI.Parent = Pan
+
+    local PosInfo = TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out);
+
+    for _, v in pairs(Pan:GetChildren()) do
+        if v:IsA("ParticleEmitter") then
+            v.Enabled = true;
+        end
+    end
+
+    visualizeSizzle(Pan, true);
+
+    numValue.Changed:Connect(function()
+        if not mainFrame or not mainFrame:FindFirstChild("BarHolder") then return end;
+        mainFrame.BarHolder:WaitForChild("Bar").Position = UDim2.fromScale((numValue.Value / 100), .5)
+        changeIcons(numValue.Value, mainFrame)
+        visualizeCookFood(PanUIs[Pan].returnedFood, Pan, numValue.Value, fireEffect)
+    end)
+
+    if Percentages.overCookingLimit == true then
+        numValue.Value = Percentages.current;
+    else
+        numValue.Value = Percentages.previous;
+    end
+    
+    --TweenService:Create(mainFrame.BarHolder:WaitForChild("Bar"), SizeInfo, { Size = UDim2.fromScale(1, 1) }):Play();
+    
+    TweenService:Create(numValue, PosInfo, { Value = Percentages.current }):Play();
+end
+
 
 function CookingUI:StartDelivering(RecipeName, DeliverZone, DeliverTime)
     local deliverBillUI = Knit.GameLibrary.BillboardUI.DeliverHeadUI:Clone();
@@ -106,7 +286,7 @@ function CookingUI:StartDelivering(RecipeName, DeliverZone, DeliverTime)
         end
     end
 
-    task.spawn(playLocalSound, SizzleSound, 0.3)
+    --task.spawn(playLocalSound, SizzleSound, 0.3)
 
     TweenService:Create(mainFrame.BarHolder:WaitForChild("Bar"), SizeInfo, { Size = UDim2.fromScale(1, 1) }):Play();
 
@@ -130,96 +310,17 @@ end
 
 -- TODO: CONVERT THIS INTO A FUNCTION PER PERCENTAGE
 function CookingUI:StartCooking(RecipeName, Pan, CookingTime)
-    local cookBillUI = Knit.GameLibrary.BillboardUI.CookHeadUI:Clone();
-    local fireEffect = Knit.GameLibrary.Effects.Fire:Clone();
-    local recipeAssets = require(Knit.ReplicatedAssets.Recipes);
+    if PanUIs[Pan] == nil then
+        PanUIs[Pan] = {}
+    end
+    PanUIs[Pan].cookBillUI = Knit.GameLibrary.BillboardUI.CookHeadUI:Clone();
+    PanUIs[Pan].fireEffect = Knit.GameLibrary.Effects.Fire:Clone();
 
     --local currentRecipeImage = recipeAssets[RecipeName].Image;
 
-    local mainFrame = cookBillUI:WaitForChild("Frame")
+    task.spawn(playLocalSound, SizzleSound, 0.3)
 
-    local numValue = Instance.new("NumberValue");
-
-    local coldRangeIcons = {min = 0, max = 34};
-    local cookedRangeIcons = {min = 35, max = 66};
-    local burntRangeIcons = {min = 67, max = 96};
-
-    local coldRangeVisuals = {min = 20, max = 50};
-    local cookedRangeVisuals = {min = 51, max = 75};
-    local burntRangeVisuals = {min = 76, max = 96};
-
-    local function changeIcons(percentage)
-        if percentage >= coldRangeIcons.min and percentage <= coldRangeIcons.max then
-            mainFrame:WaitForChild("ItemImage").Image = ColdIcon;
-        elseif percentage > coldRangeIcons.max and percentage <= cookedRangeIcons.max then
-            mainFrame:WaitForChild("ItemImage").Image = ReadyIcon;
-        elseif percentage > cookedRangeIcons.max and percentage <= burntRangeIcons.max then
-            mainFrame:WaitForChild("ItemImage").Image = HotIcon;
-        else
-            mainFrame:WaitForChild("ItemImage").Image = SkullIcon;
-        end
-    end
-
-    local function rangeInPercentage(percentage, startPercent, endPercent, startRange, endRange)
-        return (startRange + (percentage / endPercent) * (endRange - startRange));
-    end
-
-    local function percentageInRange(currentNumber, startRange, endRange)
-        if startRange > endRange then startRange, endRange = endRange, startRange; end
-
-        local normalizedNum = (currentNumber - startRange) / (endRange - startRange);
-
-        normalizedNum = math.max(0, normalizedNum);
-        normalizedNum = math.min(1, normalizedNum);
-
-        return (math.floor(normalizedNum * 100) / 100); -- rounds to .2 decimal places
-    end
-
-    local function visualizeCookFood(foodObject, pan, percentage)
-        if not foodObject or not pan or not percentage then return end
-        if percentage <= coldRangeVisuals.min then
-
-            foodObject.Cooked.Burnt.FillTransparency = 1;
-            foodObject.Cooked.Transparency = 0;
-            foodObject.Raw.Transparency = 0;
-
-        elseif percentage > coldRangeVisuals.min and percentage <= coldRangeVisuals.max then
-
-            foodObject.Cooked.Burnt.FillTransparency = 1;
-            foodObject.Cooked.Transparency = 0;
-            if foodObject.Cooked:FindFirstChild("Decal") then
-                foodObject.Cooked:FindFirstChild("Decal").Transparency = (1 - percentageInRange(percentage, coldRangeVisuals.min, coldRangeVisuals.max));
-            end
-            foodObject.Raw.Transparency = percentageInRange(percentage, coldRangeVisuals.min, coldRangeVisuals.max);
-
-        elseif percentage > coldRangeVisuals.max and percentage <= cookedRangeVisuals.max then
-
-            foodObject.Cooked.Burnt.FillTransparency = 1;
-            foodObject.Cooked.Transparency = 0;
-            foodObject.Raw.Transparency = 1;
-            
-        elseif percentage > cookedRangeVisuals.max and percentage <= burntRangeVisuals.max then
-
-            foodObject.Cooked.Burnt.FillTransparency = (1 - percentageInRange(percentage, cookedRangeVisuals.min, burntRangeVisuals.max));
-            foodObject.Cooked.Transparency = 0;
-            foodObject.Raw.Transparency = 1;
-
-        else
-            
-            foodObject.Cooked.Burnt.FillTransparency = 0;
-            foodObject.Cooked.Transparency = 0;
-            foodObject.Raw.Transparency = 1;
-
-            if not foodObject:FindFirstChild("Fire") then
-                fireEffect.Parent = foodObject
-                local attachment1 = fireEffect.LinkPoint
-                local attachment2 = pan.MidAttach
-                
-                fireEffect.CFrame = (attachment2.WorldCFrame * attachment1.CFrame:Inverse())
-            end
-
-        end
-    end
+    local mainFrame = PanUIs[Pan].cookBillUI:WaitForChild("Frame")
 
     local function visualizeCreateFood(foodName)
         local FoodPreviewClone = CookingPreviews:FindFirstChild(foodName):Clone()
@@ -235,12 +336,10 @@ function CookingUI:StartCooking(RecipeName, Pan, CookingTime)
     end
 
     mainFrame:WaitForChild("ItemImage").Image = ColdIcon;
-    mainFrame:WaitForChild("Duration").Text = tostring(CookingTime).."s";
+    --mainFrame:WaitForChild("Duration").Text = tostring(CookingTime).."s";
 
-    cookBillUI.Parent = Pan
-    local returnedFood = visualizeCreateFood(RecipeName)
-
-    local PosInfo = TweenInfo.new(CookingTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out);
+    PanUIs[Pan].cookBillUI.Parent = Pan
+    PanUIs[Pan].returnedFood = visualizeCreateFood(RecipeName)
 
     for _, v in pairs(Pan:GetChildren()) do
         if v:IsA("ParticleEmitter") then
@@ -248,40 +347,7 @@ function CookingUI:StartCooking(RecipeName, Pan, CookingTime)
         end
     end
 
-    numValue.Changed:Connect(function()
-        mainFrame.BarHolder:WaitForChild("Bar").Position = UDim2.fromScale((numValue.Value / 100), .5)
-        changeIcons(numValue.Value)
-        visualizeCookFood(returnedFood, Pan, numValue.Value)
-    end)
-
-    task.spawn(playLocalSound, SizzleSound, 0.3)
-
-    --TweenService:Create(mainFrame.BarHolder:WaitForChild("Bar"), SizeInfo, { Size = UDim2.fromScale(1, 1) }):Play();
-    
-    TweenService:Create(numValue, PosInfo, { Value = 100 }):Play();
-
-    for i = CookingTime, 0, -1 do
-        mainFrame:WaitForChild("Duration").Text = tostring(roundDecimals(i, 1)).."s";
-
-        if i == 0 then
-            
-        end
-        task.wait(1);
-    end
-
-    numValue.Value = 99
-    numValue.Value = 100
-
-    for _, v in pairs(Pan:GetChildren()) do
-        if v:IsA("ParticleEmitter") then
-            v.Enabled = false;
-        end
-    end
-
-    task.wait(5)
-
-    returnedFood:Destroy();
-    cookBillUI:Destroy()
+    visualizeSizzle(Pan, true);
 end
 
 function CookingUI:KnitStart()

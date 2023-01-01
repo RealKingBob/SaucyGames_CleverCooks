@@ -1,8 +1,8 @@
 --[[
-	Name: Cooking Service [V2]
+	Name: Cooking Service [V3]
 	Creator: Real_KingBob
 	Made in: 9/19/21
-    Updated: 9/30/22
+    Updated: 12/31/22
 	Description: Handles Cooking Mechanics / Proximity Mechanics for rat players
 ]]
 
@@ -20,6 +20,8 @@ local CookingService = Knit.CreateService {
 		ParticlesSpawn = Knit.CreateSignal(),
 		SendIngredients = Knit.CreateSignal(),
 		ProximitySignal = Knit.CreateSignal();
+
+		UpdatePans = Knit.CreateSignal();
 
 		ChangeClientBlender = Knit.CreateSignal();
 	};
@@ -46,6 +48,7 @@ local FoodObjects = GameLibrary:FindFirstChild("FoodObjects");
 ----- Loaded Modules -----
 
 local ZoneAPI = require(ReplicatedModules:FindFirstChild("Zone"));
+local Phrases = require(ReplicatedModules:FindFirstChild("Phrases"));
 local RecipeModule = require(ReplicatedAssets:WaitForChild("Recipes"));
 local SpawnItemsAPI = require(ServerModules:FindFirstChild("SpawnItems"));
 local TableAPI = require(ServerModules:FindFirstChild("Table"));
@@ -77,12 +80,16 @@ local FoodData = {};
 local possibleRecipes = {};
 local PlayersInServers = {};
 local CurrentIngredientObjects = {};
+local foodCookWarnings = {};
 
 local blenderArray = {};
 
 local playerIngredients = {};
 local prevIngredients = {};
+
 local cookingPansQueue = {};
+local additionalPansInfo = {};
+
 local blendingFoodQueue = {};
 local deliverQueues = {};
 
@@ -93,18 +100,42 @@ local partsArray = {};
 
 local function PlayerAdded(player)
     CurrentIngredientObjects[player.Name] = {};
+	additionalPansInfo[player.UserId] = {};
     possibleRecipes[player.Name] = {};
 end;
 
 local function PlayerRemoving(player)
     CurrentIngredientObjects[player.Name] = nil;
+	additionalPansInfo[player.UserId] = nil;
     possibleRecipes[player.Name] = nil;
 end;
 
 
-local coldRangeVisuals = {min = 20, max = 50};
-local cookedRangeVisuals = {min = 51, max = 75};
-local burntRangeVisuals = {min = 76, max = 96};
+local coldRangeVisuals = {min = 0, max = 34};
+local cookedRangeVisuals = {min = 35, max = 66};
+local burntRangeVisuals = {min = 67, max = 96};
+
+local easyCookTalkPhrases = Phrases.easyCookTalkPhrases
+
+local annoyedCookTalkPhrases = Phrases.annoyedCookTalkPhrases
+
+local defeatedCookTalkPhases = Phrases.defeatedCookTalkPhases
+
+local function warnAboutOvercookingFood(player, obj)
+	if not foodCookWarnings[obj] then foodCookWarnings[obj] = 0 end
+	foodCookWarnings[obj] += 1;
+
+	if foodCookWarnings[obj] < math.random(3,5) then
+		Knit.GetService("NotificationService"):Message(false, player, easyCookTalkPhrases[math.random(1, #easyCookTalkPhrases)], {Effect = true, Color = Color3.fromRGB(255,255,255)})
+		return false;
+	elseif foodCookWarnings[obj] < math.random(6,10)  then
+		Knit.GetService("NotificationService"):Message(false, player, annoyedCookTalkPhrases[math.random(1, #annoyedCookTalkPhrases)], {Effect = true, Color = Color3.fromRGB(255, 23, 23)})
+		return false;
+	else
+		Knit.GetService("NotificationService"):Message(false, player, defeatedCookTalkPhases[math.random(1, #defeatedCookTalkPhases)], {Effect = true, Color = Color3.fromRGB(255,255,255)})
+		return true
+	end
+end
 
 local function percentageInRange(currentNumber, startRange, endRange)
 	if startRange > endRange then startRange, endRange = endRange, startRange; end
@@ -118,90 +149,60 @@ local function percentageInRange(currentNumber, startRange, endRange)
 end
 
 local function visualizeFood(foodObject, percentage)
-	if not foodObject or not percentage then return end
-	if percentage <= coldRangeVisuals.min then
+    --print("\n\n\n\n\n\n\n\n\n\n\n")
+    --print("VISUALZING FOOD", foodObject, percentage)
+    if not foodObject or not percentage then return end
 
-		if foodObject:GetAttribute("RawColor") ~= nil then
-			foodObject.Color = foodObject:GetAttribute("RawColor")
-		end
+    local function destroyTexture()
+        for _, item in pairs(foodObject:GetDescendants()) do
+            if item:IsA("SurfaceAppearance") and item.Name == "Texture" then
+                item:Destroy()
+            end
 
-		for _, item in pairs(foodObject:GetDescendants()) do
-			if item:IsA("Hightlight") and item.Name == "Burnt" then
-				item.FillTransparency = 1;
-			end
+            if item:IsA("Decal") and item.Name == "Texture" then
+                item:Destroy()
+            end
+        end
+    end
 
-			if item:IsA("SurfaceAppearance") and item.Name == "Texture" then
-				item:Destroy();
-			end
+    local function setTransparency(transparency)
+        for _, item in pairs(foodObject:GetDescendants()) do
+            if item:IsA("Decal") and item.Name == "Texture" then
+                item.Transparency = transparency
+            end
+        end
+    end
 
-			if item:IsA("Decal") and item.Name == "Texture" then
-				item:Destroy();
-			end
-		end
+    local function setFillTransparency(transparency)
+        for _, item in pairs(foodObject:GetDescendants()) do
+            if item:IsA("Highlight") and item.Name == "Burnt" then
+                item.FillTransparency = transparency
+            end
+        end
+    end
 
-	elseif percentage > coldRangeVisuals.min and percentage <= coldRangeVisuals.max then
+    if foodObject:GetAttribute("RawColor") ~= nil then
+        foodObject.Color = foodObject:GetAttribute("RawColor")
+    end
 
-		if foodObject:GetAttribute("RawColor") ~= nil then
-			foodObject.Color = foodObject:GetAttribute("RawColor")
-		end
-
-		for _, item in pairs(foodObject:GetDescendants()) do
-			if item:IsA("Hightlight") and item.Name == "Burnt" then
-				item.FillTransparency = 1;
-			end
-
-			if item:IsA("SurfaceAppearance") and item.Name == "Texture" then
-				item:Destroy();
-			end
-
-			if item:IsA("Decal") and item.Name == "Texture" then
-				item.Transparency = (1 - percentageInRange(percentage, coldRangeVisuals.min, coldRangeVisuals.max));
-			end
-		end
-
-	elseif percentage > coldRangeVisuals.max and percentage <= cookedRangeVisuals.max then
-
-		for _, item in pairs(foodObject:GetDescendants()) do
-			if item:IsA("Hightlight") and item.Name == "Burnt" then
-				item.FillTransparency = 1;
-			end
-
-			if item:IsA("Decal") and item.Name == "Texture" then
-				item.Transparency = 0;
-			end
-		end
-		
-	elseif percentage > cookedRangeVisuals.max and percentage <= burntRangeVisuals.max then
-
-		for _, item in pairs(foodObject:GetDescendants()) do
-			if item:IsA("Hightlight") and item.Name == "Burnt" then
-				item.FillTransparency = (1 - percentageInRange(percentage, cookedRangeVisuals.min, burntRangeVisuals.max));
-			end
-
-			if item:IsA("Decal") and item.Name == "Texture" then
-				item.Transparency = 0;
-			end
-		end
-
-	else
-		
-		for _, item in pairs(foodObject:GetDescendants()) do
-			if item:IsA("Hightlight") and item.Name == "Burnt" then
-				item.FillTransparency = 0;
-			end
-
-			if item:IsA("Decal") and item.Name == "Texture" then
-				item.Transparency = 0;
-			end
-		end
-
-	end
+    if percentage <= coldRangeVisuals.min or (percentage > coldRangeVisuals.min and percentage <= coldRangeVisuals.max) then
+        destroyTexture()
+    elseif percentage > coldRangeVisuals.max and percentage <= cookedRangeVisuals.max then
+        --destroyTexture()
+        setTransparency(0)
+    elseif percentage > cookedRangeVisuals.max and percentage <= burntRangeVisuals.max then
+        setTransparency(0)
+        setFillTransparency((1 - percentageInRange(percentage, cookedRangeVisuals.min, burntRangeVisuals.max)))
+    else
+        setTransparency(0)
+        setFillTransparency(0)
+    end
 end
 
 -- Proximity Functions
 
 function CookingService:PickUp(Player, Character, Item)
-	print(Player, Character, Item)
+	--print(Player, Character, Item)
 	if Player and Character and Item then
 		if (PlayersInServers[Player.UserId] == nil or PlayersInServers[Player.UserId][1] == nil) and Character:FindFirstChild("Ingredient").Value == nil then
 			PlayersInServers[Player.UserId] = {true, Item};
@@ -256,6 +257,10 @@ function CookingService:PickUp(Player, Character, Item)
 				
 				local ClonedItem = FoodObjects:FindFirstChild(Item.Name):Clone();
 
+				local mainCloneItem = (ClonedItem:IsA("Model") and ClonedItem.PrimaryPart ~= nil and ClonedItem.PrimaryPart) or ClonedItem
+				
+				mainCloneItem:SetAttribute("CookingPercentage", cookingPercentage)
+				
 				visualizeFood(ClonedItem, cookingPercentage);
 				
 				ProximityService:PickUpFood(Character, ClonedItem);
@@ -305,14 +310,69 @@ end;
 function CookingService:CanCookOnPan(player, pan)
 	if not cookingPansQueue[player.UserId] then 
 		cookingPansQueue[player.UserId] = {};
+		additionalPansInfo[player.UserId] = {};
 		return true;
 	end
-	print("cookingPansQueue", cookingPansQueue[player.UserId], table.find(cookingPansQueue[player.UserId], pan))
+	local function tablefind(tab,el) for index, value in pairs(tab) do if value == el then	return index end end end
+
+	--print("cookingPansQueue", cookingPansQueue[player.UserId], tablefind(cookingPansQueue[player.UserId], pan) )
 	if #cookingPansQueue[player.UserId] == 0 then return true; end
 
-	if table.find(cookingPansQueue[player.UserId], pan) then return false; end
+	local function removeFood()
+		if tablefind(cookingPansQueue[player.UserId], pan) then 
+			-- something is on the pan i will clear it for u
+	
+			table.remove( cookingPansQueue[player.UserId], tablefind(cookingPansQueue[player.UserId], pan) );
+	
+			self.Client.UpdatePans:Fire(player, cookingPansQueue[player.UserId])
+	
+			--print("cookingPansQueue", cookingPansQueue[player.UserId])
+			local SelectedRecipe = RecipeModule[tostring(additionalPansInfo[player.UserId][pan].Recipe)];
+			local RawCalculatedEXP = (EXPMultiplier * #SelectedRecipe["Ingredients"]);
+			self.Client.ProximitySignal:Fire(player,"CookVisible",false);
+			--RewardService:GiveReward(profile, {EXP = MathAPI:Find_Closest_Divisible_Integer(RawCalculatedEXP, 2);})
+	
+			local DistanceBetweenPlayerAndPan = player:DistanceFromCharacter(pan.Position);
+			local food;
+	
+			--print("OUTPUT:", additionalPansInfo[player.UserId][pan])
+	
+			if DistanceBetweenPlayerAndPan > MaxFoodSpawnRange or DistanceBetweenPlayerAndPan == 0 then
+				food = SpawnItemsAPI:Spawn(
+					player.UserId, 
+					player, 
+					additionalPansInfo[player.UserId][pan].Recipe, 
+					FoodObjects, 
+					FoodAvailable, 
+					pan.Position + Vector3.new(0,5,0),
+					additionalPansInfo[player.UserId][pan].Percentage
+				);
+			else
+				food = SpawnItemsAPI:Spawn(
+					player.UserId, 
+					player, 
+					additionalPansInfo[player.UserId][pan].Recipe, 
+					FoodObjects, 
+					FoodAvailable,
+					player.Character.HumanoidRootPart.Position + player.Character.HumanoidRootPart.CFrame.lookVector * 4,
+					additionalPansInfo[player.UserId][pan].Percentage
+				);
+			end
+	
+			print("food created:", food)
+	
+			Knit.GetService("NotificationService"):Message(false, player, string.upper(tostring(food)).." WAS MADE!")
+	
+			self.Client.ParticlesSpawn:Fire(player, food, "CookedParticle")
+			self.Client.Cook:Fire(player, "Destroy", tostring(additionalPansInfo[player.UserId][pan].Recipe), pan)
+			
+			additionalPansInfo[player.UserId][pan] = nil;
+		end
+	end
 
-	if #cookingPansQueue[player.UserId] > 1 then
+	removeFood()
+
+	if #cookingPansQueue[player.UserId] >= 1 then
 		print("needs gamepass to cook multiple foods")
 		-- check if has gamepass
 		return true;
@@ -384,33 +444,37 @@ function CookingService:Blend(player, Character, recipe, blender)
 end;
 -- TODO: CONVERT THIS INTO A FUNCTION WHERE I CAN STOP THIS AT ANY TIME
 function CookingService:Cook(player, Character, recipe, pan)
-	print('[CookingService]: Cooking Food: '.. tostring(recipe));
-
+	print('[CookingService]: Cooking Food: '.. tostring(recipe), self:CanCookOnPan(player, pan));
+	if not player or not pan then return false; end
 	if self:CanCookOnPan(player, pan) == false then return false; end
 
 	local DataService = Knit.GetService("DataService")
 	local profile = DataService.GetProfile(player);
 	if not profile then
-		if RecipeModule[tostring(recipe)] then
+		if recipe and RecipeModule[tostring(recipe)] then -- if not food and all ingredients
 			local IngredientsUsed = {};
 			local SelectedRecipe = RecipeModule[tostring(recipe)];
+			local previousPercentage = 0;
 			--print(SelectedRecipe,SelectedRecipe["Ingredients"])
 			for _,ingredientFromRecipe in pairs(SelectedRecipe["Ingredients"]) do
 				--print("AB",ingredientFromRecipe,CurrentIngredientObjects[player.Name]);
-				for _, ingredientFromTable in pairs(CurrentIngredientObjects[player.Name]) do
-					if typeof(ingredientFromTable) == "table" then
-						if tostring(ingredientFromTable.Ingredient) == tostring(ingredientFromRecipe) then
-							CollectionService:AddTag(ingredientFromTable.Source, "OnDelete")
-							table.insert(IngredientsUsed,ingredientFromTable.Source);
-							break;
-						end;
-					else
-						if tostring(ingredientFromTable) == tostring(ingredientFromRecipe) then
-							table.insert(IngredientsUsed,ingredientFromTable);
-							break;
-						end;
-					end
-				end;
+				if not CurrentIngredientObjects[player.Name] then CurrentIngredientObjects[player.Name] = {} end
+				if CurrentIngredientObjects[player.Name] then
+					for _, ingredientFromTable in pairs(CurrentIngredientObjects[player.Name]) do
+						if typeof(ingredientFromTable) == "table" then
+							if tostring(ingredientFromTable.Ingredient) == tostring(ingredientFromRecipe) then
+								CollectionService:AddTag(ingredientFromTable.Source, "OnDelete")
+								table.insert(IngredientsUsed,ingredientFromTable.Source);
+								break;
+							end;
+						else
+							if tostring(ingredientFromTable) == tostring(ingredientFromRecipe) then
+								table.insert(IngredientsUsed,ingredientFromTable);
+								break;
+							end;
+						end
+					end;
+				end
 			end;
 			if #SelectedRecipe["Ingredients"] == #IngredientsUsed then
 				print('[CookingService]: Found all ingredients',IngredientsUsed);
@@ -459,93 +523,244 @@ function CookingService:Cook(player, Character, recipe, pan)
 				end;
 				IngredientsUsed = {};
 			else
+				local foundFood = false;
+				for _, ingredientFromTable in pairs(CurrentIngredientObjects[player.Name]) do
+					local obj = (ingredientFromTable:IsA("Model") and ingredientFromTable.PrimaryPart ~= nil and ingredientFromTable.PrimaryPart) or ingredientFromTable
+					if obj:GetAttribute("Type") == "Food" then
+						recipe = ingredientFromTable.Name;
+						previousPercentage = obj:GetAttribute("CookingPercentage") or 0;
+						print("previousPercentage", previousPercentage)
+						if previousPercentage >= 100 then
+							if warnAboutOvercookingFood(player, ingredientFromTable) == false then 
+								return
+							end;
+						end
+
+						ingredientFromTable:Destroy()
+						foundFood = true;
+						break;
+					end;
+				end;
 				IngredientsUsed = {};
-				return
+				if foundFood == false then
+					return
+				end
 			end;
 
 			print("COOKING TIME")
 			IngredientsUsed = {};
 
-			table.insert(cookingPansQueue[player.UserId], pan)
+			if additionalPansInfo[player.UserId][pan] == nil then
+				additionalPansInfo[player.UserId][pan] = {};
+			end
 
-			local cookingTime = RecipeModule:GetCookTime(tostring(recipe));
+			table.insert(cookingPansQueue[player.UserId], pan)
+			additionalPansInfo[player.UserId][pan] = {
+				Recipe = recipe,
+				Percentage = previousPercentage,
+			}
+
+			local cookingTime = RecipeModule:GetCookTime(tostring(recipe)) * 2;
 
 			--print("cookingPansQueue", cookingPansQueue[player.UserId])
 
 			Knit.GetService("NotificationService"):Message(false, player, "COOKING STARTED!")
 
-			local foodPercentage = 0;
-
-			self.Client.Cook:Fire(player, tostring(recipe), pan, cookingTime)
-
-			task.spawn(function()
-				local waitTime = 2;
-				local numOfDrops = cookingTime / waitTime;
-				local cheeseDrop = RecipeModule:GetRecipeRewards(RecipeModule[tostring(recipe)].Difficulty);
-				local rCheeseDropReward = math.random(
-					(cheeseDrop[1] - (cheeseDrop[1] * .15)),
-					(cheeseDrop[2] - (cheeseDrop[2] * .15)))
-
-				local cheeseValuePerDrop = rCheeseDropReward / numOfDrops;
-				local cheeseObjectPerDrop = 10;
-				-- oCFrame, obj, amount, value
-
-				--print("cooking drop", numOfDrops, cheeseDrop, rCheeseDropReward, cheeseValuePerDrop)
-				local CurrencySessionService = Knit.GetService("CurrencySessionService");
-				
-				for i = 1, numOfDrops do
-					CurrencySessionService:DropCheese(
-						pan.CFrame, 
-						player, 
-						cheeseObjectPerDrop, 
-						math.floor((cheeseValuePerDrop / cheeseObjectPerDrop))
-					)
-					task.wait(waitTime);
-				end
-			end)
-
-			task.wait(cookingTime);
+			self.Client.Cook:Fire(player, "Initialize", tostring(recipe), pan)
+			self.Client.UpdatePans:Fire(player, cookingPansQueue[player.UserId])
 
 			local function tablefind(tab,el) for index, value in pairs(tab) do if value == el then	return index end end end
-			table.remove( cookingPansQueue[player.UserId], tablefind(cookingPansQueue[player.UserId], pan) );
+
+			-- Function to get a number within the range 0 to 100 from a range from 0 to [num]
+			local function getNumberInRange(num, maxRange)
+				-- Calculate the number in the range 0 to 100
+				local numberInRange = (num / maxRange) * 100
+
+				-- Return the calculated number
+				return numberInRange
+			end
+
+			-- Function to get a number within the range 0 to [num] from a range from 0 to 100
+			local function getNumberInRange2(num, maxRange)
+				-- Calculate the number in the range 0 to 100
+				local numberInRange = (num / 100) * maxRange
+
+				-- Return the calculated number
+				return numberInRange
+			end
+
+			local count = getNumberInRange2(previousPercentage,  cookingTime);
+			local isOverLimit = false;
+
+			local waitTime = 2;
+			local numOfDrops = (cookingTime / 2) / waitTime;
+
+			local CurrencySessionService = Knit.GetService("CurrencySessionService");
+
+			task.spawn(function()
+				repeat
+					if count >= cookingTime then
+						count = cookingTime
+						isOverLimit = true;
+					else
+						count += 1;
+					end
+
+					if (count % waitTime == 0) and (count <= (cookingTime / 2)) then
+						
+						local cheeseDrop = RecipeModule:GetRecipeRewards(RecipeModule[tostring(recipe)].Difficulty);
+						local rCheeseDropReward = math.random(
+							(cheeseDrop[1] - (cheeseDrop[1] * .15)),
+							(cheeseDrop[2] - (cheeseDrop[2] * .15)))
+
+						local cheeseValuePerDrop = rCheeseDropReward / numOfDrops;
+						local cheeseObjectPerDrop = 10;
+
+						CurrencySessionService:DropCheese(
+							pan.CFrame, 
+							player, 
+							cheeseObjectPerDrop, 
+							math.floor((cheeseValuePerDrop / cheeseObjectPerDrop))
+						)
+					end
+
+					if additionalPansInfo[player.UserId][pan] then
+						additionalPansInfo[player.UserId][pan] = {
+							Recipe = recipe,
+							Percentage = getNumberInRange(count,  cookingTime),
+						}
+						local previousNumberInRange = getNumberInRange(count - 1, cookingTime)
+						local currentNumberInRange = getNumberInRange(count,  cookingTime)
+
+						--print("nums", count, count-1, previousNumberInRange, currentNumberInRange)
+
+						self.Client.Cook:Fire(player, "CookUpdate", tostring(recipe), pan, {previous = previousNumberInRange, current = currentNumberInRange, overCookingLimit = isOverLimit})
+						task.wait(1)
+					end
+				until not player 
+					or additionalPansInfo[player.UserId][pan] == nil 
+					or cookingPansQueue[player.UserId] == nil 
+					or tablefind(cookingPansQueue[player.UserId], pan) == nil
+			end)
+
+		else -- if food
+			if not CurrentIngredientObjects[player.Name] then CurrentIngredientObjects[player.Name] = {} end
+			local foundFood = false;
+			local previousPercentage = 0;
+
+			for _, ingredientFromTable in pairs(CurrentIngredientObjects[player.Name]) do
+				local obj = (ingredientFromTable:IsA("Model") and ingredientFromTable.PrimaryPart ~= nil and ingredientFromTable.PrimaryPart) or ingredientFromTable
+				if obj:GetAttribute("Type") == "Food" then
+					recipe = ingredientFromTable.Name;
+					previousPercentage = obj:GetAttribute("CookingPercentage") or 0;
+					print("previousPercentage", previousPercentage)
+					if previousPercentage >= 100 then
+						if warnAboutOvercookingFood(player, ingredientFromTable) == false then 
+							return
+						end;
+					end
+
+					ingredientFromTable:Destroy()
+					foundFood = true;
+					break;
+				end;
+			end;
+			if foundFood == false then
+				return
+			end
+
+			if additionalPansInfo[player.UserId][pan] == nil then
+				additionalPansInfo[player.UserId][pan] = {};
+			end
+
+			table.insert(cookingPansQueue[player.UserId], pan)
+			additionalPansInfo[player.UserId][pan] = {
+				Recipe = recipe,
+				Percentage = previousPercentage,
+			}
+
+			local cookingTime = RecipeModule:GetCookTime(tostring(recipe)) * 2;
 
 			--print("cookingPansQueue", cookingPansQueue[player.UserId])
 
-			local RawCalculatedEXP = (EXPMultiplier * #SelectedRecipe["Ingredients"]);
-			self.Client.ProximitySignal:Fire(player,"CookVisible",false);
-			--RewardService:GiveReward(profile, {EXP = MathAPI:Find_Closest_Divisible_Integer(RawCalculatedEXP, 2);})
+			Knit.GetService("NotificationService"):Message(false, player, "COOKING STARTED!")
 
-			local DistanceBetweenPlayerAndPan = player:DistanceFromCharacter(pan.Position);
-			local food;
+			self.Client.Cook:Fire(player, "Initialize", tostring(recipe), pan)
+			self.Client.UpdatePans:Fire(player, cookingPansQueue[player.UserId])
 
-			if DistanceBetweenPlayerAndPan > MaxFoodSpawnRange or DistanceBetweenPlayerAndPan == 0 then
-				food = SpawnItemsAPI:Spawn(
-					player.UserId, 
-					player, 
-					recipe, 
-					FoodObjects, 
-					FoodAvailable, 
-					pan.Position + Vector3.new(0,5,0),
-					foodPercentage
-				);
-			else
-				food = SpawnItemsAPI:Spawn(
-					player.UserId, 
-					player, 
-					recipe, 
-					FoodObjects, 
-					FoodAvailable,
-					Character.HumanoidRootPart.Position + Character.HumanoidRootPart.CFrame.lookVector * 4,
-					foodPercentage
-				);
+			local function tablefind(tab,el) for index, value in pairs(tab) do if value == el then	return index end end end
+
+			-- Function to get a number within the range 0 to 100 from a range from 0 to [num]
+			local function getNumberInRange(num, maxRange)
+				-- Calculate the number in the range 0 to 100
+				local numberInRange = (num / maxRange) * 100
+
+				-- Return the calculated number
+				return numberInRange
 			end
 
-			print("food created:", food)
-			
-			Knit.GetService("NotificationService"):Message(false, player, string.upper(tostring(food)).." WAS MADE!")
+			-- Function to get a number within the range 0 to [num] from a range from 0 to 100
+			local function getNumberInRange2(num, maxRange)
+				-- Calculate the number in the range 0 to 100
+				local numberInRange = (num / 100) * maxRange
 
-			self.Client.ParticlesSpawn:Fire(player, food, "CookedParticle")
-			--StatTrackService:SetRecentCookedFood(player, tostring(recipe));
+				-- Return the calculated number
+				return numberInRange
+			end
+
+			local count = getNumberInRange2(previousPercentage,  cookingTime);
+			local isOverLimit = false;
+
+			local waitTime = 2;
+			local numOfDrops = (cookingTime / 2) / waitTime;
+
+			local CurrencySessionService = Knit.GetService("CurrencySessionService");
+
+			task.spawn(function()
+				repeat
+					if count >= cookingTime then
+						count = cookingTime
+						isOverLimit = true;
+					else
+						count += 1;
+					end
+
+					if (count % waitTime == 0) and (count <= (cookingTime / 2)) then
+
+						local cheeseDrop = RecipeModule:GetRecipeRewards(RecipeModule[tostring(recipe)].Difficulty);
+						local rCheeseDropReward = math.random(
+							(cheeseDrop[1] - (cheeseDrop[1] * .15)),
+							(cheeseDrop[2] - (cheeseDrop[2] * .15)))
+
+						local cheeseValuePerDrop = rCheeseDropReward / numOfDrops;
+						local cheeseObjectPerDrop = 10;
+
+						CurrencySessionService:DropCheese(
+							pan.CFrame, 
+							player, 
+							cheeseObjectPerDrop, 
+							math.floor((cheeseValuePerDrop / cheeseObjectPerDrop))
+						)
+					end
+
+					if additionalPansInfo[player.UserId][pan] then
+						additionalPansInfo[player.UserId][pan] = {
+							Recipe = recipe,
+							Percentage = getNumberInRange(count,  cookingTime),
+						}
+						local previousNumberInRange = getNumberInRange(count - 1, cookingTime)
+						local currentNumberInRange = getNumberInRange(count,  cookingTime)
+
+						--print("nums", count, count-1, previousNumberInRange, currentNumberInRange)
+
+						self.Client.Cook:Fire(player, "CookUpdate", tostring(recipe), pan, {previous = previousNumberInRange, current = currentNumberInRange, overCookingLimit = isOverLimit})
+						task.wait(1)
+					end
+				until not player 
+					or additionalPansInfo[player.UserId][pan] == nil 
+					or cookingPansQueue[player.UserId] == nil 
+					or tablefind(cookingPansQueue[player.UserId], pan) == nil
+			end)
 		end;
 	else
 		warn("Could not find user["..tostring(player.UserId).."] profile to cook the food, please retry")
@@ -594,6 +809,8 @@ function CookingService:DeliverFood(player, food)
 			table.insert(deliverQueues[player.UserId], food)
 
 			local deliverTime = RecipeModule:GetCookTime(tostring(food));
+
+			local cookingPercentage = (food:IsA("Model") and food.PrimaryPart ~= nil and food.PrimaryPart:GetAttribute("CookingPercentage")) or food:GetAttribute("CookingPercentage")
 
 			--print("cookingPansQueue", cookingPansQueue[player.UserId])
 
@@ -651,7 +868,7 @@ function CookingService:DeliverFood(player, food)
 			--local RawCalculatedEXP = (EXPMultiplier * #SelectedRecipe["Ingredients"]);
 			self.Client.ProximitySignal:Fire(player,"CookVisible",false);
 
-			Knit.GetService("OrderService"):completeRecipe(player, tostring(food), cheeserew)
+			Knit.GetService("OrderService"):completeRecipe(player, tostring(food), cheeserew, cookingPercentage)
 			--RewardService:GiveReward(profile, {EXP = MathAPI:Find_Closest_Divisible_Integer(RawCalculatedEXP, 2);})
 
 			print("food delivered:", food)
@@ -921,7 +1138,9 @@ function CookingService:KnitInit()
 				end;
 			else
 				FoodData = {};
-				CurrentIngredientObjects = {};
+				for _, player in Players:GetPlayers() do
+					CurrentIngredientObjects[player.Name] = {};
+				end
 			end;
 		end;
 	end);
@@ -940,6 +1159,7 @@ function CookingService:KnitInit()
     end)
 
 	self.Client.Cook:Connect(function(player, recipe, pan)
+		print(player, recipe, pan)
 		return self:Cook(player, player.Character, recipe, pan);
     end)
 
