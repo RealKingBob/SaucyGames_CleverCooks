@@ -83,6 +83,7 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
     -- UI that needs to be updated from prompt
     local promptFrame = promptUI:WaitForChild("Frame")
 	local inputFrame = promptFrame:WaitForChild("InputFrame")
+	local roundFrame = inputFrame:WaitForChild("RoundFrame")
 	local titleFrame = promptFrame:WaitForChild("TitleFrame")
 	local titleText = titleFrame:WaitForChild("TitleText")
 	local buttonImage = inputFrame:WaitForChild("ButtonImage")
@@ -214,6 +215,10 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 	-- Tween Variables
 	local tweensForFadeOut = {}
 	local tweensForFadeIn = {}
+
+	local tweensForClickOut = {}
+	local tweensForClickIn = {}
+
 	local tweenInfoFast = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 	-- Prompt Frame Tweens
@@ -243,10 +248,12 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 		table.insert(tweensForFadeIn, TweenService:Create(itemsFrame, tweenInfoFast, { Size = UDim2.fromScale(1, 1), Visible = true }))
 	end
 
-
 	-- Prompt Title Frame Tweens
 	table.insert(tweensForFadeOut, TweenService:Create(titleText, tweenInfoFast, { Position = UDim2.fromScale(1,0) }))
 	table.insert(tweensForFadeIn, TweenService:Create(titleText, tweenInfoFast, { Position = UDim2.fromScale(0, 0) }))
+
+	table.insert(tweensForClickOut, TweenService:Create(roundFrame, tweenInfoFast, { BackgroundColor3 = Color3.fromRGB(255, 255, 255) }))
+	table.insert(tweensForClickIn, TweenService:Create(roundFrame, tweenInfoFast, { BackgroundColor3 = Color3.fromRGB(179, 179, 179) }))
 
 	if customStatus == Status.IngredientsTable then
 		titleText.Text = "Pickup blended food";
@@ -297,15 +304,17 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 
 	-- Connect to events to play tweens when Triggered/Ended
 	triggeredConnection = prompt.Triggered:Connect(function()
-		for _, tween in ipairs(tweensForFadeOut) do
+		roundFrame.BackgroundColor3 = Color3.fromRGB(179, 179, 179);
+		--[[for _, tween in ipairs(tweensForClickOut) do
 			tween:Play()
-		end
-	end)       
+		end]]
+	end)
 
 	triggerEndedConnection = prompt.TriggerEnded:Connect(function()
-		for _, tween in ipairs(tweensForFadeIn) do
+		roundFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
+		--[[for _, tween in ipairs(tweensForClickIn) do
 			tween:Play()
-		end
+		end]]
 	end)
 	
 	-- Make the Prompt actually show up on screen

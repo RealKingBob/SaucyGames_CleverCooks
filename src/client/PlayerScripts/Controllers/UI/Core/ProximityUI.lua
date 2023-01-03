@@ -59,7 +59,7 @@ ProxFunctions["DropDown"] = function(bool)
 		if Ingredient.Value ~= nil then
 			proxim.Enabled = true;
 
-			dropConnection = proxim.Triggered:Connect(function(plr)
+			dropConnection = proxim.TriggerEnded:Connect(function(plr)
 				--print("drop down YUP")
 				DropDown();
 			end);

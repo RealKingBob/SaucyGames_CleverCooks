@@ -21,39 +21,6 @@ function TableFind(tab,el) -- table,value
 	end;
 end;
 
---[[function GameController:createProximityPrompt(object, type)
-	if object:IsA("Model") 
-	and (not object.PrimaryPart:FindFirstChild("ProximityPrompt") or not object.PrimaryPart:FindFirstChildWhichIsA("ProximityPrompt")) then
-		local prox = Instance.new("ProximityPrompt");
-		prox.ActionText = "Pick Up";
-		prox.Exclusivity = Enum.ProximityPromptExclusivity.OnePerButton;
-		prox.HoldDuration = 0;
-		prox.GamepadKeyCode = Enum.KeyCode.ButtonX;
-		prox.KeyboardKeyCode = Enum.KeyCode.E;
-		prox.MaxActivationDistance = 6;
-		prox.Name = "ProximityPrompt";
-		prox.ObjectText = tostring(type);
-		prox.RequiresLineOfSight = true;
-		prox.ClickablePrompt = true;
-		prox.Parent = object.PrimaryPart;
-	elseif object:IsA("MeshPart") 
-	and (not object:FindFirstChild("ProximityPrompt") or not object:FindFirstChildWhichIsA("ProximityPrompt")) then
-		local prox = Instance.new("ProximityPrompt");
-		prox.ActionText = "Pick Up";
-		prox.Exclusivity = Enum.ProximityPromptExclusivity.OnePerButton;
-		prox.HoldDuration = 0;
-		prox.GamepadKeyCode = Enum.KeyCode.ButtonX;
-		prox.KeyboardKeyCode = Enum.KeyCode.E;
-		prox.MaxActivationDistance = 6;
-		prox.Name = "ProximityPrompt";
-		prox.ObjectText = tostring(type);
-		prox.RequiresLineOfSight = true;
-		prox.ClickablePrompt = true;
-		prox.Parent = object;
-	end;
-end;]]
-
-
 function GameController:ForIngredient(Ingredient)
 	if not Ingredient then return end;
 	table.insert(CollectedItems,Ingredient);
@@ -66,7 +33,8 @@ function GameController:ForIngredient(Ingredient)
 
 	if not Ingredient:FindFirstChild("ProximityPrompt") then return end
 	Ingredient:WaitForChild("ProximityPrompt").Enabled = true;
-	Ingredient.ProximityPrompt.Triggered:Connect(function(plr)
+	Ingredient.ProximityPrompt.TriggerEnded:Connect(function(plr)
+		--print("HUH")
 		if Cooldown == false then
 			Cooldown = true;
 			--print("triggered")
@@ -99,7 +67,7 @@ function GameController:ForIngredient(Ingredient)
 				end;
 			end;
 
-			task.wait(1);
+			task.wait(.1);
 			Cooldown = false;
 		end;
 	end);
@@ -119,7 +87,7 @@ function GameController:ForFood(Food)
 
 	if not Food:FindFirstChild("ProximityPrompt") then return end
 	Food:WaitForChild("ProximityPrompt").Enabled = true;
-	Food.ProximityPrompt.Triggered:Connect(function(plr)
+	Food.ProximityPrompt.TriggerEnded:Connect(function(plr)
 		if Cooldown == false then
 			Cooldown = true;
 			if plr.Character:FindFirstChild("Ingredient") then
@@ -148,7 +116,7 @@ function GameController:ForFood(Food)
 				end;
 			end;
 
-			task.wait(1);
+			task.wait(.1);
 			Cooldown = false;
 		end;
 	end);
@@ -181,7 +149,7 @@ function GameController:KnitStart()
     end);
 
     FoodAvailable.ChildRemoved:Connect(function(food)
-        table.remove(CollectedItems,TableFind(CollectedItems,food));
+       	table.remove(CollectedItems,TableFind(CollectedItems,food));
     end);
 end
 
@@ -197,6 +165,7 @@ function GameController:KnitInit()
 				--print(object.PrimaryPart:GetAttribute("Owner"));
 				--print(object,"is getting destroyed in workspace");
 				object:Destroy();
+				--object.PrimaryPart.CanCollide = false;
 			end;
 		elseif object:IsA("MeshPart") then
 			if object:GetAttribute("Owner") == "Default" 
@@ -205,6 +174,7 @@ function GameController:KnitInit()
 				--print(object:GetAttribute("Owner"));
 				--print(object,"is getting destroyed in workspace");
 				object:Destroy();
+				--object.CanCollide = false;
 			end;
 		end;
 	end

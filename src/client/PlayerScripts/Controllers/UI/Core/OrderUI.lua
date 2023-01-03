@@ -40,7 +40,9 @@ function OrderUI:AddOrder(orderData)
     local ItemClone = StickyNotePrefab:Clone() do
         local MainFrame = ItemClone:WaitForChild("MainFrame")
         ItemClone.Name = "OrderItem_"..tostring(name);
-        MainFrame:WaitForChild("Icon").Image = image;
+        local IconFrame = MainFrame:WaitForChild("Icon")
+        IconFrame.Name = "View";
+        IconFrame.InspectRecipe.Image = image;
         ItemClone.LayoutOrder = #OrderFrame:GetChildren() - 1;
         ItemClone:SetAttribute("orderId", id)
         ItemClone:SetAttribute("maxTimer", timer)
@@ -142,7 +144,7 @@ function OrderUI:AddOrder(orderData)
             end
         end)
 
-        MainFrame:FindFirstChild("Icon").InspectRecipe.MouseButton1Click:Connect(function()
+        IconFrame.InspectRecipe.MouseButton1Click:Connect(function()
             --print('inspecting recipe')
             if deb == false then
                 deb = true;

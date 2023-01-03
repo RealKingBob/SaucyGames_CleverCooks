@@ -123,16 +123,23 @@ local defeatedCookTalkPhases = Phrases.defeatedCookTalkPhases
 
 local function warnAboutOvercookingFood(player, obj)
 	if not foodCookWarnings[obj] then foodCookWarnings[obj] = 0 end
+	
 	foodCookWarnings[obj] += 1;
 
+	local NotificationService = Knit.GetService("NotificationService")
+	local talkPhrase;
+
 	if foodCookWarnings[obj] < math.random(3,5) then
-		Knit.GetService("NotificationService"):Message(false, player, easyCookTalkPhrases[math.random(1, #easyCookTalkPhrases)], {Effect = true, Color = Color3.fromRGB(255,255,255)})
+		talkPhrase = easyCookTalkPhrases[math.random(1, #easyCookTalkPhrases)]
+		NotificationService:Message(false, player, talkPhrase, {Effect = true, Color = Color3.fromRGB(255,255,255)})
 		return false;
 	elseif foodCookWarnings[obj] < math.random(6,10)  then
-		Knit.GetService("NotificationService"):Message(false, player, annoyedCookTalkPhrases[math.random(1, #annoyedCookTalkPhrases)], {Effect = true, Color = Color3.fromRGB(255, 23, 23)})
+		talkPhrase = annoyedCookTalkPhrases[math.random(1, #annoyedCookTalkPhrases)]
+		NotificationService:Message(false, player, talkPhrase, {Effect = true, Color = Color3.fromRGB(255, 23, 23)})
 		return false;
 	else
-		Knit.GetService("NotificationService"):Message(false, player, defeatedCookTalkPhases[math.random(1, #defeatedCookTalkPhases)], {Effect = true, Color = Color3.fromRGB(255,255,255)})
+		talkPhrase = defeatedCookTalkPhases[math.random(1, #defeatedCookTalkPhases)]
+		NotificationService:Message(false, player, talkPhrase, {Effect = true, Color = Color3.fromRGB(255,255,255)})
 		return true
 	end
 end
@@ -149,8 +156,6 @@ local function percentageInRange(currentNumber, startRange, endRange)
 end
 
 local function visualizeFood(foodObject, percentage)
-    --print("\n\n\n\n\n\n\n\n\n\n\n")
-    --print("VISUALZING FOOD", foodObject, percentage)
     if not foodObject or not percentage then return end
 
     local function destroyTexture()
@@ -199,110 +204,133 @@ local function visualizeFood(foodObject, percentage)
     end
 end
 
+local function checkItemIsOwner(Player, Item)
+	if Item:GetAttribute("Owner") == "Default" then
+		return true;
+	end
+	
+	if Item:GetAttribute("Owner") == Player.Name then
+		return true;
+	end
+
+	return false;
+end
+
 -- Proximity Functions
 
 function CookingService:PickUp(Player, Character, Item)
-	--print(Player, Character, Item)
-	if Player and Character and Item then
-		if (PlayersInServers[Player.UserId] == nil or PlayersInServers[Player.UserId][1] == nil) and Character:FindFirstChild("Ingredient").Value == nil then
-			PlayersInServers[Player.UserId] = {true, Item};
-			local ProximityService = Knit.GetService("ProximityService");
-			if Item:GetAttribute("Type") == "Ingredient"
-			or (Item:IsA("Model") and Item.PrimaryPart:GetAttribute("Type") == "Ingredient") then
+	if not Player or not Character or not Item then return end
+	if checkItemIsOwner(Player, Item) == false then return end
 
-				local blendedItems = {};
+	local playerData = PlayersInServers[Player.UserId];
+	if not playerData then 
+		PlayersInServers[Player.UserId] = {nil, nil}; 
+		playerData = PlayersInServers[Player.UserId];
+	end
 
-				if CollectionService:HasTag(Item, "IngredientsTable") 
-				or (Item:IsA("Model") and CollectionService:HasTag(Item.PrimaryPart, "IngredientsTable")) then
-					for i = 1, 5 do
-						if Item:IsA("Model") then
-							table.insert(blendedItems, i, Item.PrimaryPart:GetAttribute("i"..tostring(i)))
-						else
-							table.insert(blendedItems, i, Item:GetAttribute("i"..tostring(i)))
-						end
-					end
-				end
+	if not playerData[1] and not Character:FindFirstChild("Ingredient").Value then
+		local ProximityService = Knit.GetService("ProximityService");
+		local itemObject = (Item:IsA("Model") and Item.PrimaryPart ~= nil and Item.PrimaryPart) or Item;
+		
+		if not itemObject or not Character:FindFirstChild("HumanoidRootPart") then return end;
+		local Magnitude = (itemObject.Position - Character:FindFirstChild("HumanoidRootPart").Position).magnitude;
+		
+		if not Magnitude or Magnitude > 7 then return end
 
-				local ClonedItem = IngredientObjects:FindFirstChild(Item.Name):Clone();
-				
-				if CollectionService:HasTag(Item, "IngredientsTable") 
-				or (Item:IsA("Model") and CollectionService:HasTag(Item.PrimaryPart, "IngredientsTable")) then
+		local itemType = itemObject:GetAttribute("Type");
 
-					if ClonedItem:IsA("Model") then
-						ClonedItem.PrimaryPart.Color = (Item:IsA("Model") and Item.PrimaryPart ~= nil and Item.PrimaryPart.Color) or Item.Color
+		PlayersInServers[Player.UserId] = {true, Item};
+
+		local blendedItems = {};
+
+		if itemType == "Ingredient" then
+
+			local ClonedItem = IngredientObjects:FindFirstChild(Item.Name):Clone();
+
+			if CollectionService:HasTag(itemObject, "IngredientsTable")  then
+				for i = 1, 5 do
+					if Item:IsA("Model") then
+						table.insert(blendedItems, i, Item.PrimaryPart:GetAttribute("i"..tostring(i)))
 					else
-						ClonedItem.Color = (Item:IsA("Model") and Item.PrimaryPart ~= nil and Item.PrimaryPart.Color) or Item.Color
-					end
-
-					for i = 1, 5 do
-						if ClonedItem:IsA("Model") then
-							ClonedItem.PrimaryPart:SetAttribute("i"..tostring(i), blendedItems[i])
-						else
-							ClonedItem:SetAttribute("i"..tostring(i), blendedItems[i])
-						end
+						table.insert(blendedItems, i, Item:GetAttribute("i"..tostring(i)))
 					end
 				end
 
-				ProximityService:PickUpIngredient(Character, ClonedItem);
-				--StatTrackService:AddIngredient(Player, 1);
-				--StatTrackService:SetRecentIngredientPickUp(Player,tostring(Item));
-				self.Client.ProximitySignal:Fire(Player,"DropDown",true);
-				--ProximityService:PrintLogs(Player.UserId);
+				if ClonedItem:IsA("Model") then
+					ClonedItem.PrimaryPart.Color = (Item:IsA("Model") and Item.PrimaryPart ~= nil and Item.PrimaryPart.Color) or Item.Color
+				else
+					ClonedItem.Color = (Item:IsA("Model") and Item.PrimaryPart ~= nil and Item.PrimaryPart.Color) or Item.Color
+				end
 
-				PlayersInServers[Player.UserId] = {nil, Item};
-			elseif Item:GetAttribute("Type") == "Food"
-			or (Item:IsA("Model") and Item.PrimaryPart:GetAttribute("Type") == "Food") then
+				for i = 1, 5 do
+					if ClonedItem:IsA("Model") then
+						ClonedItem.PrimaryPart:SetAttribute("i"..tostring(i), blendedItems[i])
+					else
+						ClonedItem:SetAttribute("i"..tostring(i), blendedItems[i])
+					end
+				end
+			end
+			
+			ProximityService:PickUpIngredient(Character, ClonedItem);
+			self.Client.ProximitySignal:Fire(Player,"DropDown",true);
+			PlayersInServers[Player.UserId] = {nil, Item};
+		elseif itemType == "Food" then
+			local cookingPercentage = (Item:IsA("Model") and Item.PrimaryPart ~= nil and Item.PrimaryPart:GetAttribute("CookingPercentage")) or Item:GetAttribute("CookingPercentage")
 				
-				local cookingPercentage = (Item:IsA("Model") and Item.PrimaryPart ~= nil and Item.PrimaryPart:GetAttribute("CookingPercentage")) or Item:GetAttribute("CookingPercentage")
-				
-				local ClonedItem = FoodObjects:FindFirstChild(Item.Name):Clone();
+			local ClonedItem = FoodObjects:FindFirstChild(Item.Name):Clone();
 
-				local mainCloneItem = (ClonedItem:IsA("Model") and ClonedItem.PrimaryPart ~= nil and ClonedItem.PrimaryPart) or ClonedItem
-				
-				mainCloneItem:SetAttribute("CookingPercentage", cookingPercentage)
-				
-				visualizeFood(ClonedItem, cookingPercentage);
-				
-				ProximityService:PickUpFood(Character, ClonedItem);
-				--StatTrackService:AddFood(Player, 1);
-				--StatTrackService:SetRecentFoodPickUp(Player,tostring(Item));
-				self.Client.ProximitySignal:Fire(Player,"DropDown",true);
-				--ProximityService:PrintLogs(Player.UserId);
-
-				PlayersInServers[Player.UserId] = {nil, Item};
-			end;
-		end;
-	end;
+			local mainCloneItem = (ClonedItem:IsA("Model") and ClonedItem.PrimaryPart ~= nil and ClonedItem.PrimaryPart) or ClonedItem
+			
+			mainCloneItem:SetAttribute("CookingPercentage", cookingPercentage)
+			
+			visualizeFood(ClonedItem, cookingPercentage);
+			
+			ProximityService:PickUpFood(Character, ClonedItem);
+			self.Client.ProximitySignal:Fire(Player,"DropDown",true);
+			PlayersInServers[Player.UserId] = {nil, Item};
+		end
+	end
 end;
 
 function CookingService:DropDown(Player,Character)
-	if Player and Character then
-		if (PlayersInServers[Player.UserId] == nil or PlayersInServers[Player.UserId][1] == nil) and Character:FindFirstChild("Ingredient").Value ~= nil then
-			PlayersInServers[Player.UserId][1] = true;
-			local ProximityService = Knit.GetService("ProximityService");
-			for _,item in pairs(game.Workspace:FindFirstChild("FoodAvailable"):GetChildren()) do
-				if item:IsA("Model") then
-					--print("CHECKl", item.PrimaryPart:GetAttribute("Owner") , Player.Name, item , PlayersInServers[Player.UserId][2], item.PrimaryPart == PlayersInServers[Player.UserId][2])
-					if item.PrimaryPart:GetAttribute("Owner") == Player.Name and item.PrimaryPart == PlayersInServers[Player.UserId][2] then item:Destroy() end;
-				elseif item:IsA("MeshPart") then
-					if item:GetAttribute("Owner") == Player.Name and item == PlayersInServers[Player.UserId][2] then item:Destroy() end;
-				end;
+	if not Player or not Character then return end
+	local playerData = PlayersInServers[Player.UserId];
+	if not playerData then 
+		PlayersInServers[Player.UserId] = {nil, nil}; 
+		playerData = PlayersInServers[Player.UserId];
+	end
+
+	if not playerData[1] and Character:FindFirstChild("Ingredient").Value then
+		PlayersInServers[Player.UserId][1] = true;
+		local ProximityService = Knit.GetService("ProximityService");
+		for _,item in pairs(game.Workspace:FindFirstChild("FoodAvailable"):GetChildren()) do
+			if item:IsA("Model") then
+				--print("CHECKl", item.PrimaryPart:GetAttribute("Owner") , Player.Name, item , PlayersInServers[Player.UserId][2], item.PrimaryPart == PlayersInServers[Player.UserId][2])
+				if not item then continue end
+				if item and not item.PrimaryPart then item:Destroy() continue end
+				if item.PrimaryPart:GetAttribute("Owner") == Player.Name and item.PrimaryPart == PlayersInServers[Player.UserId][2] then item:Destroy() end;
+			elseif item:IsA("MeshPart") then
+				if not item then continue end
+				if item:GetAttribute("Owner") == Player.Name and item == PlayersInServers[Player.UserId][2] then item:Destroy() end;
 			end;
-			for _,item in pairs(game.Workspace:FindFirstChild("IngredientAvailable"):GetChildren()) do
-				if item:IsA("Model") then
-					if item.PrimaryPart:GetAttribute("Owner") == Player.Name and item.PrimaryPart == PlayersInServers[Player.UserId][2] then item:Destroy() end;
-				elseif item:IsA("MeshPart") then
-					--print("CHECK2", item:GetAttribute("Owner") , Player.Name, item , PlayersInServers[Player.UserId][2], item == PlayersInServers[Player.UserId][2])
-					if item:GetAttribute("Owner") == Player.Name and item == PlayersInServers[Player.UserId][2] then item:Destroy() end;
-				end;
-			end;
-	
-			ProximityService:DropItem(Character, PlayersInServers[Player.UserId][2]);
-			self.Client.ProximitySignal:Fire(Player,"DropDown",false);
-	
-			PlayersInServers[Player.UserId] = nil;
 		end;
-	end;
+		for _,item in pairs(game.Workspace:FindFirstChild("IngredientAvailable"):GetChildren()) do
+			if item:IsA("Model") then
+				if not item then continue end
+				if item and not item.PrimaryPart then item:Destroy() continue end
+				if item.PrimaryPart:GetAttribute("Owner") == Player.Name and item.PrimaryPart == PlayersInServers[Player.UserId][2] then item:Destroy() end;
+			elseif item:IsA("MeshPart") then
+				--print("CHECK2", item:GetAttribute("Owner") , Player.Name, item , PlayersInServers[Player.UserId][2], item == PlayersInServers[Player.UserId][2])
+				if not item then continue end
+				if item:GetAttribute("Owner") == Player.Name and item == PlayersInServers[Player.UserId][2] then item:Destroy() end;
+			end;
+		end;
+
+		ProximityService:DropItem(Character, PlayersInServers[Player.UserId][2]);
+		self.Client.ProximitySignal:Fire(Player,"DropDown",false);
+
+		PlayersInServers[Player.UserId] = nil;
+	end
 end;
 
 ----- Cooking Functions -----
@@ -442,8 +470,336 @@ function CookingService:Blend(player, Character, recipe, blender)
 		warn("Could not find user["..tostring(player.UserId).."] profile to cook the food, please retry")
 	end;
 end;
--- TODO: CONVERT THIS INTO A FUNCTION WHERE I CAN STOP THIS AT ANY TIME
+
+local function ingredientCheck(player, recipe)
+	local IngredientsUsed = {};
+	local SelectedRecipe = RecipeModule[tostring(recipe)];
+	local previousPercentage = 0;
+	--print(SelectedRecipe,SelectedRecipe["Ingredients"])
+	for _,ingredientFromRecipe in pairs(SelectedRecipe["Ingredients"]) do
+		--print("AB",ingredientFromRecipe,CurrentIngredientObjects[player.Name]);
+		if not CurrentIngredientObjects[player.Name] then CurrentIngredientObjects[player.Name] = {} end
+		if CurrentIngredientObjects[player.Name] then
+			for _, ingredientFromTable in pairs(CurrentIngredientObjects[player.Name]) do
+				if typeof(ingredientFromTable) == "table" then
+					if tostring(ingredientFromTable.Ingredient) == tostring(ingredientFromRecipe) then
+						CollectionService:AddTag(ingredientFromTable.Source, "OnDelete")
+						table.insert(IngredientsUsed,ingredientFromTable.Source);
+						break;
+					end;
+				else
+					if tostring(ingredientFromTable) == tostring(ingredientFromRecipe) then
+						table.insert(IngredientsUsed,ingredientFromTable);
+						break;
+					end;
+				end
+			end;
+		end
+	end;
+
+	return IngredientsUsed;
+end
+
+local function destroyIngredients(IngredientsUsed)
+	local FoodSpawnPoints = CollectionService:GetTagged("FoodSpawnPoints");
+	for i, ingredient in pairs(IngredientsUsed) do
+		if ingredient then
+			if CollectionService:HasTag(ingredient, "OnDelete") then
+				ingredient:Destroy();
+				table.remove(IngredientsUsed, i);
+				continue;
+			end
+			if ingredient:IsA("Model") and ingredient.PrimaryPart then
+				ingredient.PrimaryPart.ProximityPrompt.Enabled = false;
+			else
+				ingredient.ProximityPrompt.Enabled = false;
+			end
+		end
+	end;
+	for _, ingredient in pairs(IngredientsUsed) do
+		task.spawn(function()
+			if ingredient then
+				local RandomFoodLocation = FoodSpawnPoints[math.random(1, #FoodSpawnPoints)];
+				if RandomFoodLocation then
+					if ingredient:IsA("Model") then
+						if ingredient.PrimaryPart then
+							ingredient:SetPrimaryPartCFrame(CFrame.new(RandomFoodLocation.Position + Vector3.new(math.random(-5,5) ,5, math.random(-5,5))))
+						else
+							ingredient = nil;
+						end
+					else
+						ingredient.Position = RandomFoodLocation.Position + Vector3.new(math.random(-5,5) ,5, math.random(-5,5));
+					end
+				end
+
+				task.wait(0.1)
+
+				if ingredient ~= nil then
+					if ingredient:IsA("Model") and ingredient.PrimaryPart then
+						ingredient.PrimaryPart.ProximityPrompt.Enabled = true;
+					else
+						ingredient.ProximityPrompt.Enabled = true;
+					end
+				end;
+			end
+		end)
+	end;
+end
+
+local function checkForFood(player)
+	local foundFood = false;
+	local currentRecipe, currentPercentage;
+	local playerData = CurrentIngredientObjects[player.Name];
+	if not playerData then 
+		CurrentIngredientObjects[player.Name] = {}
+		playerData = CurrentIngredientObjects[player.Name];
+	end
+	for _, ingredientFromTable in pairs(playerData) do
+		local obj = (ingredientFromTable:IsA("Model") and ingredientFromTable.PrimaryPart ~= nil and ingredientFromTable.PrimaryPart) or ingredientFromTable
+		if obj:GetAttribute("Type") == "Food" then
+			currentRecipe = ingredientFromTable.Name;
+			currentPercentage = obj:GetAttribute("CookingPercentage") or 0;
+			if currentPercentage >= 100 then
+				if warnAboutOvercookingFood(player, ingredientFromTable) == false then return nil end
+			end
+
+			ingredientFromTable:Destroy();
+			foundFood = true;
+			break;
+		end;
+	end;
+	if foundFood == false then return nil end
+	return currentRecipe, currentPercentage;
+end
+
+function CookingService:StartCookingProcess(player, pan, recipe, previousPercentage)
+	if additionalPansInfo[player.UserId][pan] == nil then
+		additionalPansInfo[player.UserId][pan] = {};
+	end
+
+	table.insert(cookingPansQueue[player.UserId], pan)
+	additionalPansInfo[player.UserId][pan] = {
+		Recipe = recipe,
+		Percentage = previousPercentage,
+	}
+
+	local cookingTime = RecipeModule:GetCookTime(tostring(recipe)) * 2;
+
+	--print("cookingPansQueue", cookingPansQueue[player.UserId])
+
+	Knit.GetService("NotificationService"):Message(false, player, "COOKING STARTED!")
+
+	self.Client.Cook:Fire(player, "Initialize", tostring(recipe), pan)
+	self.Client.UpdatePans:Fire(player, cookingPansQueue[player.UserId])
+
+	local function tablefind(tab,el) for index, value in pairs(tab) do if value == el then	return index end end end
+
+	-- Function to get a number within the range 0 to 100 from a range from 0 to [num]
+	local function getNumberInRange(num, maxRange)
+		-- Calculate the number in the range 0 to 100
+		local numberInRange = (num / maxRange) * 100
+
+		-- Return the calculated number
+		return numberInRange
+	end
+
+	-- Function to get a number within the range 0 to [num] from a range from 0 to 100
+	local function getNumberInRange2(num, maxRange)
+		-- Calculate the number in the range 0 to 100
+		local numberInRange = (num / 100) * maxRange
+
+		-- Return the calculated number
+		return numberInRange
+	end
+
+	local count = getNumberInRange2(previousPercentage,  cookingTime);
+	local isOverLimit = false;
+
+	local waitTime = 2;
+	local numOfDrops = (cookingTime / 2) / waitTime;
+
+	local CurrencySessionService = Knit.GetService("CurrencySessionService");
+
+	task.spawn(function()
+		repeat
+			if count >= cookingTime then
+				count = cookingTime
+				isOverLimit = true;
+			else
+				count += 1;
+			end
+
+			if (count % waitTime == 0) and (count <= (cookingTime / 2)) then
+
+				local cheeseDrop = RecipeModule:GetRecipeRewards(RecipeModule[tostring(recipe)].Difficulty);
+				local rCheeseDropReward = math.random(
+					(cheeseDrop[1] - (cheeseDrop[1] * .15)),
+					(cheeseDrop[2] - (cheeseDrop[2] * .15)))
+
+				local cheeseValuePerDrop = rCheeseDropReward / numOfDrops;
+				local cheeseObjectPerDrop = 10;
+
+				CurrencySessionService:DropCheese(
+					pan.CFrame, 
+					player, 
+					cheeseObjectPerDrop, 
+					math.floor((cheeseValuePerDrop / cheeseObjectPerDrop))
+				)
+			end
+
+			if additionalPansInfo[player.UserId][pan] then
+				additionalPansInfo[player.UserId][pan] = {
+					Recipe = recipe,
+					Percentage = getNumberInRange(count,  cookingTime),
+				}
+				local previousNumberInRange = getNumberInRange(count - 1, cookingTime)
+				local currentNumberInRange = getNumberInRange(count,  cookingTime)
+
+				--print("nums", count, count-1, previousNumberInRange, currentNumberInRange)
+
+				self.Client.Cook:Fire(player, "CookUpdate", tostring(recipe), pan, {previous = previousNumberInRange, current = currentNumberInRange, overCookingLimit = isOverLimit})
+				task.wait(1)
+			end
+		until not player 
+			or additionalPansInfo[player.UserId][pan] == nil 
+			or cookingPansQueue[player.UserId] == nil 
+			or tablefind(cookingPansQueue[player.UserId], pan) == nil
+	end)
+end
+
 function CookingService:Cook(player, Character, recipe, pan)
+	print('[CookingService]: Cooking Food: '.. tostring(recipe), self:CanCookOnPan(player, pan));
+	if not player or not pan then return false; end
+	if self:CanCookOnPan(player, pan) == false then return false; end
+
+	local DataService = Knit.GetService("DataService")
+	local profile = DataService.GetProfile(player);
+	if not profile then
+		if recipe and RecipeModule[tostring(recipe)] then -- if not food and all ingredients
+			local SelectedRecipe = RecipeModule[tostring(recipe)];
+			local previousPercentage = 0;
+			local IngredientsUsed = ingredientCheck(player, recipe);
+
+			if #SelectedRecipe["Ingredients"] == #IngredientsUsed then
+				print('[CookingService]: Found all ingredients',IngredientsUsed);
+				destroyIngredients(IngredientsUsed)
+				IngredientsUsed = {};
+			else
+				recipe, previousPercentage = checkForFood(player);
+				if not recipe then return end
+				IngredientsUsed = {};
+			end;
+
+			print("COOKING TIME")
+
+			self:StartCookingProcess(player, pan, recipe, previousPercentage)
+
+			--[[if additionalPansInfo[player.UserId][pan] == nil then
+				additionalPansInfo[player.UserId][pan] = {};
+			end
+
+			table.insert(cookingPansQueue[player.UserId], pan)
+			additionalPansInfo[player.UserId][pan] = {
+				Recipe = recipe,
+				Percentage = previousPercentage,
+			}
+
+			local cookingTime = RecipeModule:GetCookTime(tostring(recipe)) * 2;
+
+			Knit.GetService("NotificationService"):Message(false, player, "COOKING STARTED!")
+
+			self.Client.Cook:Fire(player, "Initialize", tostring(recipe), pan)
+			self.Client.UpdatePans:Fire(player, cookingPansQueue[player.UserId])
+
+			local function tablefind(tab,el) for index, value in pairs(tab) do if value == el then	return index end end end
+
+			-- Function to get a number within the range 0 to 100 from a range from 0 to [num]
+			local function getNumberInRange(num, maxRange)
+				-- Calculate the number in the range 0 to 100
+				local numberInRange = (num / maxRange) * 100
+
+				-- Return the calculated number
+				return numberInRange
+			end
+
+			-- Function to get a number within the range 0 to [num] from a range from 0 to 100
+			local function getNumberInRange2(num, maxRange)
+				-- Calculate the number in the range 0 to 100
+				local numberInRange = (num / 100) * maxRange
+
+				-- Return the calculated number
+				return numberInRange
+			end
+
+			local count = getNumberInRange2(previousPercentage,  cookingTime);
+			local isOverLimit = false;
+
+			local waitTime = 2;
+			local numOfDrops = (cookingTime / 2) / waitTime;
+
+			local CurrencySessionService = Knit.GetService("CurrencySessionService");
+
+			task.spawn(function()
+				repeat
+					if count >= cookingTime then
+						count = cookingTime
+						isOverLimit = true;
+					else
+						count += 1;
+					end
+
+					if (count % waitTime == 0) and (count <= (cookingTime / 2)) then
+						
+						local cheeseDrop = RecipeModule:GetRecipeRewards(RecipeModule[tostring(recipe)].Difficulty);
+						local rCheeseDropReward = math.random(
+							(cheeseDrop[1] - (cheeseDrop[1] * .15)),
+							(cheeseDrop[2] - (cheeseDrop[2] * .15)))
+
+						local cheeseValuePerDrop = rCheeseDropReward / numOfDrops;
+						local cheeseObjectPerDrop = 10;
+
+						CurrencySessionService:DropCheese(
+							pan.CFrame, 
+							player, 
+							cheeseObjectPerDrop, 
+							math.floor((cheeseValuePerDrop / cheeseObjectPerDrop))
+						)
+					end
+
+					if additionalPansInfo[player.UserId][pan] then
+						additionalPansInfo[player.UserId][pan] = {
+							Recipe = recipe,
+							Percentage = getNumberInRange(count,  cookingTime),
+						}
+						local previousNumberInRange = getNumberInRange(count - 1, cookingTime)
+						local currentNumberInRange = getNumberInRange(count,  cookingTime)
+
+						--print("nums", count, count-1, previousNumberInRange, currentNumberInRange)
+
+						self.Client.Cook:Fire(player, "CookUpdate", tostring(recipe), pan, {previous = previousNumberInRange, current = currentNumberInRange, overCookingLimit = isOverLimit})
+						task.wait(1)
+					end
+				until not player 
+					or additionalPansInfo[player.UserId][pan] == nil 
+					or cookingPansQueue[player.UserId] == nil 
+					or tablefind(cookingPansQueue[player.UserId], pan) == nil
+			end)]]
+
+		else -- if food
+			if not CurrentIngredientObjects[player.Name] then CurrentIngredientObjects[player.Name] = {} end
+			local previousPercentage = 0;
+
+			recipe, previousPercentage = checkForFood(player);
+			if not recipe then return end
+
+			self:StartCookingProcess(player, pan, recipe, previousPercentage)
+		end;
+	else
+		warn("Could not find user["..tostring(player.UserId).."] profile to cook the food, please retry")
+	end;
+end;
+
+function CookingService:Cook2(player, Character, recipe, pan)
 	print('[CookingService]: Cooking Food: '.. tostring(recipe), self:CanCookOnPan(player, pan));
 	if not player or not pan then return false; end
 	if self:CanCookOnPan(player, pan) == false then return false; end
@@ -524,6 +880,7 @@ function CookingService:Cook(player, Character, recipe, pan)
 				IngredientsUsed = {};
 			else
 				local foundFood = false;
+				if not CurrentIngredientObjects[player.Name] then CurrentIngredientObjects[player.Name] = {} end
 				for _, ingredientFromTable in pairs(CurrentIngredientObjects[player.Name]) do
 					local obj = (ingredientFromTable:IsA("Model") and ingredientFromTable.PrimaryPart ~= nil and ingredientFromTable.PrimaryPart) or ingredientFromTable
 					if obj:GetAttribute("Type") == "Food" then

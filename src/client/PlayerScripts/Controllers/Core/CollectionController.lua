@@ -16,6 +16,8 @@ local NumberUtil = require(game.ReplicatedStorage.Common.Modules.NumberUtil);
 
 local Sfx = game.SoundService.Sfx;
 
+local CurrencyCollected;
+
 local function Destroyed(x)
 	if x.Parent then
 		return false
@@ -63,6 +65,7 @@ local function customDebris(instance, lifetime)
 		local isDestroyedAlready = Destroyed(instance)
 		if continueDebris and instance and not isDestroyedAlready then
             instance.Name = "_oldCurrency"
+            CurrencyCollected = nil;
             task.wait(.5)
             FadeOut:Play();
             FadeOut.Completed:Wait();
@@ -140,7 +143,12 @@ function CollectionController:DropCurrencyText(oCFrame, amount, userId)
         prevObj.UI.Amount.Text = NumberSuffix(newAmount);
         prevObj.CFrame = oCFrame;
 
-        local CurrencyCollected = Sfx:WaitForChild("CheesePop"):Clone() do
+        if CurrencyCollected then
+            CurrencyCollected.Volume = NumberUtil.Lerp(.1, .4, math.random());
+            CurrencyCollected:Play();
+        end
+
+        --[[CurrencyCollected = Sfx:WaitForChild("CheesePop"):Clone() do
             CurrencyCollected.Volume = NumberUtil.Lerp(.1, .4, math.random());
             CurrencyCollected.Parent = prevObj;
             
@@ -149,7 +157,7 @@ function CollectionController:DropCurrencyText(oCFrame, amount, userId)
             end)
     
             CurrencyCollected:Play();
-        end
+        end]]
 
         local player = Players:GetPlayerByUserId(userId)
 
@@ -168,13 +176,13 @@ function CollectionController:DropCurrencyText(oCFrame, amount, userId)
     cloneObject.CFrame = oCFrame;
     cloneObject.Parent = workspace.Spawnables.CurrencyText;
 
-    local CurrencyCollected = Sfx:WaitForChild("CheesePop"):Clone() do
+    CurrencyCollected = Sfx:WaitForChild("CheesePop"):Clone() do
         CurrencyCollected.Volume = NumberUtil.Lerp(.1, .4, math.random());
         CurrencyCollected.Parent = cloneObject;
         
-        CurrencyCollected.Ended:Connect(function()
+        --[[CurrencyCollected.Ended:Connect(function()
             CurrencyCollected:Destroy();
-        end)
+        end)]]
 
         CurrencyCollected:Play();
     end

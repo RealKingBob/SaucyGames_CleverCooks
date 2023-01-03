@@ -566,7 +566,7 @@ function RecipesView:KnitStart()
 	local debounce = false;
 
 	for _, pan in pairs(CollectionService:GetTagged("Pan")) do
-		pan.ProximityPrompt.Triggered:Connect(function(plr)
+		pan.ProximityPrompt.TriggerEnded:Connect(function(plr)
 			if not tablefind(currentPansInUse, pan) then
 				if debounce == false then
 					debounce = true;

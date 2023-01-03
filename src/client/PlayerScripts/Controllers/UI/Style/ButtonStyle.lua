@@ -28,8 +28,10 @@ function ButtonStyle:StyleButton(Container)
     if (Container:IsA("TextButton") or Container:IsA("ImageButton")) then
         Button = Container;
     else
-        Button = Container:FindFirstChildWhichIsA("TextButton", true);
+        Button = (Container:FindFirstChildWhichIsA("TextButton", true) ~= nil and Container:FindFirstChildWhichIsA("TextButton", true)) or Container:FindFirstChildWhichIsA("ImageButton", true);
     end
+
+    if not Button then return end;
 
     Styles[Container] = ButtonMaid;
 

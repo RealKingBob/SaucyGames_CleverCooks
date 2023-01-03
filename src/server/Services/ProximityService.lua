@@ -192,19 +192,19 @@ function ProximityService:UnlinkItemToPlayer(Character,Object)
 			end;
 
 			for _,part in pairs(Object:GetChildren()) do
-				if part:IsA("MeshPart") then
+				if part:IsA("BasePart") then
 					part.CanCollide = true;
 					part.Massless = false;
 					part.CustomPhysicalProperties = DropProperties;
+                    part:SetNetworkOwner(game.Players:GetPlayerFromCharacter(Character))
 				end;
 			end;
 
-            Object:SetPrimaryPartCFrame(CFrame.new(Character.HumanoidRootPart.Position + Character.HumanoidRootPart.CFrame.lookVector * 4 + Vector3.new(0,GetYOffset(Object),0)))
-			--_PrimaryPart.Position = Character.HumanoidRootPart.Position + Character.HumanoidRootPart.CFrame.lookVector * 4 + Vector3.new(0,GetYOffset(Object),0);
+        	--_PrimaryPart.Position = Character.HumanoidRootPart.Position + Character.HumanoidRootPart.CFrame.lookVector * 4 + Vector3.new(0,GetYOffset(Object),0);
             
 			Character.PrimaryPart.ProximityPrompt.Enabled = false;
             _PrimaryPart.ProximityPrompt.Enabled = true;
-		elseif Object:IsA("MeshPart") then
+		elseif Object:IsA("BasePart") then
 			Object:SetAttribute("Owner", PlayerService:GetPlayerFromCharacter(Character).Name);
 			Object.HandJoint.Attachment1 = nil;
 			if Object:GetAttribute("Type") == "Ingredient" then
@@ -218,6 +218,8 @@ function ProximityService:UnlinkItemToPlayer(Character,Object)
 			Object.CanCollide = true;
 			Object.Massless = false;
 			Object.CustomPhysicalProperties = DropProperties;
+
+            Object:SetNetworkOwner(game.Players:GetPlayerFromCharacter(Character))
 
 			Object.Position = Character.HumanoidRootPart.Position + Character.HumanoidRootPart.CFrame.lookVector * 4 + Vector3.new(0,GetYOffset(Object),0);
 			Character.PrimaryPart.ProximityPrompt.Enabled = false;
@@ -297,7 +299,7 @@ function ProximityService:DropItem( Character, Item)
 
 		self.Client.SetAnimations:Fire(Player, {"rbxassetid://8028990292","rbxassetid://8028984908","rbxassetid://8028993547"}); -- idle, walk, jump animation for normal
 
-        task.wait(1);
+        task.wait(.3);
         Player:FindFirstChild("Data").GameValues.Ingredient.Value = nil;
 		Character:FindFirstChild("Ingredient").Value = nil;
     end;

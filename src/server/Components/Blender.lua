@@ -227,7 +227,7 @@ function Blender.new(instance)
         end
     end))
 
-    self._maid:GiveTask(self.Object.Button.ProximityPrompt.Triggered:Connect(function(player)
+    self._maid:GiveTask(self.Object.Button.ProximityPrompt.TriggerEnded:Connect(function(player)
         --task.spawn(TemporaryDisableButton, 3)
         print("BLENDER", self.BlenderEnabled, self.playersDebounces[player.UserId]);
 
