@@ -27,16 +27,31 @@ local FrenchMusic = {
     };
 }
 
+local BackgroundSFX = {
+    Day = {
+        "rbxassetid://9118151948";
+        "rbxassetid://9118151948";
+        "rbxassetid://9118151948";
+        "rbxassetid://9118151948";
+    };
+
+    Night = {};
+    
+}
+
 function FadeOut(sound, length)
     if not Fading then return end
     TweenService:Create(sound, TweenInfo.new(length), {Volume = 0}):Play()
     task.wait(length)
+    sound:Stop();
+    sound.Volume = 0.125;
     Fading = false
 end
 
 -- Function to choose a random audio
 function chooseAudio(audioList)
-    if not audioList then return end;
+    if not audioList then return "" end;
+    if #audioList <= 1 then return "" end;
     local randomAudio = audioList[math.random(1, #audioList)];
     -- If it was just played
     --print("Audios:", randomAudio, lastPlayed, randomAudio == lastPlayed)
@@ -57,6 +72,30 @@ function getThemeAudios(theme)
     return FrenchMusic.Day, FrenchMusic.Night;
 end
 
+-- Function to choose a random audio
+function getThemeSFX(theme)
+    return BackgroundSFX.Day, BackgroundSFX.Night;
+end
+
+
+function MusicService:StartBackgroundSFX(Theme, DayNight)
+    if not Theme then return end;
+    local dayTheme, nightTheme = getThemeSFX(Theme);
+    local currentTheme = (DayNight == "Day" and dayTheme) or nightTheme;
+
+    local backgroundSFX = workspace:FindFirstChild("BackgroundSFX");
+
+    if not backgroundSFX then
+        backgroundSFX = Instance.new("Sound", workspace)
+        backgroundSFX.Volume = 0.3
+        backgroundSFX.Name = "BackgroundSFX"
+    end
+
+    backgroundSFX.SoundId = chooseAudio(currentTheme);
+    repeat task.wait(0.3) until backgroundSFX.IsLoaded == true
+    backgroundSFX:Play();
+end
+
 function MusicService:StartBackgroundMusic(Theme, DayNight)
     if not Theme then return end;
 
@@ -74,7 +113,14 @@ function MusicService:StartBackgroundMusic(Theme, DayNight)
 
     if backgroundMusicConn then 
         if backgroundMusic then
-            backgroundMusic:Stop();
+            local backgroundSFX = workspace:FindFirstChild("BackgroundSFX");
+
+            if backgroundSFX then
+                backgroundSFX:Stop();
+            end
+            Fading = true
+            FadeOut(backgroundMusic, fadeLength)
+            --backgroundMusic:Stop();
         end
         backgroundMusicConn:Disconnect()
         backgroundMusicConn = nil;
@@ -98,6 +144,9 @@ function MusicService:StartBackgroundMusic(Theme, DayNight)
     backgroundMusic.SoundId = chooseAudio(currentTheme);
     repeat task.wait(0.3) until backgroundMusic.IsLoaded == true
     backgroundMusic:Play();
+    task.spawn(function()
+        self:StartBackgroundSFX(Theme, DayNight)
+    end)
     --print("Background play")
 end
 
