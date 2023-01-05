@@ -41,6 +41,7 @@ Knit.ReplicatedBoosterEffects = Knit.Shared.Assets.BoosterEffects;
 ----- Loaded Services -----
 Knit.DataService = require(Knit.Services.DataService);
 Knit.AvatarService = require(Knit.Services.AvatarService);
+Knit.MusicService = require(Knit.Services.MusicService);
 Knit.NotificationService = require(Knit.Services.NotificationService);
 Knit.ProximityService = require(Knit.Services.ProximityService);
 Knit.CurrencySessionService = require(Knit.Services.CurrencySessionService)
@@ -115,13 +116,13 @@ local PurchasedChatTags = {
 
 local VIP_GAMEPASS = 26228902;
 
--- Chat System
+--[[ [OLD] Chat System
 local inDevelopment = false
 local configuration = require(Knit.Settings.ChatConfigs)
 local toRequire = inDevelopment and  game:GetService("ServerScriptService"):WaitForChild("MainModule") or 9375790695
 local addons = script:WaitForChild("Addons")
 
-require(toRequire)(configuration,addons)
+require(toRequire)(configuration,addons)]]
 
 local client, server, shared = require(script:FindFirstChild("LoaderUtils", true)).toWallyFormat(script.src, false)
 

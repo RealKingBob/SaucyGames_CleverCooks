@@ -189,6 +189,9 @@ function GameController:KnitInit()
 					local HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart");
 					if HumanoidRootPart then
 						local DropProximity = HumanoidRootPart:FindFirstChildWhichIsA("ProximityPrompt")
+						if not DropProximity then
+							continue
+						end
 						if DropProximity.Enabled == true then
 							DropProximity.Enabled = false
 						end

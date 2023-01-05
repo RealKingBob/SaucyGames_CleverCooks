@@ -7,7 +7,7 @@ local LocalPlayer = game.Players.LocalPlayer;
 
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui");
 
-local SprintAnim;
+local SprintAnimTrack = nil;
 local PrevAnim;
 
 local NormalWalkSpeed = 16
@@ -42,6 +42,9 @@ local regularStaminaColor = Color3.fromRGB(16, 165, 251);
 local boostStaminaColor = Color3.fromRGB(192, 14, 251);
 local cooldownStaminaColor = Color3.fromRGB(206, 6, 6);
 
+local sprintAnimation = Instance.new('Animation')
+sprintAnimation.AnimationId = "rbxassetid://8028996064"
+sprintAnimation.Name = "SprintAnim"
 
 function StaminaUI:CheckSprintAnim(Humanoid)
     local Tracks = Humanoid:FindFirstChildOfClass("Animator"):GetPlayingAnimationTracks()
@@ -65,13 +68,14 @@ function StaminaUI:SetupStamina(Character)
     if Humanoid then
         local animator = Humanoid:FindFirstChildOfClass("Animator")
         if animator then
-            local Anim = Instance.new('Animation',animator)
-            Anim.AnimationId = "rbxassetid://8028996064"
-            Anim.Name = "SprintAnim"
-            SprintAnim = animator:LoadAnimation(Anim)
-            SprintAnim.Priority = Enum.AnimationPriority.Movement
+            if not SprintAnimTrack then 
+                SprintAnimTrack = animator:LoadAnimation(sprintAnimation);
+                SprintAnimTrack.Priority = Enum.AnimationPriority.Movement
+            end
         end
     end
+
+    if not Humanoid or not Humanoid:FindFirstChildOfClass("Animator") or not SprintAnimTrack then return end
 
     if inStaminaCon and outStaminaCon and movementCon then
         inStaminaCon:Disconnect();
@@ -121,6 +125,7 @@ function StaminaUI:SetupStamina(Character)
             if not Knit.GamePlayers.BoostSFX:FindFirstChild(LocalPlayer.Name) then return end;
 
             BoostSFX = Knit.GamePlayers.BoostSFX:FindFirstChild(LocalPlayer.Name):Clone();
+            BoostSFX.Volume = .3
             BoostSFX.PlayOnRemove = false;
 
             BoomSFX = Instance.new("Sound")
@@ -168,26 +173,24 @@ function StaminaUI:SetupStamina(Character)
             end)
 
 
-            camShake:Start()
+            --camShake:Start()
             
             -- Explosion shake:
-            camShake:ShakeOnce(3, 3, 0.2, 1.5)
-            --camShake:Shake(CameraShaker.Presets.Earthquake)
+            --camShake:ShakeOnce(3, 3, 0.2, 1.5)
 
-            if not SprintAnim then
-                if Humanoid then
-                    local animator = Humanoid:FindFirstChildOfClass("Animator")
-                    if animator then
-                        local Anim = Instance.new('Animation',animator)
-                        Anim.AnimationId = "rbxassetid://8028996064"
-                        Anim.Name = "SprintAnim"
-                        SprintAnim = animator:LoadAnimation(Anim)
-                        SprintAnim.Priority = Enum.AnimationPriority.Movement
+            if Humanoid then
+                local animator = Humanoid:FindFirstChildOfClass("Animator")
+                if animator then
+                    if not SprintAnimTrack then 
+                        SprintAnimTrack = animator:LoadAnimation(sprintAnimation);
+                        SprintAnimTrack.Priority = Enum.AnimationPriority.Movement
                     end
                 end
             end
 
-            SprintAnim:Play()
+            if not Humanoid or not Humanoid:FindFirstChildOfClass("Animator") or not SprintAnimTrack then return end
+
+            SprintAnimTrack:Play()
             AvatarService.BoostEffect:Fire(true)
 
             local MainUI = PlayerGui:WaitForChild("Main")
@@ -212,7 +215,7 @@ function StaminaUI:SetupStamina(Character)
             end
 
             if sprinting == true then
-                SprintAnim:Stop()
+                SprintAnimTrack:Stop()
                 sprinting = false
                 --if PrevAnim then PrevAnim:Play(); end
 
@@ -257,7 +260,7 @@ function StaminaUI:SetupStamina(Character)
             if (sprinting == true) then
                 sprinting = false
 
-                SprintAnim:Stop()
+                SprintAnimTrack:Stop()
                 --if PrevAnim then PrevAnim:Play(); end
                 if BoostSFX then
                     BoomSFX:Destroy()
@@ -302,6 +305,7 @@ function StaminaUI:KnitInit()
         local StaminaBar = StaminaFrame:WaitForChild("Bar")
         StaminaBar.BackgroundColor3 = regularStaminaColor;
         StaminaBar.Size = UDim2.new(1,0,1,0);
+        SprintAnimTrack = nil;
         self:SetupStamina(Character);
     end)
 

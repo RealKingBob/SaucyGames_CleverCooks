@@ -15,12 +15,12 @@ function CollisionController:KnitInit()
     local function onDescendantAdded(descendant)
         if descendant:IsA("BasePart") then
             PhysicsService:SetPartCollisionGroup(descendant, "NoCollision")
-            print("descendant.CollisionGroup:", descendant:GetFullName(), descendant.CollisionGroup)
+            --print("descendant.CollisionGroup:", descendant:GetFullName(), descendant.CollisionGroup)
         end
     end
 
     local function onCharacterAdded(character)
-        print("no collision here")
+        --print("no collision here")
         if not character then return end
         
         for _, descendant in pairs(character:GetDescendants()) do

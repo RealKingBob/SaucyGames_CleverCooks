@@ -170,7 +170,7 @@ function NpcService:SetupChef(NPC)
     local ConfusedAnimId = "http://www.roblox.com/asset/?id=4940561610";
 
     local function StopTaskAnim()
-        print("StopTaskAnim")
+        --print("StopTaskAnim")
         local AnimationTracks = NPC_Animator:GetPlayingAnimationTracks();
         for i, AnimationTrack in pairs(AnimationTracks) do
             --print("||||||||||", i, AnimationTrack.Name, AnimationTrack.Animation.AnimationId)
@@ -298,7 +298,7 @@ function NpcService:SetupChef(NPC)
         taskAnimTrack.Looped = false;
         taskAnimTrack.Priority = Enum.AnimationPriority.Action;
         repeat task.wait(0.1) until taskAnimTrack.length ~= 0;
-        warn("Length:",taskAnimTrack.Name,taskAnimTrack.Length)
+        --warn("Length:",taskAnimTrack.Name,taskAnimTrack.Length)
         
         if zeroSpeed == true then
             NPC_Humanoid.WalkSpeed = 0;
@@ -312,7 +312,7 @@ function NpcService:SetupChef(NPC)
         task.wait(taskAnimTrack.Length);
 
         --taskAnimTrack.Stopped:Wait()
-        print("anim done")
+        --print("anim done")
         --[[if TaskType == "Alert" or TaskType == "Confused" then
             taskAnimTrack.Stopped:Wait()
             print("anim done")
@@ -493,7 +493,7 @@ function NpcService:SetupChef(NPC)
     ------------------------------------------------------------------------
 
     local function TravelToRandomPoint(exclude)
-        print("travelToRandomPoint: ", travelToRandomPoint, "targetPresent: ", targetPresent)
+        --print("travelToRandomPoint: ", travelToRandomPoint, "targetPresent: ", targetPresent)
         if travelToRandomPoint == true or targetPresent == true then return end
         
         travelToRandomPoint = true;
@@ -519,7 +519,7 @@ function NpcService:SetupChef(NPC)
         NPC_Humanoid.WalkSpeed = NPC_WalkSpeed;
         
         Path:Run(RandomPart);
-        warn("Random point Found");
+        --warn("Random point Found");
     end
     
     
@@ -599,7 +599,7 @@ function NpcService:SetupChef(NPC)
     
     
     Path.Reached:Connect(function(agent, finalWaypoint)
-        warn("Random point reached");
+        --warn("Random point reached");
         --print("agent, finalWaypoint", agent, finalWaypoint,"|", travelToRandomPoint, targetPresent);
         --NPC_Root.CFrame = CFrame.new(NPC_Root.CFrame.Position) * CFrame.Angles(0, RandomPart.Orientation.Y, 0)
         
@@ -612,7 +612,7 @@ function NpcService:SetupChef(NPC)
                 
                 if magnitudeInStuds < 15 then
                     NPC_Root.CFrame= CFrame.lookAt(RandomPart.Position, direction);
-                    warn("TaskType:", RandomPart:GetAttribute("TaskType"));
+                    --warn("TaskType:", RandomPart:GetAttribute("TaskType"));
                     PlayAnim(RandomPart:GetAttribute("TaskType"));
                 end
             end

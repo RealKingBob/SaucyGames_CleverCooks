@@ -12,6 +12,20 @@ local ProximityService = Knit.CreateService {
     };
 }
 
+--[[
+    -- to add texture on foods
+local decalTexture = "http://www.roblox.com/asset/?id=5352896021"
+
+local part =(game:GetService("Selection"):Get()[1])
+for _, face in ipairs(Enum.NormalId:GetEnumItems()) do
+    local decal = Instance.new("Decal")
+    decal.Name = "Burnt"
+    decal.Transparency = 1
+    decal.Color3 = Color3.fromRGB(0,0,0)
+    decal.Parent = part
+    decal.Face = face
+    decal.Texture = decalTexture
+end]]
 
 ----- Integers -----
 
@@ -188,7 +202,7 @@ function ProximityService:UnlinkItemToPlayer(Character,Object)
                 --local cookingPercentage = _PrimaryPart:GetAttribute("CookingPercentage")
                 --visualizeFood(Object, cookingPercentage);
 				Object.Parent = workspace.FoodAvailable;
-                task.spawn(fixHighlight, Object)
+                --task.spawn(fixHighlight, Object)
 			end;
 
 			for _,part in pairs(Object:GetChildren()) do
@@ -213,7 +227,7 @@ function ProximityService:UnlinkItemToPlayer(Character,Object)
                 --local cookingPercentage = Object:GetAttribute("CookingPercentage")
                 --visualizeFood(Object, cookingPercentage);
 				Object.Parent = workspace.FoodAvailable;
-                task.spawn(fixHighlight, Object)
+                --task.spawn(fixHighlight, Object)
 			end;
 			Object.CanCollide = true;
 			Object.Massless = false;
@@ -278,7 +292,7 @@ function ProximityService:PickUpFood(Character, Food)
 end;
 
 function ProximityService:DropItem( Character, Item)
-    print( Character, Item);
+    --print( Character, Item);
     if Character and Item then
         local Ingredient = Character:FindFirstChild("Ingredient").Value;
 		local _Ingredient = Character:FindFirstChild(Ingredient.Name);

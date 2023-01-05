@@ -36,8 +36,10 @@ function ButtonStyle:StyleButton(Container)
     Styles[Container] = ButtonMaid;
 
     ButtonMaid:GiveTask(Button.MouseButton1Down:Connect(function()
+        if not Button then return end;
         if Button:FindFirstChildWhichIsA("UIScale") then
             local ButtonTween = TweenModule.new(ClickInfo, function(Alpha)
+                if not Button then return end;
                 Button:FindFirstChildWhichIsA("UIScale").Scale = NumberUtil.LerpClamp(1, 0.9, Alpha); 
             end)
             ButtonTween:Play()
@@ -49,8 +51,10 @@ function ButtonStyle:StyleButton(Container)
     end))
     
     ButtonMaid:GiveTask(Button.MouseButton1Up:Connect(function()
+        if not Button then return end;
         if Button:FindFirstChildWhichIsA("UIScale") then
             local ButtonTween = TweenModule.new(ClickInfo, function(Alpha)
+                if not Button then return end;
                 Button:FindFirstChildWhichIsA("UIScale").Scale = NumberUtil.LerpClamp(1, 1.15, Alpha); 
             end)
             ButtonTween:Play()
@@ -62,8 +66,10 @@ function ButtonStyle:StyleButton(Container)
     end))
     
     ButtonMaid:GiveTask(Button.MouseEnter:Connect(function()
+        if not Button then return end;
         if Button:FindFirstChildWhichIsA("UIScale") then
             local ButtonTween = TweenModule.new(ClickInfo, function(Alpha)
+                if not Button then return end;
                 Button:FindFirstChildWhichIsA("UIScale").Scale = NumberUtil.LerpClamp(1, 1.15, Alpha); 
             end)
             ButtonTween:Play()
@@ -73,8 +79,10 @@ function ButtonStyle:StyleButton(Container)
     end))
     
     ButtonMaid:GiveTask(Button.MouseLeave:Connect(function()
+        if not Button then return end;
         if Button:FindFirstChildWhichIsA("UIScale") then
             local ButtonTween = TweenModule.new(ClickInfo, function(Alpha)
+                if not Button then return end;
                 Button:FindFirstChildWhichIsA("UIScale").Scale = NumberUtil.LerpClamp(1.15, 1, Alpha); 
             end)
             ButtonTween:Play()
@@ -85,6 +93,7 @@ function ButtonStyle:StyleButton(Container)
 end
 
 function ButtonStyle:RemoveStyle(Container)
+    if not Container then return end;
     local ButtonMaid = Styles[Container];
     
     if (ButtonMaid) then

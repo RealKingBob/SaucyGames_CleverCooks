@@ -73,8 +73,8 @@ local function visualizeFood(foodObject, percentage)
 
     local function setFillTransparency(transparency)
         for _, item in pairs(foodObject:GetDescendants()) do
-            if item:IsA("Highlight") and item.Name == "Burnt" then
-                item.FillTransparency = transparency
+            if item:IsA("Decal") and item.Name == "Burnt" then--if item:IsA("Highlight") and item.Name == "Burnt" then
+                item.Transparency = transparency --item.FillTransparency = transparency
             end
         end
     end
@@ -150,7 +150,7 @@ function SpawnItems:SpawnAtRandomSpawns(RootFolder, Directory, SpawnFolder) -- [
                 SpawnDictionary = createSpawnDict()
             end
             local RandomNum = math.random(1, #SpawnDictionary)
-            if item:IsA("Model") or item:IsA("MeshPart") then
+            if item:IsA("Model") or item:IsA("BasePart") then
                 local clonedItem = item:Clone();
                 clonedItem.Parent = Directory;
                 if SpawnFolder then
@@ -171,7 +171,7 @@ function SpawnItems:SpawnAll(RootFolder, Directory, Location) -- [IngredientOjec
     PrintL("[SpawnItemsAPI]: Spawned all items from RootFolder[".. tostring(RootFolder) .."]");
     if RootFolder and Directory then
         for _,item in pairs(RootFolder:GetChildren()) do
-            if item:IsA("Model") or item:IsA("MeshPart") then
+            if item:IsA("Model") or item:IsA("BasePart") then
                 local clonedItem = item:Clone();
                 clonedItem.Parent = Directory;
                 if Location then
@@ -202,7 +202,7 @@ function SpawnItems:SpawnBlenderFood(UserId, Owner, Ingredients, RootFolder, Dir
                     ItemClone.PrimaryPart:SetAttribute("i"..tostring(index), tostring(value));
                     print(index, value);
                 end
-            elseif ItemClone:IsA("MeshPart") then
+            elseif ItemClone:IsA("BasePart") then
                 ItemClone.Color = ColorOfBlendedFood;
                 ItemClone:SetAttribute("Owner", tostring(Owner));
 
@@ -246,7 +246,7 @@ function SpawnItems:Spawn(UserId, Owner, ItemName, RootFolder, Directory, Locati
         if Owner then
             if ItemClone:IsA("Model") then
                 ItemClone.PrimaryPart:SetAttribute("Owner", tostring(Owner));
-            elseif ItemClone:IsA("MeshPart") then
+            elseif ItemClone:IsA("BasePart") then
                 ItemClone:SetAttribute("Owner", tostring(Owner));
             end;
             if Location then
@@ -259,7 +259,12 @@ function SpawnItems:Spawn(UserId, Owner, ItemName, RootFolder, Directory, Locati
             end
 
             if FoodPercentage then
-                ItemClone:SetAttribute("CookingPercentage", FoodPercentage)
+                if ItemClone:IsA("Model") then
+                    ItemClone.PrimaryPart:SetAttribute("CookingPercentage", FoodPercentage);
+                elseif ItemClone:IsA("BasePart") then
+                    ItemClone:SetAttribute("CookingPercentage", FoodPercentage);
+                end;
+                --ItemClone:SetAttribute("CookingPercentage", FoodPercentage)
                 visualizeFood(ItemClone, FoodPercentage);
             end
 

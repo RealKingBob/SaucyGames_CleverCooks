@@ -189,7 +189,7 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 				local ingredientValue = prompt.Parent:GetAttribute(ingredient)
 				if ingredientValue ~= "" then
 					images[i].Visible = true
-					images[i].Image = IngredientModule[ingredientValue].BlendedImage or ""
+					images[i].Image = (IngredientModule[ingredientValue] ~= nil and IngredientModule[ingredientValue].BlendedImage ~= nil and IngredientModule[ingredientValue].BlendedImage) or "http://www.roblox.com/asset/?id=4509163032"
 				else
 					images[i].Visible = false
 				end

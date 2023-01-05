@@ -83,6 +83,9 @@ local CurrentIngredientObjects = {};
 local foodCookWarnings = {};
 
 local blenderArray = {};
+local playerDebounces = {};
+
+local cookingTimers = {};
 
 local playerIngredients = {};
 local prevIngredients = {};
@@ -102,12 +105,15 @@ local function PlayerAdded(player)
     CurrentIngredientObjects[player.Name] = {};
 	additionalPansInfo[player.UserId] = {};
     possibleRecipes[player.Name] = {};
+	playerDebounces[player] = false;
 end;
 
 local function PlayerRemoving(player)
     CurrentIngredientObjects[player.Name] = nil;
 	additionalPansInfo[player.UserId] = nil;
     possibleRecipes[player.Name] = nil;
+	playerDebounces[player] = nil;
+	cookingTimers[player] = nil;
 end;
 
 
@@ -120,6 +126,27 @@ local easyCookTalkPhrases = Phrases.easyCookTalkPhrases
 local annoyedCookTalkPhrases = Phrases.annoyedCookTalkPhrases
 
 local defeatedCookTalkPhases = Phrases.defeatedCookTalkPhases
+
+local function debounceCooking(player, time)
+	if not player or not time then return end;
+	if (not cookingTimers[player]) then
+		cookingTimers[player] = Instance.new("IntValue")
+		cookingTimers[player].Value = time
+		task.spawn(function()
+			while (cookingTimers[player].Value > 0) do
+				cookingTimers[player].Value -= 1
+				task.wait(1)
+			end
+			cookingTimers[player] = nil
+		end)
+	else
+		-- To RESET the timer.
+		cookingTimers[player].Value = time
+
+		-- To ADD to the timer.
+		--stunned.Value = stunned.Value + Time
+	end
+end
 
 local function warnAboutOvercookingFood(player, obj)
 	if not foodCookWarnings[obj] then foodCookWarnings[obj] = 0 end
@@ -158,6 +185,8 @@ end
 local function visualizeFood(foodObject, percentage)
     if not foodObject or not percentage then return end
 
+	print("visualizing:", foodObject, percentage)
+
     local function destroyTexture()
         for _, item in pairs(foodObject:GetDescendants()) do
             if item:IsA("SurfaceAppearance") and item.Name == "Texture" then
@@ -180,8 +209,8 @@ local function visualizeFood(foodObject, percentage)
 
     local function setFillTransparency(transparency)
         for _, item in pairs(foodObject:GetDescendants()) do
-            if item:IsA("Highlight") and item.Name == "Burnt" then
-                item.FillTransparency = transparency
+            if item:IsA("Decal") and item.Name == "Burnt" then --if item:IsA("Highlight") and item.Name == "Burnt" then
+				item.Transparency = transparency --item.FillTransparency = transparency
             end
         end
     end
@@ -216,10 +245,22 @@ local function checkItemIsOwner(Player, Item)
 	return false;
 end
 
+local function searchForItemInWorkspace(item)
+	local workspaceDescendants = workspace:GetDescendants()
+	for _, obj in ipairs(workspaceDescendants) do
+		if obj == item then
+			return true
+		end
+	end
+	return nil;
+end
+
 -- Proximity Functions
 
 function CookingService:PickUp(Player, Character, Item)
 	if not Player or not Character or not Item then return end
+	if not searchForItemInWorkspace(Item) then return end
+	if CollectionService:HasTag(Item, "OnCookingDelete") then return end
 	if checkItemIsOwner(Player, Item) == false then return end
 
 	local playerData = PlayersInServers[Player.UserId];
@@ -229,13 +270,18 @@ function CookingService:PickUp(Player, Character, Item)
 	end
 
 	if not playerData[1] and not Character:FindFirstChild("Ingredient").Value then
+		--print('c',cookingTimers[Player])
+		debounceCooking(Player, 1);
+		--print('d',cookingTimers[Player])
 		local ProximityService = Knit.GetService("ProximityService");
 		local itemObject = (Item:IsA("Model") and Item.PrimaryPart ~= nil and Item.PrimaryPart) or Item;
 		
 		if not itemObject or not Character:FindFirstChild("HumanoidRootPart") then return end;
 		local Magnitude = (itemObject.Position - Character:FindFirstChild("HumanoidRootPart").Position).magnitude;
+
+		--print("MAGNITUDE:", Magnitude)
 		
-		if not Magnitude or Magnitude > 7 then return end
+		if not Magnitude or Magnitude > 13 then return end
 
 		local itemType = itemObject:GetAttribute("Type");
 
@@ -301,6 +347,7 @@ function CookingService:DropDown(Player,Character)
 	end
 
 	if not playerData[1] and Character:FindFirstChild("Ingredient").Value then
+		debounceCooking(Player, 1);
 		PlayersInServers[Player.UserId][1] = true;
 		local ProximityService = Knit.GetService("ProximityService");
 		for _,item in pairs(game.Workspace:FindFirstChild("FoodAvailable"):GetChildren()) do
@@ -336,6 +383,7 @@ end;
 ----- Cooking Functions -----
 
 function CookingService:CanCookOnPan(player, pan)
+	--print("CanCookOnPan:", cookingPansQueue[player.UserId])
 	if not cookingPansQueue[player.UserId] then 
 		cookingPansQueue[player.UserId] = {};
 		additionalPansInfo[player.UserId] = {};
@@ -344,11 +392,13 @@ function CookingService:CanCookOnPan(player, pan)
 	local function tablefind(tab,el) for index, value in pairs(tab) do if value == el then	return index end end end
 
 	--print("cookingPansQueue", cookingPansQueue[player.UserId], tablefind(cookingPansQueue[player.UserId], pan) )
+	--print("CanCookOnPan 2:", #cookingPansQueue[player.UserId])
 	if #cookingPansQueue[player.UserId] == 0 then return true; end
 
 	local function removeFood()
 		if tablefind(cookingPansQueue[player.UserId], pan) then 
 			-- something is on the pan i will clear it for u
+			print("Removing food from pan")
 	
 			table.remove( cookingPansQueue[player.UserId], tablefind(cookingPansQueue[player.UserId], pan) );
 	
@@ -387,7 +437,7 @@ function CookingService:CanCookOnPan(player, pan)
 				);
 			end
 	
-			print("food created:", food)
+			--print("GENERATED FOOD:", food)
 	
 			Knit.GetService("NotificationService"):Message(false, player, string.upper(tostring(food)).." WAS MADE!")
 	
@@ -395,10 +445,15 @@ function CookingService:CanCookOnPan(player, pan)
 			self.Client.Cook:Fire(player, "Destroy", tostring(additionalPansInfo[player.UserId][pan].Recipe), pan)
 			
 			additionalPansInfo[player.UserId][pan] = nil;
+			return true;
 		end
+		return false;
 	end
 
-	removeFood()
+	local hasRemovedItem = removeFood()
+	--print("CanCookOnPan 3:",hasRemovedItem)
+
+	if hasRemovedItem == true then return false; end;
 
 	if #cookingPansQueue[player.UserId] >= 1 then
 		print("needs gamepass to cook multiple foods")
@@ -441,7 +496,7 @@ function CookingService:Recipe(player, recipe)
 end;
 
 function CookingService:Blend(player, Character, recipe, blender)
-	print('[CookingService]: Cooking Food: '.. tostring(recipe));
+	print('[CookingService]: Blending Food: '.. tostring(recipe));
 
 	if self:CanBlendOnBlender(player, blender) == false then return false; end
 
@@ -484,11 +539,13 @@ local function ingredientCheck(player, recipe)
 				if typeof(ingredientFromTable) == "table" then
 					if tostring(ingredientFromTable.Ingredient) == tostring(ingredientFromRecipe) then
 						CollectionService:AddTag(ingredientFromTable.Source, "OnDelete")
+						CollectionService:AddTag(ingredientFromTable.Source, "OnCookingDelete")
 						table.insert(IngredientsUsed,ingredientFromTable.Source);
 						break;
 					end;
 				else
 					if tostring(ingredientFromTable) == tostring(ingredientFromRecipe) then
+						CollectionService:AddTag(ingredientFromTable, "OnCookingDelete")
 						table.insert(IngredientsUsed,ingredientFromTable);
 						break;
 					end;
@@ -535,6 +592,7 @@ local function destroyIngredients(IngredientsUsed)
 				task.wait(0.1)
 
 				if ingredient ~= nil then
+					CollectionService:RemoveTag(ingredient, "OnCookingDelete")
 					if ingredient:IsA("Model") and ingredient.PrimaryPart then
 						ingredient.PrimaryPart.ProximityPrompt.Enabled = true;
 					else
@@ -554,16 +612,22 @@ local function checkForFood(player)
 		CurrentIngredientObjects[player.Name] = {}
 		playerData = CurrentIngredientObjects[player.Name];
 	end
+	
 	for _, ingredientFromTable in pairs(playerData) do
 		local obj = (ingredientFromTable:IsA("Model") and ingredientFromTable.PrimaryPart ~= nil and ingredientFromTable.PrimaryPart) or ingredientFromTable
+
 		if obj:GetAttribute("Type") == "Food" then
 			currentRecipe = ingredientFromTable.Name;
+			--print(obj:GetAttribute("CookingPercentage"))
 			currentPercentage = obj:GetAttribute("CookingPercentage") or 0;
+
 			if currentPercentage >= 100 then
 				if warnAboutOvercookingFood(player, ingredientFromTable) == false then return nil end
-			end
-
-			ingredientFromTable:Destroy();
+			end		
+			local objToDelete = (obj:GetAttribute("Type") ~= nil and obj.Parent:IsA("Model") and obj.Parent) or obj
+			CollectionService:AddTag(objToDelete, "OnCookingDelete")
+			print("checkforfood:", objToDelete:GetFullName(), ingredientFromTable:GetFullName())
+			objToDelete:Destroy();
 			foundFood = true;
 			break;
 		end;
@@ -573,6 +637,8 @@ local function checkForFood(player)
 end
 
 function CookingService:StartCookingProcess(player, pan, recipe, previousPercentage)
+	print("player, pan, recipe, previousPercentage:", player, pan, recipe, previousPercentage)
+	debounceCooking(player, 1);
 	if additionalPansInfo[player.UserId][pan] == nil then
 		additionalPansInfo[player.UserId][pan] = {};
 	end
@@ -652,6 +718,7 @@ function CookingService:StartCookingProcess(player, pan, recipe, previousPercent
 					Recipe = recipe,
 					Percentage = getNumberInRange(count,  cookingTime),
 				}
+				--print("ehm: ", additionalPansInfo[player.UserId][pan])
 				local previousNumberInRange = getNumberInRange(count - 1, cookingTime)
 				local currentNumberInRange = getNumberInRange(count,  cookingTime)
 
@@ -666,11 +733,22 @@ function CookingService:StartCookingProcess(player, pan, recipe, previousPercent
 			or tablefind(cookingPansQueue[player.UserId], pan) == nil
 	end)
 end
-
+local count = 0;
 function CookingService:Cook(player, Character, recipe, pan)
-	print('[CookingService]: Cooking Food: '.. tostring(recipe), self:CanCookOnPan(player, pan));
+	count += 1;
+
+	print("\n\n\n\n\n\n\n\n\n\n\n\n\n")
+	print('[CookingService]: Cooking Food: '.. tostring(recipe), player,"COUNT:",count);
+	print('[CookingService]: Additional info:', player, Character, recipe, pan);
+
 	if not player or not pan then return false; end
-	if self:CanCookOnPan(player, pan) == false then return false; end
+	if cookingTimers[player] then
+		warn('CANT COOK BECAUSE COOLDOWN:', cookingTimers[player].Value)
+		return 
+	end;
+	local CanCook = self:CanCookOnPan(player, pan)
+	print('Check if can cook:', CanCook)
+	if CanCook == false then return false; end
 
 	local DataService = Knit.GetService("DataService")
 	local profile = DataService.GetProfile(player);
@@ -683,15 +761,19 @@ function CookingService:Cook(player, Character, recipe, pan)
 
 			if #SelectedRecipe["Ingredients"] == #IngredientsUsed then
 				print('[CookingService]: Found all ingredients',IngredientsUsed);
-				destroyIngredients(IngredientsUsed)
+				destroyIngredients(IngredientsUsed);
 				IngredientsUsed = {};
 			else
 				recipe, previousPercentage = checkForFood(player);
-				if not recipe then return end
+
+				if not recipe then 
+					warn("couldnt find food")
+					return 
+				end
 				IngredientsUsed = {};
 			end;
 
-			print("COOKING TIME")
+			--print("COOKING TIME")
 
 			self:StartCookingProcess(player, pan, recipe, previousPercentage)
 		else -- if food
@@ -700,7 +782,10 @@ function CookingService:Cook(player, Character, recipe, pan)
 			local previousPercentage = 0;
 
 			recipe, previousPercentage = checkForFood(player);
-			if not recipe then return end
+			if not recipe then 
+				warn("couldnt find food")
+				return 
+			end
 
 			self:StartCookingProcess(player, pan, recipe, previousPercentage)
 		end;
@@ -718,6 +803,7 @@ function CookingService:DeliverFood(player, food)
 
 		if RecipeModule[tostring(food)] then
 			--print(SelectedRecipe,SelectedRecipe["Ingredients"])
+			debounceCooking(player, 1);
 			for k, v in ipairs(food:GetDescendants()) do
 				if v:IsA("BasePart") or v:IsA("MeshPart") or v:IsA("Weld") then
 					continue;
@@ -829,8 +915,8 @@ function CookingService:KnitStart()
 	--local RandomFoodLocation = FoodSpawnPoints[math.random(1, #FoodSpawnPoints)]
 
 	--SpawnItemsAPI:Spawn(nil, nil, "Raw Steak", IngredientObjects, IngredientsAvailable, RandomFoodLocation.Position + Vector3.new(0,5,0));
-	SpawnItemsAPI:SpawnAllIngredients(3);
-    --SpawnItemsAPI:SpawnAll(IngredientObjects,IngredientsAvailable);
+    SpawnItemsAPI:SpawnAllIngredients(7);
+	--SpawnItemsAPI:SpawnAll(IngredientObjects,IngredientsAvailable);
     --SpawnItemsAPI:SpawnAtRandomSpawns(IngredientObjects,IngredientsAvailable, workspace.FoodSpawnPoints);
     --SpawnItemsAPI:SpawnAll(FoodObjects,IngredientsAvailable);
 end
@@ -879,8 +965,8 @@ function CookingService:KnitInit()
 		end
 
 		if TableAPI.CheckArrayEquality(prevIngredients[player.UserId],playerIngredients[player.UserId]) == false then
-			print("SENT DATA")
-			print("data comparison", prevIngredients[player.UserId], playerIngredients[player.UserId], TableAPI.CheckArrayEquality(prevIngredients[player.UserId],playerIngredients[player.UserId]))
+			--print("SENT DATA")
+			--print("data comparison", prevIngredients[player.UserId], playerIngredients[player.UserId], TableAPI.CheckArrayEquality(prevIngredients[player.UserId],playerIngredients[player.UserId]))
 			self.Client.SendIngredients:Fire(player, playerIngredients[player.UserId])
 		end
 
@@ -1101,8 +1187,16 @@ function CookingService:KnitInit()
     end)
 
 	self.Client.Cook:Connect(function(player, recipe, pan)
-		print(player, recipe, pan)
-		return self:Cook(player, player.Character, recipe, pan);
+		local cookReturn = nil;
+		if not playerDebounces[player] then playerDebounces[player] = false; end
+		if playerDebounces[player] == false then
+			playerDebounces[player] = true;
+			cookReturn = self:Cook(player, player.Character, recipe, pan);
+			task.wait(1)
+			playerDebounces[player] = false;
+		end
+		--print(player, recipe, pan)
+		return cookReturn;
     end)
 
     Players.PlayerAdded:Connect(PlayerAdded);

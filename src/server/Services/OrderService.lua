@@ -76,8 +76,8 @@ local productFunctions = {}
 -- Product ID for reset time on order
 local resetTimeProductId = 123456;
 
-local recipeTimer = 50; -- 300
-local playerTimer = 20; -- 180
+local recipeTimer = 300; -- 300, 50
+local playerTimer = 30; -- 180
 
 local coldRange = {min = 0, max = 34};
 local cookedRange = {min = 35, max = 66};
@@ -115,6 +115,8 @@ end
 
 -- Function to check how many orders are in the player storage
 function OrderService:orderCount(player)
+    if not player then return end;
+    if not playerRecipes[player] then return end;
     -- Counts the amount of times it sees the recipe
     local count = 0;
 
@@ -130,6 +132,8 @@ end
 
 -- Function to check how many of the same recipe is in the player storage
 function OrderService:recipeCount(player, recipe)
+    if not player or not recipe then return end;
+    if not playerRecipes[player] then return end;
     -- Counts the amount of times it sees the recipe
     local count = 0;
 
@@ -145,6 +149,7 @@ end
 
 -- Function to add a recipe to a player's list of recipes
 function OrderService:addRecipe(player, recipe, value)
+    if not player or not recipe or not value then return end;
     -- Check if the player already has a list of recipes
     if playerRecipes[player] == nil then
         -- If not, create a new list for the player
@@ -216,6 +221,8 @@ end
 
 -- Function to remove a recipe from a player's list
 function OrderService:removeRecipe(player, recipeId)
+    if not player then return end;
+    if not playerRecipes[player] then return end;
     -- Find the recipe in the player's list and remove it
     for i, r in ipairs(playerRecipes[player].storage) do
         --print(r.id, recipeId, r.id == recipeId)
@@ -229,6 +236,7 @@ end
 
 -- Function to remove a recipe from a player's list
 function OrderService:getRecipe(player, recipeId)
+    if not player or not recipeId then return end;
     -- Check if the player already has a list of recipes
     if playerRecipes[player] == nil then
         -- If not, create a new list for the player
@@ -249,6 +257,8 @@ end
 
 -- Function to remove expired recipes from a player's table
 function OrderService:removeExpiredRecipes(player)
+    if not player then return end;
+    if not playerRecipes[player] then return end;
     -- Iterate through the player's recipes
     for i, recipe in ipairs(playerRecipes[player].storage) do
         -- Decrement the timer
@@ -256,7 +266,7 @@ function OrderService:removeExpiredRecipes(player)
 
         -- If the timer has expired, remove the recipe from the table
         if recipe.timer <= 0 then
-            print("timer expired for", recipe.name, playerRecipes[player])
+            -- --print("timer expired for", recipe.name, playerRecipes[player])
             --table.remove(playerRecipes[player].storage, i)
             self:removeRecipe(player, recipe.id)
         end
@@ -266,6 +276,7 @@ end
 -- Function to mark a recipe as completed for a player
 function OrderService:completeRecipe(player, recipe, reward, percentage)
     if not player or not recipe then return end;
+    if not playerRecipes[player] then return end;
     -- Find the recipe in the player's list and mark it as completed
     for _, r in ipairs(playerRecipes[player].storage) do
         if r.name == recipe and r.completed == false then
@@ -291,6 +302,7 @@ end
 
 -- Function to add all recipes to a player's list in random order
 function OrderService:addRandomRecipes(player, recipes, numCopies)
+    if not player or not recipes or not numCopies then return end;
     -- Shuffle the list of recipes
     local shuffledRecipes = shuffle(recipes)
 
@@ -305,6 +317,7 @@ end
 
 -- Function to update the recipes for a player
 function OrderService:updatePlayerRecipes(player)
+    if not player then return end;
     if playerRecipes[player] then
         --print("timer:", playerRecipes[player].timer)
         if playerRecipes[player].timer <= 0 then
@@ -314,7 +327,7 @@ function OrderService:updatePlayerRecipes(player)
             local CalculatedTime = playerTimer --180 + ((#playerRecipes[player].storage * 60) - 90)
 
             playerRecipes[player].timer = CalculatedTime; -- reset to 3 minutes
-            print("add recipe:", playerRecipes[player], "| adjusted CalculatedTime:", CalculatedTime)
+            -- --print("add recipe:", playerRecipes[player], "| adjusted CalculatedTime:", CalculatedTime)
         end
 
         -- Remove any expired recipes from the player's table
@@ -346,6 +359,7 @@ function OrderService:SetupProducts()
 end
 
 local function processReceipt(receiptInfo)
+    if not receiptInfo then return end;
 	local userId = receiptInfo.PlayerId
 	local productId = receiptInfo.ProductId
 	local player = Players:GetPlayerByUserId(userId)

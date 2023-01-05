@@ -1,5 +1,6 @@
 ----- Services -----
 local CollectionService = game:GetService("CollectionService")
+local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -41,6 +42,26 @@ local SandboxMode = Knit.CreateService {
     Name = "SandboxMode",
     Client = {},
 }
+
+local TS = game:GetService("TweenService")
+
+local dayGoal = {};
+dayGoal.Ambient = Color3.fromRGB(143, 101, 50);
+
+local nightGoal = {};
+nightGoal.Ambient = Color3.fromRGB(35, 24, 12)
+
+local tweenInfo = TweenInfo.new(
+    1, -- Time
+    Enum.EasingStyle.Linear, -- EasingStyle
+    Enum.EasingDirection.Out, -- EasingDirection
+    0, -- RepeatCount (when less than zero the tween will loop indefinitely)
+    false, -- Reverses (tween will reverse once reaching it's goal)
+    0 -- DelayTime
+)
+
+local dayTween = TS:Create(game.Lighting, tweenInfo, dayGoal)
+local nightTween = TS:Create(game.Lighting, tweenInfo, nightGoal)
 
 ----- Sandbox Mode -----
 SandboxMode.numOfDays = 0;
@@ -113,7 +134,7 @@ function SandboxMode:StartMode()
 
     local GameService = Knit.GetService("GameService");
 
-    print("[GameService]: Intermission Started")
+    --print("[GameService]: Intermission Started")
 
     while true do
         --GameService:SetState(GAMESTATE.INTERMISSION)
@@ -133,12 +154,12 @@ function SandboxMode:StartMode()
         --self.Intermission = Intermission.new(INTERMISSION_TIME, self.numOfDays);
 
         --// Intermission Ended
-        print("[GameService]: Intermission Ended")
+       --print("[GameService]: Intermission Ended")
 
         task.wait(5)
 
         --GameService:SetState(GAMESTATE.GAMEPLAY)
-        print("[GameService]: Gameplay Starting soon, getting map mode")
+        --print("[GameService]: Gameplay Starting soon, getting map mode")
 
         --[[for _, player : Player in pairs(CollectionService:GetTagged(Knit.Config.ALIVE_TAG)) do
             GameService:AddTracker(player)
@@ -146,7 +167,7 @@ function SandboxMode:StartMode()
 
         --currentMap = getRandomMap();
 
-        print("MAP;", currentMap, nextMap)
+       -- print("MAP;", currentMap, nextMap)
 
         --[[GameService.Client.UpdateMapQueue:FireAll({
             CurrentMap = currentMap,
@@ -156,7 +177,11 @@ function SandboxMode:StartMode()
 
         boostedMap = false
         
-        print("[GameService]: Gameplay Started")
+       -- print("[GameService]: Gameplay Started")
+       local MusicService = Knit.GetService("MusicService");
+       MusicService:StartBackgroundMusic("French", "Day")
+       --Lighting.Ambient = Color3.fromRGB(143, 101, 50)
+       dayTween:Play();
 
         for i = 0, GAMEPLAY_TIME do
             local currentTime = dayShiftHours((i / GAMEPLAY_TIME))
@@ -169,7 +194,21 @@ function SandboxMode:StartMode()
             task.wait(1)
         end
 
-        local Synced = require(Knit.ReplicatedModules.Synced);
+        --Lighting.Ambient = Color3.fromRGB(35, 24, 12)
+        nightTween:Play();
+        MusicService:StartBackgroundMusic("French", "Night")
+        for i = 0, NIGHT_TIME do
+            local currentTime = nightShiftHours((i / NIGHT_TIME))
+            GameService.Client.AdjustTimeSignal:FireAll({
+                Day = self.numOfDays,
+                Time = currentTime,
+                IsNight = true,
+            });
+            --print("Night:", self.numOfDays, i,  NIGHT_TIME, i/NIGHT_TIME, "| Time:", currentTime)
+            task.wait(1)
+        end
+
+        --[[local Synced = require(Knit.ReplicatedModules.Synced);
         local DailyShopOffset = (60 * 60 * Knit.Config.DAILY_SHOP_OFFSET); 
         local Day = math.floor((Synced.time() + DailyShopOffset) / (60 * 60 * 24))
         local seed = Random.new(Day);
@@ -177,8 +216,10 @@ function SandboxMode:StartMode()
         local weightNumber = seed:NextNumber(0, 100);
 
         if weightNumber <= self.percentageTillNight then
-            warn("OOO SPOOKY NIGHT")
+            --warn("OOO SPOOKY NIGHT")
             self.percentageTillNight = 2;
+            Lighting.Ambient = Color3.fromRGB(35, 24, 12)
+            MusicService:StartBackgroundMusic("French", "Night")
             for i = 0, NIGHT_TIME do
                 local currentTime = nightShiftHours((i / NIGHT_TIME))
                 GameService.Client.AdjustTimeSignal:FireAll({
@@ -191,7 +232,7 @@ function SandboxMode:StartMode()
             end
         else
             self.percentageTillNight += 10;
-        end
+        end]]
         
         --TimeTween:Play();
         --TimeTween.Completed:Wait();

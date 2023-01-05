@@ -36,10 +36,10 @@ local GoodPoofSound = "rbxassetid://9125639499";
 local BadPoofSound = "rbxassetid://9116406899";
 local SizzleSound = "rbxassetid://9119165436";
 
-local ColdIcon = "rbxassetid://11961241221";
+local ColdIcon = "rbxassetid://12025423929";
 local ReadyIcon = "rbxassetid://11961241690";
-local HotIcon = "rbxassetid://11961241536";
-local SkullIcon = "rbxassetid://11961241388";
+local HotIcon = "rbxassetid://12025424257";
+local SkullIcon = "rbxassetid://12025423642";
 
 local PanUIs = {}
 
@@ -143,7 +143,16 @@ local function visualizeCookFood(foodObject, pan, percentage, fireEffect)
     local coldRangeMin = coldRangeVisuals.min
     local coldRangeMax = coldRangeVisuals.max
 
-    foodObject.Cooked.Burnt.FillTransparency = 1
+    local function fillTransparency(transparency)
+        for _, item in pairs(foodObject.Cooked:GetChildren()) do
+            if item:IsA("Decal") and item.Name == "Burnt" then--if item:IsA("Highlight") and item.Name == "Burnt" then
+                item.Transparency = transparency --item.FillTransparency = transparency
+            end
+        end
+    end
+
+    fillTransparency(1)
+    --foodObject.Cooked.Burnt.FillTransparency = 1
     foodObject.Cooked.Transparency = 0
 
     if percentage <= coldRangeMin then
@@ -159,11 +168,13 @@ local function visualizeCookFood(foodObject, pan, percentage, fireEffect)
         foodObject.Raw.Transparency = 1
 
     elseif percentage > cookedRangeMax and percentage <= burntRangeMax then
-        foodObject.Cooked.Burnt.FillTransparency = (1 - percentageInRange(percentage, cookedRangeMin, burntRangeMax))
+        fillTransparency((1 - percentageInRange(percentage, cookedRangeMin, burntRangeMax)))
+        --foodObject.Cooked.Burnt.FillTransparency = (1 - percentageInRange(percentage, cookedRangeMin, burntRangeMax))
         foodObject.Raw.Transparency = 1
 
     else
-        foodObject.Cooked.Burnt.FillTransparency = 0
+        fillTransparency(0)
+        --foodObject.Cooked.Burnt.FillTransparency = 0
         foodObject.Raw.Transparency = 1
 
         if not foodObject:FindFirstChild("Fire") then
