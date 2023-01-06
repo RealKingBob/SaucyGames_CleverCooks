@@ -4,7 +4,7 @@ local DEFAULT_SETTINGS = {
 
 	COMPARISON_CHECKS = 1;
 
-	JUMP_WHEN_STUCK = false;
+	JUMP_WHEN_STUCK = true;
 }
 
 ---------------------------------------------------------------------
@@ -100,11 +100,12 @@ end
 local function move(self)
 	local timeOut = 0
 	if self._waypoints[self._currentWaypoint].Action == Enum.PathWaypointAction.Jump then
+		--warn("MOVE: JUMP STATE")
 		-- JUMPRELATED: setJumpState(self)
 	end
 	repeat 
 		self._humanoid:MoveTo(self._waypoints[self._currentWaypoint].Position)
-		wait(.05)
+		task.wait(.05)
 		timeOut = timeOut +.05
 	until timeOut > 1 or (self._agent.PrimaryPart.Position - self._waypoints[self._currentWaypoint].Position).magnitude < 5
 end
@@ -173,6 +174,7 @@ local function comparePosition(self)
 	self._position._last = self._agent.PrimaryPart.Position
 	if self._position._count >= self._settings.COMPARISON_CHECKS then
 		if self._settings.JUMP_WHEN_STUCK then
+			warn("JUMP_WHEN_STUCK: JUMP STATE")
 			--setJumpState(self)
 		end
 		declareError(self, self.ErrorType.AgentStuck)
@@ -224,6 +226,7 @@ function Path.new(agent, agentParameters, override)
 	--Path blocked connection
 	self._path.Blocked:Connect(function(...)
 		if (self._currentWaypoint <= ... and self._currentWaypoint + 1 >= ...) and self._humanoid then
+			warn("BLOCK: JUMP STATE")
 			--setJumpState(self)
 			self._events.Blocked:Fire(self._agent, self._waypoints[...])
 		end

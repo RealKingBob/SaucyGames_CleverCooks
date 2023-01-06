@@ -1,9 +1,14 @@
 local Players = game:GetService("Players")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
+local AnimateBIG = require(script.Parent.AnimateBigMan)
 
 local LocalPlayer = Players.LocalPlayer
 
 local AnimationController = Knit.CreateController { Name = "AnimationController" }
+
+function AnimationController:SetupNPC(Character)
+    task.defer(AnimateBIG, Character)
+end;
 
 function AnimationController:Animate(Controller, Animation)
     --print(Controller, Animation)
@@ -68,6 +73,10 @@ function AnimationController:KnitStart()
     local NpcService = Knit.GetService("NpcService")
     NpcService.PlayAnimation:Connect(function(Controller, Animation)
         self:Animate(Controller, Animation);
+    end)
+
+    NpcService.SetupNPC:Connect(function(Character)
+        self:SetupNPC(Character);
     end)
 end
 

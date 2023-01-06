@@ -12,17 +12,6 @@ local rockDespawnTime = 5;
 
 local stompRange = 20;
 
-local plr = Players.LocalPlayer
-local char = plr.Character
-local mouse = plr:GetMouse()
-
-local armOffset = char.UpperTorso.CFrame:Inverse() * char.RightUpperArm.CFrame
-
-local armWeld = Instance.new("Weld")
-armWeld.Part0 = char.UpperTorso
-armWeld.Part1 = char.RightUpperArm
-armWeld.Parent = char
-
 local taskAnim = Instance.new("Animation");
 taskAnim.Name = "TaskAnim";
 
@@ -77,7 +66,7 @@ end
 
 
 
-function AttackService:Swing(animator, fistPart)
+function AttackService:Swing(char, playerPos, animator, fistPart)
 	
 	fistPart.Size = Vector3.new(8.518, 8.84, 6.045)
 
@@ -112,8 +101,17 @@ function AttackService:Swing(animator, fistPart)
 	taskAnimTrack:Play();
 	taskAnimTrack:AdjustSpeed(0.5)
 
+	task.wait(taskAnimTrack.Length / 2)
+
+	local armOffset = char.UpperTorso.CFrame:Inverse() * char.RightUpperArm.CFrame
+
+	local armWeld = Instance.new("Weld")
+	armWeld.Part0 = char.UpperTorso
+	armWeld.Part1 = char.RightUpperArm
+	armWeld.Parent = char
+
 	--RunService.Heartbeat:Connect(function()
-	local cframe = CFrame.new(char.UpperTorso.Position, mouse.Hit.Position) * CFrame.Angles(math.pi/2, 0, 0)
+	local cframe = CFrame.new(char.UpperTorso.Position, playerPos) * CFrame.Angles(math.pi/2, 0, 0)
 	armWeld.C0 = armOffset * char.UpperTorso.CFrame:toObjectSpace(cframe)
 	--end)
 	

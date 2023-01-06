@@ -97,8 +97,8 @@ end)
 
 ----- Variables -----
 local playerCollisionGroupName = "Players";
-PhysicsService:CreateCollisionGroup(playerCollisionGroupName);
-PhysicsService:CollisionGroupSetCollidable(playerCollisionGroupName, playerCollisionGroupName, false);
+--PhysicsService:CreateCollisionGroup(playerCollisionGroupName);
+--PhysicsService:CollisionGroupSetCollidable(playerCollisionGroupName, playerCollisionGroupName, false);
 
 local previousCollisionGroups = {};
 local playerProfiles = {}; -- [player] = profile
@@ -211,6 +211,13 @@ local function onPlayerAdded(player)
 		end
 		task.wait(.125);
 	end
+
+	for i,v in pairs(CollectionService:GetTagged("NPC")) do
+        task.spawn(function()
+            task.wait(i/2)
+            Knit.NpcService.Client.SetupNPC:FireAll(v)
+        end)
+    end
 
     local profile = Knit.DataService:GetProfile(player);
 

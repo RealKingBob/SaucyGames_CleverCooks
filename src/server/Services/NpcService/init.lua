@@ -4,6 +4,7 @@ local NpcService = Knit.CreateService {
     Name = "NpcService";
     Client = {
         PlayAnimation = Knit.CreateSignal();
+        SetupNPC = Knit.CreateSignal();
     };
 }
 
@@ -23,7 +24,7 @@ local playerCollisionGroupName = "NPC";
 local previousCollisionGroups = {};
 
 local function CreateCollisionGroup(collisionGroupName)
-    local createdGroups = PhysicsService:GetCollisionGroups()
+    local createdGroups = PhysicsService:GetRegisteredCollisionGroups()
     local collisionGroupExists = {} do
         for _, createdGroup in pairs(createdGroups) do
             collisionGroupExists[createdGroup] = true
@@ -187,8 +188,8 @@ function NpcService:SetupChef(NPC)
     local Path = PathfindingService.new(NPC, {
         AgentRadius = 20,
         AgentHeight = 37,
-        WaypointSpacing = 30,
-        AgentCanJump = false,
+        WaypointSpacing = 5,--30,
+        AgentCanJump = true,
         Costs = {
             TravelZone = 0.01,
             NoZone = math.huge
@@ -197,12 +198,12 @@ function NpcService:SetupChef(NPC)
 
     Path.Visualize = true;
     for i,v in pairs(NPC:GetDescendants()) do
-        if v:IsA("Part") or v:IsA("MeshPart") then
+        if v:IsA("BasePart") then
             v:SetNetworkOwner(nil);
         end
     end
     NPC:WaitForChild("FistParticles").Size = Vector3.new(8.518, 8.84, 6.045)
-    NPC_Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+    --NPC_Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
     
     ----------------------------------------------------------------------
     
@@ -219,7 +220,7 @@ function NpcService:SetupChef(NPC)
     
     --------------------------------------------------------------------------
     
-    local function SwingAttack()
+    local function SwingAttack(targetPos)
         if attackDebounce == false then
             attackDebounce = true;
             
@@ -235,7 +236,7 @@ function NpcService:SetupChef(NPC)
     
             NPC_Humanoid.WalkSpeed = 0;
     
-            local success = AttackService:Swing(NPC_Animator, NPC:WaitForChild("FistParticles"));
+            local success = AttackService:Swing(NPC, targetPos, NPC_Animator, NPC:WaitForChild("FistParticles"));
     
             repeat task.wait() until success == true;
     
@@ -596,8 +597,7 @@ function NpcService:SetupChef(NPC)
             AnimationTrack:AdjustSpeed(0.58);
         end
     end)
-    
-    
+
     Path.Reached:Connect(function(agent, finalWaypoint)
         --warn("Random point reached");
         --print("agent, finalWaypoint", agent, finalWaypoint,"|", travelToRandomPoint, targetPresent);
@@ -657,7 +657,7 @@ function NpcService:SetupChef(NPC)
     
     Path.WaypointReached:Connect(function()
         --warn("Waypoint reached")
-        if targetPresent == true then
+        --[[if targetPresent == true then
             reachedWaypoint = true;
             
             local target;
@@ -686,7 +686,7 @@ function NpcService:SetupChef(NPC)
         elseif travelToRandomPoint == true then
             StopTaskAnim()
             NPC_Humanoid.WalkSpeed = NPC_WalkSpeed;
-        end
+        end]]
     end)
     
     Path.Error:Connect(function(errorType)
@@ -694,7 +694,8 @@ function NpcService:SetupChef(NPC)
         if travelToRandomPoint == true then
             if errorType == PathfindingService.ErrorType.ComputationError 
             or errorType == PathfindingService.ErrorType.TargetUnreachable  
-            or errorType == PathfindingService.ErrorType.LimitReached  then
+            or errorType == PathfindingService.ErrorType.AgentStuck
+            or errorType == PathfindingService.ErrorType.LimitReached then
                 warn("REDIRECT:", tostring(errorType),'| ', "targetPresent:", targetPresent, "travelRandom:", travelToRandomPoint, "status:", Path:GetStatus())
                 
                 travelToRandomPoint = false;
@@ -814,7 +815,7 @@ function NpcService:SetupChef(NPC)
                     if (hitMagInStuds <= 25) then
                         print("directionType", directionType)
                         if directionType == DirectionType.Up then
-                            SwingAttack()
+                            SwingAttack(tempTarget.Position)
                         elseif directionType == DirectionType.Down then
                             StompAttack()
                         end
@@ -860,11 +861,12 @@ end
 function NpcService:KnitInit()
     print("[SERVICE]: NPC Service Initialized")
 
-    CreateCollisionGroup(playerCollisionGroupName);
+    --CreateCollisionGroup(playerCollisionGroupName);
 
     CollectionService:GetInstanceAddedSignal("NPC"):Connect(function(v)
         task.spawn(function()
             self:SetupChef(v);
+            self.Client.SetupNPC:FireAll(v)
         end)
     end)
 
@@ -872,6 +874,7 @@ function NpcService:KnitInit()
         task.spawn(function()
             task.wait(i/2)
             self:SetupChef(v);
+            self.Client.SetupNPC:FireAll(v)
         end)
     end
 end
