@@ -1,5 +1,6 @@
 local AttackService = {};
 
+local Players = game:GetService("Players")
 local DebrisService = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -11,14 +12,27 @@ local rockDespawnTime = 5;
 
 local stompRange = 20;
 
+local plr = Players.LocalPlayer
+local char = plr.Character
+local mouse = plr:GetMouse()
+
+local armOffset = char.UpperTorso.CFrame:Inverse() * char.RightUpperArm.CFrame
+
+local armWeld = Instance.new("Weld")
+armWeld.Part0 = char.UpperTorso
+armWeld.Part1 = char.RightUpperArm
+armWeld.Parent = char
+
+local taskAnim = Instance.new("Animation");
+taskAnim.Name = "TaskAnim";
+
 function AttackService:Stomp(animator, position)
 	
 	--print("STOMP", position)
 	
 	local stompAnimId = "rbxassetid://10453571674"
 	
-	local taskAnim = Instance.new("Animation");
-	taskAnim.Name = "TaskAnim";
+	if not taskAnim then taskAnim = Instance.new("Animation"); taskAnim.Name = "TaskAnim"; end
 	taskAnim.AnimationId = stompAnimId;
 	
 	local controller = animator;
@@ -26,7 +40,7 @@ function AttackService:Stomp(animator, position)
 	local taskAnimTrack = controller:LoadAnimation(taskAnim);
 	taskAnimTrack.Priority = Enum.AnimationPriority.Action;
 
-	repeat wait(0.1) until taskAnimTrack.length ~= 0;
+	repeat task.wait(0.1) until taskAnimTrack.length ~= 0;
 	
 	taskAnimTrack:Play();
 	task.wait(taskAnimTrack.Length / 1.5);
@@ -72,8 +86,7 @@ function AttackService:Swing(animator, fistPart)
 	local swingAnimId = "rbxassetid://10477361080";
 	local fistConnection = nil;
 
-	local taskAnim = Instance.new("Animation");
-	taskAnim.Name = "TaskAnim";
+	if not taskAnim then taskAnim = Instance.new("Animation"); taskAnim.Name = "TaskAnim"; end
 	taskAnim.AnimationId = swingAnimId;
 
 	local controller = animator;
@@ -81,7 +94,7 @@ function AttackService:Swing(animator, fistPart)
 	local taskAnimTrack = controller:LoadAnimation(taskAnim);
 	taskAnimTrack.Priority = Enum.AnimationPriority.Action;
 
-	repeat wait(0.1) until taskAnimTrack.length ~= 0;
+	repeat task.wait(0.1) until taskAnimTrack.length ~= 0;
 	
 	for _, v in pairs(fistPart:GetDescendants()) do
 		if v:IsA("ParticleEmitter") then
@@ -98,6 +111,11 @@ function AttackService:Swing(animator, fistPart)
 
 	taskAnimTrack:Play();
 	taskAnimTrack:AdjustSpeed(0.5)
+
+	--RunService.Heartbeat:Connect(function()
+	local cframe = CFrame.new(char.UpperTorso.Position, mouse.Hit.Position) * CFrame.Angles(math.pi/2, 0, 0)
+	armWeld.C0 = armOffset * char.UpperTorso.CFrame:toObjectSpace(cframe)
+	--end)
 	
 	taskAnimTrack.Stopped:Wait()
 	
@@ -164,7 +182,7 @@ function AttackService:Shockwave(position)
 		tween:Play()
 
 		coroutine.resume(coroutine.create(function()
-			wait(rockDespawnTime)
+			task.wait(rockDespawnTime)
 			local tween = game:GetService("TweenService"):Create(rock, TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {CFrame = position * CFrame.new(0, -20, 0) * CFrame.Angles(0, math.rad(12 * i), 0) * CFrame.new(7, 0, 0) * CFrame.Angles(math.rad(math.random(-60, 60)), math.rad(math.random(-180, 180)), math.rad(math.random(-60, 60)))})
 			tween:Play()
 
