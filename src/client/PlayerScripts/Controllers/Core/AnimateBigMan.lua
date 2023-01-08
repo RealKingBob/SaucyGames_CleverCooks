@@ -295,16 +295,29 @@ return function (Character)
                 runAnimTrack:Destroy()
             end
 
-            currentAnimSpeed = 0.58
+            currentAnimSpeed = .1--0.58
         
             -- load it to the humanoid; get AnimationTrack
-            currentAnimTrack = humanoid:LoadAnimation(anim)
+            local animator = humanoid:FindFirstChildOfClass("Animator")
+            for _, AnimationTrack in pairs(animator:GetPlayingAnimationTracks()) do
+                AnimationTrack:Stop();
+                AnimationTrack:Destroy();
+            end 
+            currentAnimTrack = animator:LoadAnimation(anim)
             currentAnimTrack.Priority = Enum.AnimationPriority.Core
             
             -- play the animation
-            currentAnimTrack:Play(transitionTime)
+            currentAnimTrack:Play(transitionTime,1,currentAnimSpeed)
             currentAnim = animName
             currentAnimInstance = anim
+
+            for _, AnimationTrack in pairs(animator:GetPlayingAnimationTracks()) do
+                print("[1]",AnimationTrack, AnimationTrack.Speed)
+                AnimationTrack:AdjustSpeed(currentAnimSpeed);
+                print("[2]",AnimationTrack, AnimationTrack.Speed)
+            end 
+
+            print("GetPlayingAnimationTracks", animator:GetPlayingAnimationTracks())
 
             -- set up keyframe name triggers
             if (currentAnimKeyframeHandler ~= nil) then
@@ -319,7 +332,13 @@ return function (Character)
 
                 runAnimTrack = humanoid:LoadAnimation(animTable[runAnimName][runIdx].anim)
                 runAnimTrack.Priority = Enum.AnimationPriority.Core
-                runAnimTrack:Play(transitionTime)		
+                runAnimTrack:Play(transitionTime,1,currentAnimSpeed)	
+                
+                for _, AnimationTrack in pairs(animator:GetPlayingAnimationTracks()) do
+                    print("[3]",AnimationTrack, AnimationTrack.Speed)
+                    AnimationTrack:AdjustSpeed(currentAnimSpeed);
+                    print("[4]",AnimationTrack, AnimationTrack.Speed)
+                end
                 
                 if (runAnimKeyframeHandler ~= nil) then
                     runAnimKeyframeHandler:disconnect()
@@ -362,7 +381,7 @@ return function (Character)
                 if priority then
                     toolAnimTrack.Priority = priority
                 end
-                
+
                 -- play the animation
                 toolAnimTrack:Play(transitionTime)
                 toolAnimName = animName
@@ -566,10 +585,12 @@ return function (Character)
     pose = "Standing"
 
     -- loop to handle timed state transitions and tool animations
-    while Character.Parent ~= nil do
-        local _, currentGameTime = wait(0.1)
-        stepAnimate(currentGameTime)
-    end
+    task.spawn(function()
+        while Character.Parent ~= nil do
+            local _, currentGameTime = wait(0.1)
+            stepAnimate(currentGameTime)
+        end
+    end)
 
 end
 

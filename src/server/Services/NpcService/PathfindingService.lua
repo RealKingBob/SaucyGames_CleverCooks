@@ -8,7 +8,7 @@ local DEFAULT_SETTINGS = {
 }
 
 ---------------------------------------------------------------------
-
+local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 local PathfindingService = game:GetService("PathfindingService")
 local Players = game:GetService("Players")
 local function output(func, msg)
@@ -100,9 +100,10 @@ end
 local function move(self)
 	local timeOut = 0
 	if self._waypoints[self._currentWaypoint].Action == Enum.PathWaypointAction.Jump then
-		--warn("MOVE: JUMP STATE")
+		warn("MOVE: JUMP STATE")
 		-- JUMPRELATED: setJumpState(self)
 	end
+	Knit.GetService("NpcService").Client.PlayAnimation:FireAll(self._humanoid:FindFirstChildOfClass("Animator"), "rbxassetid://913402848", "RunAnim", self._agent)
 	repeat 
 		self._humanoid:MoveTo(self._waypoints[self._currentWaypoint].Position)
 		task.wait(.05)

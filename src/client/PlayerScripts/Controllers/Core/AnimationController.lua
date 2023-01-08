@@ -3,30 +3,73 @@ local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 local AnimateBIG = require(script.Parent.AnimateBigMan)
 
 local LocalPlayer = Players.LocalPlayer
+local currAnimName = {};
+local currAnimId;
+local currentAnimKeyframeHandler = {}
+local currentAnimSpeed = {}; --0.58
+
+local currAnimPlaying;
+
 
 local AnimationController = Knit.CreateController { Name = "AnimationController" }
 
 function AnimationController:SetupNPC(Character)
-    task.defer(AnimateBIG, Character)
+    --task.spawn(AnimateBIG, Character)
 end;
 
-function AnimationController:Animate(Controller, Animation)
-    --print(Controller, Animation)
+local function playAnimationForDuration(animationTrack, duration)
+	local speed = animationTrack.Length / duration
+	animationTrack:AdjustSpeed(speed)
+	animationTrack:Play()
+end
+
+-- TODO: MAKE CONTROLLER TABLE SO THE IF STATEMENT DOESNT STOP THE OTHER WALKING ANIMATIONS
+function AnimationController:Animate(Controller, Animation, AnimationName, Agent, byPass)
+    --print(Controller, Animation, AnimationName, AnimationName == currAnimName[Agent])
+    assert(Agent, "You didnt insert an agent!")
+    assert(Controller, "You didnt insert an Controller!")
+    assert(Animation, "You didnt insert an Animation!")
+    assert(AnimationName, "You didnt insert an AnimationName!")
+    if AnimationName == currAnimName[Agent] and not byPass then return end;
+
+    --print(Agent:FindFirstChildOfClass("Humanoid").WalkSpeed)
+
+    currAnimName[Agent] = AnimationName
+
+    if Agent:FindFirstChildOfClass("Humanoid").WalkSpeed > 16 then
+        currentAnimSpeed[Agent] = 0.65
+    else
+        currentAnimSpeed[Agent] = 0.58
+    end
+    
+
     local taskAnim = Instance.new("Animation");
-    taskAnim.Name = "TaskAnim";
+    taskAnim.Name = AnimationName;
     taskAnim.AnimationId = Animation
 
     local taskAnimTrack = Controller:LoadAnimation(taskAnim)
     taskAnimTrack.Looped = false;
 
+    local function keyFrameReachedFunc(frameName)
+        if (frameName == "End") then
+            taskAnimTrack:Play(0.100000001, 1, currentAnimSpeed[Agent]);
+        end
+    end
+
     for _, AnimationTrack in pairs(Controller:GetPlayingAnimationTracks()) do
-        AnimationTrack:AdjustSpeed(0.58);
+        --AnimationTrack:AdjustSpeed(0.58);
+        AnimationTrack:Stop();
+        AnimationTrack:Destroy();
     end
 
     if Controller and Animation then
-        taskAnimTrack:Play();
-        taskAnimTrack:AdjustSpeed(0.58);
-        taskAnimTrack.Stopped:Wait()
+        taskAnimTrack:Play(0.100000001, 1, currentAnimSpeed[Agent]);
+         -- set up keyframe name triggers
+         if (currentAnimKeyframeHandler[Agent] ~= nil) then
+            currentAnimKeyframeHandler[Agent]:disconnect()
+        end
+        currentAnimKeyframeHandler[Agent] = taskAnimTrack.KeyframeReached:connect(keyFrameReachedFunc)
+        
         --print("STOP")
     end
 end;
@@ -62,6 +105,7 @@ function AnimationController:SetAnimations(Animations)
     end;
 end;
 
+
 function AnimationController:KnitStart()
     --print("animation contrller")
 
@@ -71,12 +115,12 @@ function AnimationController:KnitStart()
     end)
 
     local NpcService = Knit.GetService("NpcService")
-    NpcService.PlayAnimation:Connect(function(Controller, Animation)
-        self:Animate(Controller, Animation);
+    NpcService.PlayAnimation:Connect(function(Controller, Animation, AnimationName, Agent, byPass)
+        self:Animate(Controller, Animation, AnimationName, Agent, byPass);
     end)
 
     NpcService.SetupNPC:Connect(function(Character)
-        self:SetupNPC(Character);
+        --self:SetupNPC(Character);
     end)
 end
 

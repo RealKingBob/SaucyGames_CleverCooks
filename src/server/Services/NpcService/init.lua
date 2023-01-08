@@ -23,6 +23,8 @@ local Config = require(script.Config)
 local playerCollisionGroupName = "NPC";
 local previousCollisionGroups = {};
 
+local inCutscene = {};
+
 local function CreateCollisionGroup(collisionGroupName)
     local createdGroups = PhysicsService:GetRegisteredCollisionGroups()
     local collisionGroupExists = {} do
@@ -114,6 +116,7 @@ function NpcService:SetupChef(NPC)
     local reachedWaypoint = false;
 
     local attackDebounce = false;
+    if not inCutscene[NPC] then inCutscene[NPC] = false end
 
     local prevRandomPart;
     local prevSignal = nil;
@@ -188,7 +191,7 @@ function NpcService:SetupChef(NPC)
     local Path = PathfindingService.new(NPC, {
         AgentRadius = 20,
         AgentHeight = 37,
-        WaypointSpacing = 5,--30,
+        WaypointSpacing = 4,--30,
         AgentCanJump = true,
         Costs = {
             TravelZone = 0.01,
@@ -215,10 +218,24 @@ function NpcService:SetupChef(NPC)
             Neck.C0 = Neck.C0:lerp(NeckC0, UpdateSpeed/2)
         end
     end
-
-    
     
     --------------------------------------------------------------------------
+
+    local function SprayAttack(targetPos)
+        if attackDebounce == false then
+            attackDebounce = true;
+    
+            NPC_Humanoid.WalkSpeed = 0;
+    
+            local success = AttackService:Swing(NPC, targetPos);
+    
+            repeat task.wait() until success == true;
+    
+            NPC_Humanoid.WalkSpeed = 16;
+            
+            attackDebounce = false;
+        end
+    end
     
     local function SwingAttack(targetPos)
         if attackDebounce == false then
@@ -305,7 +322,7 @@ function NpcService:SetupChef(NPC)
             NPC_Humanoid.WalkSpeed = 0;
         end
 
-        self.Client.PlayAnimation:FireAll(controller, taskAnim.AnimationId)
+        self.Client.PlayAnimation:FireAll(controller, taskAnim.AnimationId, "TaskAnim", NPC, true)
         
         --taskAnimTrack:Play();
         taskAnimTrack:AdjustSpeed(0.58);
@@ -387,7 +404,7 @@ function NpcService:SetupChef(NPC)
 
         end	
         
-        print("friendIds:", friendIds)
+        --print("friendIds:", friendIds)
     
         local RandomFriend;
             
@@ -585,18 +602,6 @@ function NpcService:SetupChef(NPC)
     end
     
     -------------------------------------------------------------
-    
-    NPC_Humanoid.Running:Connect(function(speed)
-        task.wait(.1);
-        
-        local AnimationTracks = NPC_Animator:GetPlayingAnimationTracks()
-        for _, AnimationTrack in pairs(AnimationTracks) do
-            --[[if AnimationTrack.Name == "RunAnim" or AnimationTrack.Name == "Animation1" then
-                
-            end]]
-            AnimationTrack:AdjustSpeed(0.58);
-        end
-    end)
 
     Path.Reached:Connect(function(agent, finalWaypoint)
         --warn("Random point reached");
@@ -657,18 +662,11 @@ function NpcService:SetupChef(NPC)
     
     Path.WaypointReached:Connect(function()
         --warn("Waypoint reached")
-        --[[if targetPresent == true then
+        if targetPresent == true then
             reachedWaypoint = true;
             
-            local target;
-            
-            --print(Character, type(Character))
-            if Character:IsA("Model") then
-                target = Character.PrimaryPart.Position;
-            else
-                target = Character.Position;
-            end
-            
+            local target = (Character:IsA("Model") and Character.PrimaryPart ~= nil and Character.PrimaryPart.Position) or Character.Position
+  
             if (NPC_Head.Position - target).Magnitude > NPC_ViewDistance + 40 then
                 if Path:GetStatus() ~= "Idle" then
                     Path:Stop();
@@ -686,7 +684,7 @@ function NpcService:SetupChef(NPC)
         elseif travelToRandomPoint == true then
             StopTaskAnim()
             NPC_Humanoid.WalkSpeed = NPC_WalkSpeed;
-        end]]
+        end
     end)
     
     Path.Error:Connect(function(errorType)
@@ -694,15 +692,16 @@ function NpcService:SetupChef(NPC)
         if travelToRandomPoint == true then
             if errorType == PathfindingService.ErrorType.ComputationError 
             or errorType == PathfindingService.ErrorType.TargetUnreachable  
-            or errorType == PathfindingService.ErrorType.AgentStuck
-            or errorType == PathfindingService.ErrorType.LimitReached then
+            or errorType == PathfindingService.ErrorType.LimitReached  then
                 warn("REDIRECT:", tostring(errorType),'| ', "targetPresent:", targetPresent, "travelRandom:", travelToRandomPoint, "status:", Path:GetStatus())
                 
                 travelToRandomPoint = false;
     
                 if targetPresent == false then
                     print("TRAVEL RANDOM POINT")
-                    TravelToRandomPoint(TaskExclusion);
+                    if inCutscene[NPC] == false then
+                        TravelToRandomPoint(TaskExclusion);
+                    end
                 end
             end
         elseif targetPresent == true then
@@ -722,14 +721,16 @@ function NpcService:SetupChef(NPC)
                     prevSignal:Disconnect()
                 end
 
-                TravelToRandomPoint(TaskExclusion);
+                if inCutscene[NPC] == false then
+                    TravelToRandomPoint(TaskExclusion);
+                end
             end
         end
     end)
     
     -----------------------------------------------------------------------------------------
     
-    PhysicsService:CollisionGroupSetCollidable(playerCollisionGroupName, playerCollisionGroupName, false);
+    --PhysicsService:CollisionGroupSetCollidable(playerCollisionGroupName, playerCollisionGroupName, false);
     
     setCollisionGroupRecursive(NPC);
     NPC.DescendantAdded:Connect(setCollisionGroup);
@@ -740,18 +741,14 @@ function NpcService:SetupChef(NPC)
     NPC:WaitForChild("FistParticles").Size = Vector3.new(8.518, 8.84, 6.045)
     
     while true do
-        
+
         local TrsoLV = NPC_Torso.CFrame.lookVector;
         local HdPos = NPC_Head.CFrame.p;
         local LookAtPart;
         
         for _, target in pairs(CollectionService:GetTagged("TrackInstance")) do
             
-            if target:IsA("Model") then
-                target = target.PrimaryPart.Position;
-            else
-                target = target.Position;
-            end
+            target = (target:IsA("Model") and target.PrimaryPart ~= nil and target.PrimaryPart.Position) or target.Position
             
             local npcToTarget = (NPC_Head.Position - target).Unit;
             local npcVision = - NPC_Head.CFrame.LookVector;
@@ -771,17 +768,13 @@ function NpcService:SetupChef(NPC)
                     hit = hit.Parent
                 end
                 
-                if hit and CollectionService:HasTag(hit, "TrackInstance") == true then -- If the ray has a hit
+                if hit and CollectionService:HasTag(hit, "TrackInstance") == true and inCutscene[NPC] == false then -- If the ray has a hit
                     
                     --print("hit:", hit)
+
+                    LookAtPart = (hit:IsA("Model") and hit.PrimaryPart ~= nil and hit.PrimaryPart) or hit
                     
-                    if hit:IsA("Model") then
-                        LookAtPart = hit.PrimaryPart
-                    else
-                        LookAtPart = hit
-                    end
-                    
-                    --[[if IsR6 and Neck or Neck and Waist then
+                    if IsR6 and Neck or Neck and Waist then
                         if LookAtPart then
                             local Dist = nil;
                             local Diff = nil;
@@ -800,39 +793,34 @@ function NpcService:SetupChef(NPC)
                                 LookAt(NeckOrgnC0, WaistOrgnC0)
                             end
                         end
-                    end]]
-                    
-                    local tempTarget;
-                    
-                    if hit:IsA("Model") then	
-                        tempTarget = hit.PrimaryPart;
-                    else
-                        tempTarget = hit;
                     end
+                    
+                    local tempTarget = (hit:IsA("Model") and hit.PrimaryPart ~= nil and hit.PrimaryPart) or hit
                     
                     local hitMagInStuds = ((NPC_Root.Position) - tempTarget.Position).Magnitude; -- Distance between npc and target
                     
-                    if (hitMagInStuds <= 25) then
+                    if (hitMagInStuds <= 25) and inCutscene[NPC] == false then
                         print("directionType", directionType)
                         if directionType == DirectionType.Up then
-                            SwingAttack(tempTarget.Position)
+                            --SwingAttack(tempTarget.Position)
                         elseif directionType == DirectionType.Down then
                             StompAttack()
                         end
                     end
                     
-                    if targetPresent == false and travelToRandomPoint == true then -- If the hit is a humanoid	
+                    if targetPresent == false and travelToRandomPoint == true and inCutscene[NPC] == false then -- If the hit is a humanoid	
                         --print('hit', hit, hit.Parent)
                         TargetFound(hit, target);
                     end
                 else
-                    if travelToRandomPoint == false and targetPresent == false then
+                    if travelToRandomPoint == false and targetPresent == false and inCutscene[NPC] == false then
                         TravelToRandomPoint(TaskExclusion);
                     end
                 end
             else
                 -- not in fov
-                
+                LookAt(NeckOrgnC0, WaistOrgnC0)
+
                 if targetPresent == true then
                     targetPresentCount += 1;
                     if targetPresentCount > 1000 then
@@ -842,7 +830,7 @@ function NpcService:SetupChef(NPC)
                     targetPresentCount = 0;
                 end
                 
-                if travelToRandomPoint == false and targetPresent == false then
+                if travelToRandomPoint == false and targetPresent == false and inCutscene[NPC] == false then
                     targetPresentCount = 0;
                     TravelToRandomPoint(TaskExclusion);
                 end
@@ -866,7 +854,6 @@ function NpcService:KnitInit()
     CollectionService:GetInstanceAddedSignal("NPC"):Connect(function(v)
         task.spawn(function()
             self:SetupChef(v);
-            self.Client.SetupNPC:FireAll(v)
         end)
     end)
 
@@ -874,7 +861,6 @@ function NpcService:KnitInit()
         task.spawn(function()
             task.wait(i/2)
             self:SetupChef(v);
-            self.Client.SetupNPC:FireAll(v)
         end)
     end
 end
