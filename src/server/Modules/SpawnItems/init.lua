@@ -173,9 +173,11 @@ function SpawnItems:SpawnAll(RootFolder, Directory, Location) -- [IngredientOjec
         for _,item in pairs(RootFolder:GetChildren()) do
             if item:IsA("Model") or item:IsA("BasePart") then
                 local clonedItem = item:Clone();
+                CollectionService:AddTag(clonedItem, "CC_Food")
                 clonedItem.Parent = Directory;
                 if Location then
                     if clonedItem:IsA("Model") and clonedItem.PrimaryPart then
+                        CollectionService:AddTag(clonedItem.PrimaryPart, "CC_Food")
                         clonedItem.PrimaryPart:SetAttribute("Owner", "Real_KingBob");
                         clonedItem.PrimaryPart.Position = Location;
                     else

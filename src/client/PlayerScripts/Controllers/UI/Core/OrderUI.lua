@@ -197,6 +197,17 @@ function OrderUI:RemoveOrder(orderId)
     end
 end
 
+function OrderUI:RemoveAllOrders()
+    --print('ORDER REMOVED')
+    for index, frame in pairs(OrderFrame:GetChildren()) do
+        if frame:IsA("ImageLabel") then
+            self:AnimateExitOrder(frame)
+            task.wait(0.4)
+            frame:Destroy();
+        end
+    end
+end
+
 function OrderUI:AnimateEnterOrder(orderFrame)
     --[[local GuiParticleEmitter = require(GuiParticleEmitterModule)
     local Vector2Range = require(GuiParticleEmitterModule:WaitForChild("Vector2Range"))
@@ -247,6 +258,10 @@ function OrderUI:KnitStart()
 
     OrderService.RemoveOrder:Connect(function(orderId)
         self:RemoveOrder(orderId);
+    end)
+
+    OrderService.RemoveAllOrders:Connect(function()
+        self:RemoveAllOrders();
     end)
 
     OrderService.CompleteOrder:Connect(function(orderId)

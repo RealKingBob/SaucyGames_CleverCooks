@@ -87,7 +87,7 @@ function MusicService:StartBackgroundSFX(Theme, DayNight)
 
     if not backgroundSFX then
         backgroundSFX = Instance.new("Sound", workspace)
-        backgroundSFX.Volume = 0.3
+        backgroundSFX.Volume = 0.01
         backgroundSFX.Name = "BackgroundSFX"
     end
 
@@ -107,7 +107,7 @@ function MusicService:StartBackgroundMusic(Theme, DayNight)
 
     if not backgroundMusic then
         backgroundMusic = Instance.new("Sound", workspace)
-        backgroundMusic.Volume = 0.125
+        backgroundMusic.Volume = 0.01
         backgroundMusic.Name = "BackgroundMusic"
     end
 

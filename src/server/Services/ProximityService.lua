@@ -149,16 +149,16 @@ function ProximityService:LinkItemToPlayer(Character,Object)
             --print(Object.PrimaryPart:GetAttribute("i1"))
             local _PrimaryPart = Object.PrimaryPart;
             for _,b in pairs(Object:GetChildren()) do
-                if b:IsA("MeshPart") then
+                if b:IsA("BasePart") then
                     b.CanCollide = false;
                     b.CustomPhysicalProperties = PickProperties;
                     b.Massless = true;
+                    b.CollisionGroup = "Food";
                 end;
             end;
             Object:SetPrimaryPartCFrame(Character:FindFirstChild("HumanoidRootPart").CFrame)
             _PrimaryPart.HandJoint.Attachment1 = Character:FindFirstChild("Head").RightGripAttachment;
             _PrimaryPart.FaceJoint.Attachment1 = Character:FindFirstChild("Head").FaceFrontAttachment;
-
 
 
             Character.PrimaryPart.ProximityPrompt.Enabled = true;
@@ -167,6 +167,7 @@ function ProximityService:LinkItemToPlayer(Character,Object)
         else
             Object.CanCollide = false;
             Object.Massless = true;
+            Object.CollisionGroup = "Food";
             Object.CFrame = Character:FindFirstChild("HumanoidRootPart").CFrame;
             Object.HandJoint.Attachment1 = Character:FindFirstChild("Head").RightGripAttachment;
             Object.FaceJoint.Attachment1 = Character:FindFirstChild("Head").FaceFrontAttachment;
@@ -207,6 +208,7 @@ function ProximityService:UnlinkItemToPlayer(Character,Object)
 
 			for _,part in pairs(Object:GetChildren()) do
 				if part:IsA("BasePart") then
+                    part.CollisionGroup = "Food";
 					part.CanCollide = true;
 					part.Massless = false;
 					part.CustomPhysicalProperties = DropProperties;
@@ -229,6 +231,7 @@ function ProximityService:UnlinkItemToPlayer(Character,Object)
 				Object.Parent = workspace.FoodAvailable;
                 --task.spawn(fixHighlight, Object)
 			end;
+            Object.CollisionGroup = "Food";
 			Object.CanCollide = true;
 			Object.Massless = false;
 			Object.CustomPhysicalProperties = DropProperties;
@@ -260,7 +263,7 @@ function ProximityService:PickUpIngredient(Character, Ingredient)
 		self.Client.SetAnimations:Fire(Player, {"rbxassetid://8029004455","rbxassetid://8028996064","rbxassetid://8029001222"}); -- idle, walk, jump animation for standing up
         self:LinkItemToPlayer(Character,Ingredient);
 
-        self.Client.TrackItem:Fire(Player, true, self:GetNearestPan(Character.PrimaryPart.Position))
+        self.Client.TrackItem:Fire(Player, true, Ingredient) -- self:GetNearestPan(Character.PrimaryPart.Position)
         
         Player:FindFirstChild("Data").GameValues.Ingredient.Value = Ingredient;
         Character:FindFirstChild("Ingredient").Value = Ingredient;
@@ -284,7 +287,7 @@ function ProximityService:PickUpFood(Character, Food)
 		self.Client.SetAnimations:Fire(Player, {"rbxassetid://8029004455","rbxassetid://8028996064","rbxassetid://8029001222"}); -- idle, walk, jump animation for standing up
         self:LinkItemToPlayer( Character,Food);
         
-        self.Client.TrackItem:Fire(Player, true, self:GetNearestDelivery(Character.PrimaryPart.Position))
+        self.Client.TrackItem:Fire(Player, true, Food) -- self:GetNearestDelivery(Character.PrimaryPart.Position)
         
         Player:FindFirstChild("Data").GameValues.Ingredient.Value = Food;
         Character:FindFirstChild("Ingredient").Value = Food;

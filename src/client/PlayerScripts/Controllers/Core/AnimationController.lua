@@ -1,6 +1,5 @@
 local Players = game:GetService("Players")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
-local AnimateBIG = require(script.Parent.AnimateBigMan)
 
 local LocalPlayer = Players.LocalPlayer
 local currAnimName = {};
@@ -26,10 +25,11 @@ end
 -- TODO: MAKE CONTROLLER TABLE SO THE IF STATEMENT DOESNT STOP THE OTHER WALKING ANIMATIONS
 function AnimationController:Animate(Controller, Animation, AnimationName, Agent, byPass)
     --print(Controller, Animation, AnimationName, AnimationName == currAnimName[Agent])
-    assert(Agent, "You didnt insert an agent!")
-    assert(Controller, "You didnt insert an Controller!")
-    assert(Animation, "You didnt insert an Animation!")
-    assert(AnimationName, "You didnt insert an AnimationName!")
+    --assert(Agent, "You didnt insert an agent!")
+    --assert(Controller, "You didnt insert an Controller!")
+    --assert(Animation, "You didnt insert an Animation!")
+    --assert(AnimationName, "You didnt insert an AnimationName!")
+    if not Agent or not Controller or not Animation or not AnimationName then return end
     if AnimationName == currAnimName[Agent] and not byPass then return end;
 
     --print(Agent:FindFirstChildOfClass("Humanoid").WalkSpeed)

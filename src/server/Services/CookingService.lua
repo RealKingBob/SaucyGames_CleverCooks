@@ -106,6 +106,12 @@ local function PlayerAdded(player)
 	additionalPansInfo[player.UserId] = {};
     possibleRecipes[player.Name] = {};
 	playerDebounces[player] = false;
+
+	player.CharacterAdded:Connect(function(Character)
+		Character.Humanoid.Died:Connect(function()
+			Knit.GetService("CookingService"):DropDown(player,Character)
+		end)
+   	end)
 end;
 
 local function PlayerRemoving(player)
@@ -842,8 +848,6 @@ function CookingService:DeliverFood(player, food)
 
 			--print("cookingPansQueue", cookingPansQueue[player.UserId])
 
-			Knit.GetService("NotificationService"):Message(false, player, string.upper(tostring(food)).." DELIVERING!")
-
 			self.Client.Deliver:Fire(player, tostring(food), food, deliverTime)
 
 			local cheeserew;
@@ -886,6 +890,14 @@ function CookingService:DeliverFood(player, food)
 
 				food:Destroy();
 			end)
+
+			Knit.GetService("OrderService"):completeRecipe(player, tostring(food), cheeserew, cookingPercentage)
+			--RewardService:GiveReward(profile, {EXP = MathAPI:Find_Closest_Divisible_Integer(RawCalculatedEXP, 2);})
+
+			print("food delivered:", food)
+
+			Knit.GetService("NotificationService"):Message(false, player, string.upper(tostring(food)).." WAS DELIVERED!")
+			
 			task.wait(deliverTime);
 
 			local function tablefind(tab,el) for index, value in pairs(tab) do if value == el then	return index end end end
@@ -895,13 +907,6 @@ function CookingService:DeliverFood(player, food)
 
 			--local RawCalculatedEXP = (EXPMultiplier * #SelectedRecipe["Ingredients"]);
 			self.Client.ProximitySignal:Fire(player,"CookVisible",false);
-
-			Knit.GetService("OrderService"):completeRecipe(player, tostring(food), cheeserew, cookingPercentage)
-			--RewardService:GiveReward(profile, {EXP = MathAPI:Find_Closest_Divisible_Integer(RawCalculatedEXP, 2);})
-
-			print("food delivered:", food)
-
-			Knit.GetService("NotificationService"):Message(false, player, string.upper(tostring(food)).." WAS DELIVERED!")
 			
 			--StatTrackService:SetRecentCookedFood(player, tostring(recipe));
 		end;
@@ -915,7 +920,7 @@ function CookingService:KnitStart()
 	--local RandomFoodLocation = FoodSpawnPoints[math.random(1, #FoodSpawnPoints)]
 
 	--SpawnItemsAPI:Spawn(nil, nil, "Raw Steak", IngredientObjects, IngredientsAvailable, RandomFoodLocation.Position + Vector3.new(0,5,0));
-    SpawnItemsAPI:SpawnAllIngredients(7);
+    --SpawnItemsAPI:SpawnAllIngredients(5);
 	--SpawnItemsAPI:SpawnAll(IngredientObjects,IngredientsAvailable);
     --SpawnItemsAPI:SpawnAtRandomSpawns(IngredientObjects,IngredientsAvailable, workspace.FoodSpawnPoints);
     --SpawnItemsAPI:SpawnAll(FoodObjects,IngredientsAvailable);

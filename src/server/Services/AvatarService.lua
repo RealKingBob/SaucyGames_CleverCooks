@@ -171,7 +171,7 @@ end;
 
 function AvatarService:GetAvatarAccessories(UserId) -- [IngredientOjects, IngredientAvailable],[FoodOjects, FoodAvailable]
     local AccessoryIds = {};
-    local AcceptableIds = {41,42,57,58}; -- 8 Source: https://developer.roblox.com/en-us/api-reference/enum/AssetType
+    local AcceptableIds = {41,42,57,58, 8}; -- 8 Source: https://developer.roblox.com/en-us/api-reference/enum/AssetType
     if UserId then
         --warn(UserId,"[AvatarService]: Retrieving User["..tostring(UserId).."] avatar accessories");--print("[AvatarService]: Retrieving User[",AvatarId,"] avatar accessories");
         local CharacterInfo;

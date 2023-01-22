@@ -137,6 +137,7 @@ function Blender.new(instance)
     end
 
     self._maid:GiveTask(self.Object.Blade.Blade.Touched:Connect(function(hit)
+        if CollectionService:HasTag(hit, "CC_Food") then return end;
         local humanoid = hit.Parent:FindFirstChildOfClass("Humanoid")
         local player = game.Players:GetPlayerFromCharacter(hit.Parent);
         if self.BlenderEnabled == false then

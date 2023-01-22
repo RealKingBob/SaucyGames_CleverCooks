@@ -40,6 +40,20 @@ local function findPositionAtHeight(vel, t, startingPos, height)
 	return startingPos + Vector3.new(vel.X * t, height, vel.Z * t)
 end
 
+-- find the final time given at its target position
+local function findLandingTime(Vo: Vector3, startingPosition: Vector3, targetPosition: Vector3)
+	local acc = -workspace.Gravity
+	local deltaX = targetPosition.X - startingPosition.X
+	local deltaZ = targetPosition.Z - startingPosition.Z
+	local horzVel = Vector3.new(Vo.X, 0, Vo.Z)
+	local horzDist = Vector3.new(deltaX, 0, deltaZ).Magnitude
+	local horzTime = horzDist / horzVel.Magnitude
+	local vertVel = Vo.Y
+	local vertDist = targetPosition.Y - startingPosition.Y
+	local vertTime = (-vertVel + math.sqrt(vertVel^2 - 2*acc*vertDist)) / acc
+	return math.max(horzTime, vertTime)
+end
+
 -- find the position that the part will land at based on starting velocity and position
 local function findLandingPosition(Vo: Vector3, startingPosition: Vector3)
 	local acc = -workspace.Gravity
@@ -66,11 +80,16 @@ local function findLandingPosition(Vo: Vector3, startingPosition: Vector3)
 	return startingPosition + endingOffset + Vector3.new(0, findHeightAtTime(Vo, seconds), 0)
 end
 
-local module = {}
+local PositionFinder = {}
 
 -- use to easily find the final pos
-function module.getFinalPosition(startingVelocity: Vector3, startingPosition: Vector3)
+function PositionFinder.getFinalPosition(startingVelocity: Vector3, startingPosition: Vector3)
 	return findLandingPosition(startingVelocity, startingPosition)
 end
 
-return module
+-- use to easily find the final time
+function PositionFinder.getFinalTime(startingVelocity: Vector3, startingPosition: Vector3, finalPosition: Vector3)
+	return findLandingTime(startingVelocity, startingPosition, finalPosition)
+end
+
+return PositionFinder

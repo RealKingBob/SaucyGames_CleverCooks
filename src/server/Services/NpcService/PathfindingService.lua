@@ -4,7 +4,7 @@ local DEFAULT_SETTINGS = {
 
 	COMPARISON_CHECKS = 1;
 
-	JUMP_WHEN_STUCK = true;
+	JUMP_WHEN_STUCK = false;
 }
 
 ---------------------------------------------------------------------
@@ -45,9 +45,15 @@ visualWaypoint.Material = Enum.Material.Neon
 visualWaypoint.Shape = Enum.PartType.Ball
 
 --[[ PRIVATE FUNCTIONS ]]--
+local errorDebounce = false;
 local function declareError(self, errorType)
-	self._lastError = errorType
-	self._events.Error:Fire(errorType)
+	if errorDebounce == false then
+		errorDebounce = true
+		self._lastError = errorType
+		self._events.Error:Fire(errorType)
+		task.wait()
+		errorDebounce = false
+	end
 end
 
 --Create visual waypoints
@@ -100,15 +106,16 @@ end
 local function move(self)
 	local timeOut = 0
 	if self._waypoints[self._currentWaypoint].Action == Enum.PathWaypointAction.Jump then
-		warn("MOVE: JUMP STATE")
+		--warn("MOVE: JUMP STATE")
 		-- JUMPRELATED: setJumpState(self)
 	end
 	Knit.GetService("NpcService").Client.PlayAnimation:FireAll(self._humanoid:FindFirstChildOfClass("Animator"), "rbxassetid://913402848", "RunAnim", self._agent)
-	repeat 
+	self._humanoid:MoveTo(self._waypoints[self._currentWaypoint].Position)
+	--[[repeat 
 		self._humanoid:MoveTo(self._waypoints[self._currentWaypoint].Position)
 		task.wait(.05)
 		timeOut = timeOut +.05
-	until timeOut > 1 or (self._agent.PrimaryPart.Position - self._waypoints[self._currentWaypoint].Position).magnitude < 5
+	until timeOut > 1 or (self._agent.PrimaryPart.Position - self._waypoints[self._currentWaypoint].Position).magnitude < 5]]
 end
 
 --Disconnect MoveToFinished connection when pathfinding ends
@@ -149,10 +156,17 @@ local function moveToFinished(self, reached)
 		return
 	end
 
+	if not self._currentWaypoint then 
+		declareError(self, self.ErrorType.TargetUnreachable)
+	end;
+
 	if reached and self._currentWaypoint + 1 <= #self._waypoints  then --Waypoint reached
 		if self._currentWaypoint + 1 < #self._waypoints then
 			invokeWaypointReached(self)
 		end
+		if not self._currentWaypoint then 
+			return;
+		end;
 		self._currentWaypoint += 1
 		move(self)
 	elseif reached then --Target reached, pathfinding ends
@@ -171,8 +185,13 @@ end
 --Refer to Settings.COMPARISON_CHECKS
 local function comparePosition(self)
 	if self._currentWaypoint == #self._waypoints then return end
-	self._position._count = ((self._agent.PrimaryPart.Position - self._position._last).Magnitude <= 0.07 and (self._position._count + 1)) or 0
-	self._position._last = self._agent.PrimaryPart.Position
+	if self._agent then
+		self._position._count = ((self._agent.PrimaryPart.Position - self._position._last).Magnitude <= 0.07 and (self._position._count + 1)) or 0
+		self._position._last = self._agent.PrimaryPart.Position
+	else
+		self._position._count = 0
+		self._position._last = 0
+	end;
 	if self._position._count >= self._settings.COMPARISON_CHECKS then
 		if self._settings.JUMP_WHEN_STUCK then
 			warn("JUMP_WHEN_STUCK: JUMP STATE")
@@ -295,6 +314,8 @@ function Path:Run(target)
 	--Refer to Settings.TIME_VARIANCE
 	if os.clock() - self._t <= self._settings.TIME_VARIANCE and self._humanoid then
 		task.wait(os.clock() - self._t)
+		if not self then return false end
+		if not self.ErrorType then return false end
 		declareError(self, self.ErrorType.LimitReached)
 		return false
 	elseif self._humanoid then
@@ -305,6 +326,8 @@ function Path:Run(target)
 	local pathComputed, _ = pcall(function()
 		self._path:ComputeAsync(self._agent.PrimaryPart.Position, (typeof(target) == "Vector3" and target) or target.Position)
 	end)
+
+	if not self or not self._path or not self._humanoid then return false end
 
 	--Make sure path computation is successful
 	if not pathComputed

@@ -82,6 +82,7 @@ end;
 function ApplyAppearance:SetAvatarFace(Character,FaceId,IsCharacterFace) -- [UserId : Number]
 	if Character and FaceId then
 		local Head = Character:FindFirstChild("Head");
+		if not Head then return end
 		if (IsCharacterFace and IsCharacterFace == true) then
 			local success, asset = pcall(InsertService.LoadAsset, InsertService, FaceId);
 			if success and asset and Head then
@@ -95,7 +96,6 @@ function ApplyAppearance:SetAvatarFace(Character,FaceId,IsCharacterFace) -- [Use
 				--warn("[AvatarService]: Failed to change avatar face to [".. FaceId .."]");
 			end;
 		else
-			
 			Head.face.Texture = tostring(FaceId);
 			--warn("[AvatarService]: Loaded face ["..FaceId.."] successfully");
 		end;

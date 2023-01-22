@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 
 local GameLibrary = ReplicatedStorage:WaitForChild("GameLibrary")
+local BillboardUI = GameLibrary:WaitForChild("BillboardUI")
 local Shared = ReplicatedStorage:WaitForChild("Common")
 
 local ReplicatedAssets = Shared:WaitForChild("Assets")
@@ -46,7 +47,8 @@ local allIngredientsFound = false;
 local RecipeModule = require(ReplicatedAssets.Recipes)
 local IngredientModule = require(ReplicatedAssets.Ingredients)
 
-local myReplicatedIngredients = {}
+local myReplicatedIngredients = {};
+local highlightedItems = {};
 local currentPansInUse = {};
 local ShortDistanceObject
 local CookDebounce = false;
@@ -82,6 +84,117 @@ local function tablefind(tab,el)
 	return nil;
 end
 
+-- Define the sorting function
+local function sortByDifficulty(a, b)
+	local difficultyOrder = {["Easy"] = 1, ["Medium"] = 2, ["Hard"] = 3}
+	return difficultyOrder[a.Difficulty] < difficultyOrder[b.Difficulty]
+end
+
+local function sortByName(a, b)
+    return a.Key < b.Key
+end
+
+function getNearestPan(fromPosition)
+	local selectedPan, dist = nil, math.huge
+	for _, pan in ipairs(CollectionService:GetTagged("Pan")) do
+		if pan and (pan.Position - fromPosition).Magnitude < dist then
+			selectedPan, dist = pan, (pan.Position - fromPosition).Magnitude
+		end
+	end
+	return selectedPan
+end
+
+function getNearestBlender(fromPosition)
+	local selectedPan, dist = nil, math.huge
+	for _, blender in ipairs(CollectionService:GetTagged("Blender")) do
+		blender = blender:IsA("Model") and blender.PrimaryPart or blender
+		if blender and (blender.Position - fromPosition).Magnitude < dist then
+			selectedPan, dist = blender, (blender.Position - fromPosition).Magnitude
+		end
+	end
+	return selectedPan
+end
+
+function getNearestDelivery(fromPosition)
+	local selectedDeliverZone, dist = nil, math.huge
+	for _, deliverZone in ipairs(CollectionService:GetTagged("DeliverStation")) do
+		if deliverZone and (deliverZone.Position - fromPosition).Magnitude < dist then
+			selectedDeliverZone, dist = deliverZone, (deliverZone.Position - fromPosition).Magnitude
+		end
+	end
+	return selectedDeliverZone
+end
+
+function highlightItems(itemsData)
+	for i = 1,#highlightedItems do
+		highlightedItems[i]:Destroy();
+	end
+
+	local MarkerTemplate = BillboardUI:WaitForChild("MarkerUI")
+
+	if not itemsData then
+		return
+	end
+
+	for _, itemName in pairs(itemsData) do
+		local originalVal = itemName
+		local foundIngredient = IngredientModule[originalVal]
+		local foundBlendedIngredient, replaced = string.gsub(originalVal, "%[", "");
+			foundBlendedIngredient = string.gsub(foundBlendedIngredient, "%]", "")
+			foundBlendedIngredient = string.gsub(foundBlendedIngredient, "-", "")
+			foundBlendedIngredient = string.gsub(foundBlendedIngredient, "Blended", "")
+
+		if IngredientModule[originalVal] == nil then
+			foundIngredient = IngredientModule[foundBlendedIngredient]
+		end
+
+		--print(foundIngredient, tostring(itemName):find("[Blended]"), foundBlendedIngredient, IngredientModule[originalVal] , IngredientModule[foundBlendedIngredient])
+
+		if not foundIngredient then
+			foundIngredient = {
+				Name = "~Not An Item~";
+			}
+		end
+
+		local function findClosestIngredient(table, position)
+			local closestPart, closestPartMagnitude
+		
+			local tmpMagnitude
+			for i, v in pairs(table) do
+				local primaryPart = v:IsA("Model") and v.PrimaryPart ~= nil and v.PrimaryPart or v
+				if closestPart then
+					tmpMagnitude = (position - primaryPart.Position).magnitude
+
+					if tmpMagnitude < closestPartMagnitude then
+						closestPart = v
+						closestPartMagnitude = tmpMagnitude 
+					end
+				else
+					closestPart = v
+					closestPartMagnitude = (position - primaryPart.Position).magnitude
+				end
+			end
+			return closestPart --, closestPartMagnitude
+		end
+
+		local itemsList = {};
+
+		for _, item in pairs(workspace:WaitForChild("IngredientAvailable"):GetChildren()) do
+			if item.Name == foundIngredient.Name then
+				table.insert(itemsList, item)
+			end
+		end
+
+		local Character = LocalPlayer.Character
+
+		local item = (Character ~= nil and Character.PrimaryPart ~= nil and findClosestIngredient(itemsList, Character.PrimaryPart.Position)) or workspace:WaitForChild("IngredientAvailable"):FindFirstChild(foundIngredient.Name)
+		if not item then continue end
+		local markerClone = MarkerTemplate:Clone();
+		highlightedItems[#highlightedItems +  1] = markerClone
+		markerClone.Parent = item;
+	end
+end
+
 function recipePageCreated(PageNumber,PageData)
 	local PageLimit = 6 -- 6 buttons per page
 	local recipeCount = 0
@@ -92,7 +205,58 @@ function recipePageCreated(PageNumber,PageData)
 	Page.Name = tostring(PageNumber)
 	Page.Parent = recipeList
 
+	local difficultyTable = {};
+
 	if PageData then
+		for key, value in next, PageData do
+			if key and value then
+				if type(value) == "table" then
+					table.insert(difficultyTable, {Key = key, Difficulty = value.Difficulty})
+				end
+			end;
+		end;
+	end
+
+	table.sort(difficultyTable, sortByName)
+	table.sort(difficultyTable, sortByDifficulty)
+
+	print(difficultyTable)
+
+	for _, itemData in ipairs(difficultyTable) do
+		recipeCount += 1
+		local key, value = itemData.Key, PageData[itemData.Key];
+		if recipeCount < PageLimit then
+			local ClonedFoodTemplate = FoodTemplate:Clone()
+			ClonedFoodTemplate.Name = tostring(key)
+			ClonedFoodTemplate.FoodTitle.Text = tostring(key)
+			if value["Image"] == "" or value["Image"] == nil then
+				ClonedFoodTemplate.Icon.IconImage.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
+			else
+				ClonedFoodTemplate.Icon.IconImage.Image = value.Image
+			end
+			ClonedFoodTemplate.Parent = Page
+			PageData[itemData.Key] = nil
+		else
+			local ClonedFoodTemplate = FoodTemplate:Clone()
+			ClonedFoodTemplate.Name = tostring(key)
+			ClonedFoodTemplate.FoodTitle.Text = tostring(key)
+			if value["Image"] == "" or value["Image"] == nil then
+				ClonedFoodTemplate.Icon.IconImage.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
+			else
+				ClonedFoodTemplate.Icon.IconImage.Image = value.Image
+			end
+			ClonedFoodTemplate.Parent = Page
+			PageData[itemData.Key] = nil
+			--table.remove(PageData,TableFind(PageData,v))
+			local NewPage = PageData
+			recipeCount = 0
+			PageNumber += 1
+			--print(NewPage,PageNumber)
+			return recipePageCreated(PageNumber,NewPage)
+		end
+	end
+
+	--[[if PageData then
 		for key, value in next, PageData do
 			if key and value then
 				if type(value) == "table" then
@@ -129,7 +293,7 @@ function recipePageCreated(PageNumber,PageData)
 				end
 			end;
 		end;
-	end
+	end]]
 end
 
 function setupRecipes()
@@ -147,6 +311,8 @@ function setupRecipes()
 	end
 
     local duplicatedData = RecipeModule:Copy()
+	
+	print(duplicatedData)
 	recipePageCreated(1,duplicatedData)
 	local TotalPages = 0
 	for _,page in pairs(recipeList:GetChildren()) do
@@ -184,7 +350,13 @@ function setupRecipes()
 	setupRecipeButtons()
 end
 
-local function displayIngredients()
+local function displayIngredients(clearItems)
+	if clearItems then
+		foodNameDisplayed.Text = ""
+		allIngredientsFound = false;
+		highlightItems()
+		return
+	end
 	if prevIngredientTab == recipeSelected then
 		return
 	end
@@ -203,6 +375,7 @@ local function displayIngredients()
 	if recipeSelected == nil then
 		foodNameDisplayed.Text = ""
 		allIngredientsFound = false;
+		highlightItems()
 		return
 	end
 
@@ -211,6 +384,8 @@ local function displayIngredients()
 	local greenIngredients = {};
 	allIngredientsFound = false;
 	CookButton.Visible = false;
+
+	highlightItems(RecipeModule[recipeSelected]["Ingredients"])
 
 	for _,ingredient in pairs(RecipeModule[recipeSelected]["Ingredients"]) do
 		local originalVal = ingredient
@@ -560,6 +735,53 @@ function RecipesView:KnitStart()
 			if tablefind(currentPansInUse, pan) then
 				pan.ProximityPrompt.Enabled = true;
 			end
+		end
+	end)
+
+	local ProximityService = Knit.GetService("ProximityService")
+	local PlayerController = Knit.GetController("PlayerController")
+
+	ProximityService.TrackItem:Connect(function(tracking, itemObj)
+		if tracking == true then
+			local currentItem = nil;
+			local Character = LocalPlayer.Character;
+			if Character and Character.PrimaryPart then
+				if recipeSelected then
+					local ingredients = RecipeModule[recipeSelected]["Ingredients"];
+					
+					for _, ingredient in pairs(ingredients) do
+						local originalVal = ingredient
+						local foundBlendedIngredient, replaced = string.gsub(originalVal, "%[", "");
+							foundBlendedIngredient = string.gsub(foundBlendedIngredient, "%]", "")
+							foundBlendedIngredient = string.gsub(foundBlendedIngredient, "-", "")
+							foundBlendedIngredient = string.gsub(foundBlendedIngredient, "Blended", "")
+						
+						if tostring(ingredient) == tostring(itemObj) then
+							currentItem = getNearestPan(Character.PrimaryPart.Position);
+						elseif tostring(foundBlendedIngredient) == tostring(itemObj) then
+							currentItem = getNearestBlender(Character.PrimaryPart.Position)
+						end
+					end
+					if RecipeModule[tostring(itemObj)] then
+						currentItem = getNearestDelivery(Character.PrimaryPart.Position);
+					end
+					if not currentItem then
+						currentItem = getNearestPan(Character.PrimaryPart.Position);
+					end
+				else
+					if RecipeModule[tostring(itemObj)] then
+						currentItem = getNearestDelivery(Character.PrimaryPart.Position);
+					end
+					if not currentItem then
+						currentItem = getNearestPan(Character.PrimaryPart.Position);
+					end
+				end
+			end
+			if currentItem then
+				PlayerController:TrackItem(currentItem);
+			end
+		else
+			PlayerController:UnTrackItem();
 		end
 	end)
 

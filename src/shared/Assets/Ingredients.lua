@@ -98,7 +98,62 @@ local Ingredients = {
 		Name = "Raw Lamb Shank",
 		Image = "rbxassetid://8019445450",
 		BlendedImage = "rbxassetid://11874608316",
-	}
+	},
+	["Apple"] = {
+		Name = "Apple",
+		Image = "rbxassetid://12206657085",
+		BlendedImage = "rbxassetid://12232995170",
+	},
+	["Banana"] = {
+		Name = "Banana",
+		Image = "rbxassetid://12206656942",
+		BlendedImage = "rbxassetid://12232995041",
+	},
+	["Blueberries"] = {
+		Name = "Blueberries",
+		Image = "rbxassetid://12206656820",
+		BlendedImage = "rbxassetid://12232717206",
+	},
+	["Bread"] = {
+		Name = "Bread",
+		Image = "rbxassetid://12206656673",
+		BlendedImage = "rbxassetid://12232716989",
+	},
+	["Celery"] = {
+		Name = "Celery",
+		Image = "rbxassetid://12206656501",
+		BlendedImage = "rbxassetid://12232716759",
+	},
+	["Cherry"] = {
+		Name = "Cherry",
+		Image = "rbxassetid://12206656308",
+		BlendedImage = "rbxassetid://12232716604",
+	},
+	["Raw Lobster"] = {
+		Name = "Raw Lobster",
+		Image = "rbxassetid://12206656087",
+		BlendedImage = "rbxassetid://12232716352",
+	},
+	["Mint"] = {
+		Name = "Mint",
+		Image = "rbxassetid://12206655880",
+		BlendedImage = "rbxassetid://12232716166",
+	},
+	["Olive Oil"] = {
+		Name = "Olive Oil",
+		Image = "rbxassetid://12206655750",
+		BlendedImage = "rbxassetid://12232994846",
+	},
+	["Potato"] = {
+		Name = "Potato",
+		Image = "rbxassetid://12206655645",
+		BlendedImage = "rbxassetid://12232715953",
+	},
+	["Raspberries"] = {
+		Name = "Raspberries",
+		Image = "rbxassetid://12206655554",
+		BlendedImage = "rbxassetid://12232715732",
+	},
 }
 
 return Ingredients;

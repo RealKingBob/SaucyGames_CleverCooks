@@ -13,6 +13,7 @@ local OrderService = Knit.CreateService {
     Client = {
         AddOrder = Knit.CreateSignal();
         RemoveOrder = Knit.CreateSignal();
+        RemoveAllOrders = Knit.CreateSignal();
 
         CompleteOrder = Knit.CreateSignal();
 
@@ -67,6 +68,9 @@ local serverAvailableRecipes = RecipeModule:GetAllRecipeNames()
 -- Create a flag variable to indicate whether the timer should be reset
 local resetTimer = false
 
+-- Create a flag variable to indicate whether the orders should proceed
+local pauseOrders = false
+
 -- Create an empty table to store the resetTime orderIds for each player
 local resetTimeOrderIds = {};
 
@@ -113,6 +117,11 @@ local function shuffle(list)
     return list
 end
 
+-- Function to pause orders
+function OrderService:pauseOrders(boolean)
+    pauseOrders = boolean;
+end
+
 -- Function to check how many orders are in the player storage
 function OrderService:orderCount(player)
     if not player then return end;
@@ -150,6 +159,7 @@ end
 -- Function to add a recipe to a player's list of recipes
 function OrderService:addRecipe(player, recipe, value)
     if not player or not recipe or not value then return end;
+    if pauseOrders == true then return end;
     -- Check if the player already has a list of recipes
     if playerRecipes[player] == nil then
         -- If not, create a new list for the player
@@ -174,6 +184,7 @@ function OrderService:addRecipe(player, recipe, value)
         value = value, 
         completed = false
     }
+    if pauseOrders == true then return end;
     table.insert(playerRecipes[player].storage, recipeData)
     self.Client.AddOrder:Fire(player, recipeData)
     Knit.GetService("NotificationService"):Message(false, player, "NEW ORDER ADDED!")
@@ -220,6 +231,15 @@ function OrderService:addRandomRecipe(player, recipes)
 end
 
 -- Function to remove a recipe from a player's list
+function OrderService:removeAllRecipes(player)
+    if not player then return end;
+    if not playerRecipes[player] then return end;
+    -- Find the recipe in the player's list and remove it
+    playerRecipes[player].storage = {};
+    self.Client.RemoveAllOrders:Fire(player);
+end
+
+-- Function to remove a recipe from a player's list
 function OrderService:removeRecipe(player, recipeId)
     if not player then return end;
     if not playerRecipes[player] then return end;
@@ -259,8 +279,12 @@ end
 function OrderService:removeExpiredRecipes(player)
     if not player then return end;
     if not playerRecipes[player] then return end;
+    if pauseOrders == true then return end;
     -- Iterate through the player's recipes
     for i, recipe in ipairs(playerRecipes[player].storage) do
+        -- pause orders if paused
+        if pauseOrders == true then continue end;
+
         -- Decrement the timer
         recipe.timer = recipe.timer - 1
 
@@ -320,7 +344,7 @@ function OrderService:updatePlayerRecipes(player)
     if not player then return end;
     if playerRecipes[player] then
         --print("timer:", playerRecipes[player].timer)
-        if playerRecipes[player].timer <= 0 then
+        if playerRecipes[player].timer <= 0 and pauseOrders == false then
             -- Add a random recipe to the player's table
             self:addRandomRecipe(player, serverAvailableRecipes)
 
@@ -383,10 +407,13 @@ end
 
 function OrderService:KnitStart()
     while true do
-        for plr, data in pairs(playerRecipes) do
-            data.timer -= 1;
-            self:updatePlayerRecipes(plr)
-        end
+
+        if pauseOrders == false then 
+            for plr, data in pairs(playerRecipes) do
+                data.timer -= 1;
+                self:updatePlayerRecipes(plr)
+            end
+        end;
 
         task.wait(1)
     end

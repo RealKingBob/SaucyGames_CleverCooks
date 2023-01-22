@@ -365,6 +365,12 @@ function CustomProximityController:KnitStart()
 
 		local Character = game.Players:GetPlayerFromCharacter(prompt.Parent.Parent);
 
+		local objItem = (prompt.Parent.Parent:IsA("Model") and prompt.Parent.Parent.PrimaryPart ~= nil and prompt.Parent.Parent) or prompt.Parent
+		
+		if objItem:FindFirstChild("MarkerUI") then
+			objItem:FindFirstChild("MarkerUI").Enabled = false;
+		end
+
 		if CollectionService:HasTag(prompt.Parent, "ButtonClick") then
 			currentStatus = Status.Click;
 			local cleanupFunction;

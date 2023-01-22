@@ -8,6 +8,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Knit = require(ReplicatedStorage.Packages.Knit)
 local Intermission = require(Knit.Modules.Intermission);
 local TableUtil = require(Knit.Util.TableUtil);
+local ServerModules = Knit.Modules;
+local SpawnItemsAPI = require(ServerModules:FindFirstChild("SpawnItems"));
 --local RewardService = require(Knit.Services.RewardService);
 
 ----- Settings -----
@@ -64,7 +66,7 @@ local dayTween = TS:Create(game.Lighting, tweenInfo, dayGoal)
 local nightTween = TS:Create(game.Lighting, tweenInfo, nightGoal)
 
 ----- Sandbox Mode -----
-SandboxMode.numOfDays = 0;
+SandboxMode.numOfDays = 1;
 
 SandboxMode.Intermission = nil;
 SandboxMode.PreviousMap = nil;
@@ -129,6 +131,12 @@ else
     nextMap = getRandomMap();
 end
 
+local function createChefNPC()
+    local npcClone = Knit.GameLibrary:WaitForChild("NPCs"):WaitForChild("Chef"):Clone()
+    npcClone.Parent = workspace:WaitForChild("NPCS");
+    CollectionService:AddTag(npcClone, "NPC")
+end
+
 function SandboxMode:StartMode()
     print("SANDBOX MODE STARTED")
 
@@ -137,52 +145,37 @@ function SandboxMode:StartMode()
     --print("[GameService]: Intermission Started")
 
     while true do
-        --GameService:SetState(GAMESTATE.INTERMISSION)
-
-        --[[GameService.Client.UpdateMapQueue:FireAll({
-            CurrentMap = currentMap,
-            NextMap = nextMap,
-            Boosted = boostedMap,
-        });]]
         
         GameService:ClearCooldowns()
         GameService:ClearTracked()
 
         task.wait(5)
 
-        --// Intermission Started
-        --self.Intermission = Intermission.new(INTERMISSION_TIME, self.numOfDays);
+        Knit.GetService("OrderService"):pauseOrders(false)
+        for _, randomSpot in pairs(workspace:WaitForChild("RandomSpots"):GetChildren()) do
+            randomSpot:SetAttribute("Activated", false)
+        end
+            
+        local numOfRecipes = 1;
+        --local listOfRecipes = Knit.GetService("OrderService"):getNumOfRandomRecipes(numOfRecipes);
 
-        --// Intermission Ended
-       --print("[GameService]: Intermission Ended")
+        for _, player in pairs(Players:GetPlayers()) do
+            Knit.GetService("NotificationService"):LargeMessage(false, player, "RESTUARANT OPENED!", {Effect = true, Color = Color3.fromRGB(255,255,255)})
+            --Knit.GetService("OrderService"):addRecipes(listOfRecipes);
+        end
+        -- print("[GameService]: Gameplay Started")
+        local MusicService = Knit.GetService("MusicService");
+        MusicService:StartBackgroundMusic("French", "Day")
+        --Lighting.Ambient = Color3.fromRGB(143, 101, 50)
+        dayTween:Play();
 
-        task.wait(5)
+        local amountOfNpcs = math.random(3,4);
+        local intervalTime = GAMEPLAY_TIME / (amountOfNpcs + 1)
+        local called = 0
 
-        --GameService:SetState(GAMESTATE.GAMEPLAY)
-        --print("[GameService]: Gameplay Starting soon, getting map mode")
+        SpawnItemsAPI:SpawnAllIngredients(5);
 
-        --[[for _, player : Player in pairs(CollectionService:GetTagged(Knit.Config.ALIVE_TAG)) do
-            GameService:AddTracker(player)
-        end]]
-
-        --currentMap = getRandomMap();
-
-       -- print("MAP;", currentMap, nextMap)
-
-        --[[GameService.Client.UpdateMapQueue:FireAll({
-            CurrentMap = currentMap,
-            NextMap = nextMap,
-            Boosted = boostedMap,
-        });]]
-
-        boostedMap = false
-        
-       -- print("[GameService]: Gameplay Started")
-       local MusicService = Knit.GetService("MusicService");
-       MusicService:StartBackgroundMusic("French", "Day")
-       --Lighting.Ambient = Color3.fromRGB(143, 101, 50)
-       dayTween:Play();
-
+        local startTime = os.time()
         for i = 0, GAMEPLAY_TIME do
             local currentTime = dayShiftHours((i / GAMEPLAY_TIME))
             GameService.Client.AdjustTimeSignal:FireAll({
@@ -190,11 +183,51 @@ function SandboxMode:StartMode()
                 Time = currentTime, 
                 IsNight = false,
             });
+
+            if os.time() - startTime > 10 then
+                if os.time() - startTime > intervalTime * called and called < amountOfNpcs then
+                    createChefNPC()
+                    called = called + 1
+                end
+            end
             --print("Day:", self.numOfDays, i,  GAMEPLAY_TIME, i/GAMEPLAY_TIME, "| Time:", currentTime)
             task.wait(1)
         end
 
-        --Lighting.Ambient = Color3.fromRGB(35, 24, 12)
+        for _, player in pairs(Players:GetPlayers()) do
+            Knit.GetService("NotificationService"):LargeMessage(false, player, "RESTUARANT IS CLOSING...", {Effect = true, Color = Color3.fromRGB(255,255,255)})
+        end
+
+        for _, v in pairs(workspace:WaitForChild("NPCS"):GetChildren()) do
+            CollectionService:RemoveTag(v, "NPC")
+        end
+
+        local timeOut = 0
+        repeat 
+            timeOut += 1
+            task.wait(1)
+        until timeOut > 30 or #workspace:WaitForChild("NPCS"):GetChildren() == 0
+
+        workspace:WaitForChild("NPCS"):ClearAllChildren();
+        for _, randomSpot in pairs(workspace:WaitForChild("RandomSpots"):GetChildren()) do
+            randomSpot:SetAttribute("Activated", false)
+        end
+        task.wait(1);
+
+        Knit.GetService("OrderService"):pauseOrders(true)
+        for _, player in pairs(Players:GetPlayers()) do
+            Knit.GetService("OrderService"):removeAllRecipes(player)
+            Knit.GetService("NotificationService"):LargeMessage(false, player, "RESTUARANT CLOSED!", {Effect = true, Color = Color3.fromRGB(255,255,255)})
+        end
+
+        if workspace:FindFirstChild("IngredientAvailable") then
+            workspace:FindFirstChild("IngredientAvailable"):ClearAllChildren();
+        end
+
+        if workspace:FindFirstChild("FoodAvailable") then
+            workspace:FindFirstChild("FoodAvailable"):ClearAllChildren();
+        end
+
         nightTween:Play();
         MusicService:StartBackgroundMusic("French", "Night")
         for i = 0, NIGHT_TIME do
@@ -208,7 +241,13 @@ function SandboxMode:StartMode()
             task.wait(1)
         end
 
-        --[[local Synced = require(Knit.ReplicatedModules.Synced);
+        --// Game Round Ended
+        print("[GameService]: Gameplay Ended")
+        self.numOfDays += 1;
+    end
+end
+
+--[[local Synced = require(Knit.ReplicatedModules.Synced);
         local DailyShopOffset = (60 * 60 * Knit.Config.DAILY_SHOP_OFFSET); 
         local Day = math.floor((Synced.time() + DailyShopOffset) / (60 * 60 * 24))
         local seed = Random.new(Day);
@@ -237,66 +276,42 @@ function SandboxMode:StartMode()
         --TimeTween:Play();
         --TimeTween.Completed:Wait();
 
-        --// Game Round Ended
-        print("[GameService]: Gameplay Ended")
-        --GameService:SetState(GAMESTATE.ENDED)
-
-        self.numOfDays += 1;
-
-        --[[GameService:SetLighting("Lobby")
-
-        -- Fire results UI
-        print("[GameService]: Firing results UI")
-        for _, player : Player in pairs(CollectionService:GetTagged(Knit.Config.ALIVE_TAG)) do
-            if GameService:GetPlayerTracked(player) then
-                print("Track:", GameService:GetPlayerTracked(player):GetPlayerStats(player), GameService:GetPlayerTracked(player):GetSecondsPlayed(player))
-                GameService:GetPlayerTracked(player):UpdateResults(player)
-                GameService.Client.ResultSignal:Fire(player, GameService:GetPlayerTracked(player):GetPlayerStats(player))
-                local profile = Knit.DataService:GetProfile(player)
-                if profile then
-                    RewardService:GiveReward(profile, {
-                        Coins = GameService:GetPlayerTracked(player):GetPlayerStats(player).CoinsEarned;
-                    })
-                end
-                GameService:GetPlayerTracked(player):Destroy();
-                GameService:ClearTracked(player)
-            end
-        end
-
-        GameService:ClearTracked()
-
-        -- Award Winners
-        print("[GameService]: Awarding winners a win")
-        for _, player in pairs(game.Players:GetPlayers()) do
-            if  CollectionService:HasTag(player, Knit.Config.GHOST_TAG) == true then
-                continue;
-            end
-
-            local profile = Knit.DataService:GetProfile(player)
-            if CollectionService:HasTag(player , Knit.Config.WINNER_TAG) then
-                if profile then
-                    if profile.Data.PlayerInfo.TotalWins == nil then
-                        profile.Data.PlayerInfo.TotalWins = 1
-                    else
-                        profile.Data.PlayerInfo.TotalWins += 1
-                    end
-                end
-                player:WaitForChild("leaderstats"):WaitForChild("Wins").Value = profile.Data.PlayerInfo.TotalWins;
-            else
-                if profile then
-                    if profile.Data.PlayerInfo.TotalLosses == nil then
-                        profile.Data.PlayerInfo.TotalLosses = 1
-                    else
-                        profile.Data.PlayerInfo.TotalLosses += 1
-                    end
-                end
-            end
-        end]]
-    end
-end
 
 function SandboxMode:KnitStart()
-    
+    local Admins = {"Real_KingBob"}
+    local Prefix = "/" 
+
+    game.Players.PlayerAdded:Connect(function(plr)
+        for _,v in pairs(Admins) do
+            if plr.Name == v then
+                print("adasda")
+                plr.Chatted:Connect(function(msg)
+                    local loweredString = string.lower(msg)
+                    local args = string.split(loweredString," ")
+                    print(args)
+                    if args[1] == Prefix.."create" then
+                        args[2] = args[2] ~= nil and args[2] or 1
+                        for i = 0, args[2] do
+                            createChefNPC();
+                        end
+                    elseif args[1] == Prefix.."destroy" then
+                        args[2] = args[2] ~= nil and args[2] or 1
+                        local count = 0
+                        
+                        for _, n in pairs(CollectionService:GetTagged("NPC")) do
+                            CollectionService:RemoveTag(n, "NPC")
+                            task.spawn(function()
+                                task.wait(20)
+                                if n then n:Destroy(); end
+                            end)
+                            count += 1;
+                            if count == args[2] then break end
+                        end
+                    end
+                end)
+            end
+        end
+    end)
 end
 
 

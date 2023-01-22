@@ -19,8 +19,8 @@ local ReductionDelay = 0.05;
 local RegenAmount = 1;
 local RegenDelay = 0.2;
 
-local Stamina = 100;
-local MaxStamina = 100;
+local Stamina = 100--000000000000;
+local MaxStamina = 100--000000000000;
 
 local percentageToUseAgain = 30 
 
@@ -58,6 +58,9 @@ function StaminaUI:CheckSprintAnim(Humanoid)
 end
 
 function StaminaUI:SetupStamina(Character)
+    if not workspace:FindFirstChild(Character.Name) then 
+        Character = workspace:WaitForChild(Character.Name)
+    end
     local BoostSFX, BoomSFX;
     local AvatarService = Knit.GetService("AvatarService");
 
@@ -69,8 +72,10 @@ function StaminaUI:SetupStamina(Character)
         local animator = Humanoid:FindFirstChildOfClass("Animator")
         if animator then
             if not SprintAnimTrack then 
-                SprintAnimTrack = animator:LoadAnimation(sprintAnimation);
-                SprintAnimTrack.Priority = Enum.AnimationPriority.Movement
+                if Humanoid:IsDescendantOf(workspace) then
+                    SprintAnimTrack = animator:LoadAnimation(sprintAnimation);
+                    SprintAnimTrack.Priority = Enum.AnimationPriority.Movement
+                end
             end
         end
     end
@@ -90,6 +95,7 @@ function StaminaUI:SetupStamina(Character)
     end)]]
 
     local function startStamina()
+        if not Humanoid then return end
         if cooldownStamina == true and 
         (Stamina <= percentageToUseAgain) or
         Humanoid.MoveDirection.Magnitude <= 0 then
@@ -110,7 +116,9 @@ function StaminaUI:SetupStamina(Character)
                 staminaDebounce = false
             end)
 
-            Humanoid.WalkSpeed = NewWalkSpeed
+            if Humanoid then
+                Humanoid.WalkSpeed = NewWalkSpeed
+            end
 
             --print(Humanoid:FindFirstChildOfClass("Animator"):GetPlayingAnimationTracks())
 
@@ -182,15 +190,21 @@ function StaminaUI:SetupStamina(Character)
                 local animator = Humanoid:FindFirstChildOfClass("Animator")
                 if animator then
                     if not SprintAnimTrack then 
-                        SprintAnimTrack = animator:LoadAnimation(sprintAnimation);
-                        SprintAnimTrack.Priority = Enum.AnimationPriority.Movement
+                        repeat task.wait() until Character.Parent ~= nil
+                        if Humanoid:IsDescendantOf(workspace) then
+                            SprintAnimTrack = animator:LoadAnimation(sprintAnimation);
+                            SprintAnimTrack.Priority = Enum.AnimationPriority.Movement
+                        end
                     end
                 end
             end
 
             if not Humanoid or not Humanoid:FindFirstChildOfClass("Animator") or not SprintAnimTrack then return end
 
-            SprintAnimTrack:Play()
+            if SprintAnimTrack then
+                SprintAnimTrack:Play()
+            end
+            
             AvatarService.BoostEffect:Fire(true)
 
             local MainUI = PlayerGui:WaitForChild("Main")
@@ -215,7 +229,9 @@ function StaminaUI:SetupStamina(Character)
             end
 
             if sprinting == true then
-                SprintAnimTrack:Stop()
+                if SprintAnimTrack then
+                    SprintAnimTrack:Stop()
+                end
                 sprinting = false
                 --if PrevAnim then PrevAnim:Play(); end
 
@@ -234,7 +250,9 @@ function StaminaUI:SetupStamina(Character)
                     StaminaBar.BackgroundColor3 = regularStaminaColor;
                 end
 
-                Humanoid.WalkSpeed = NormalWalkSpeed
+                if Humanoid then
+                    Humanoid.WalkSpeed = NormalWalkSpeed
+                end
             end
         end
     end
@@ -260,7 +278,10 @@ function StaminaUI:SetupStamina(Character)
             if (sprinting == true) then
                 sprinting = false
 
-                SprintAnimTrack:Stop()
+                if SprintAnimTrack then
+                    SprintAnimTrack:Stop()
+                end
+                
                 --if PrevAnim then PrevAnim:Play(); end
                 if BoostSFX then
                     BoomSFX:Destroy()
@@ -282,7 +303,9 @@ function StaminaUI:SetupStamina(Character)
                     StaminaBar.BackgroundColor3 = regularStaminaColor;
                 end
 
-                Humanoid.WalkSpeed = NormalWalkSpeed
+                if Humanoid then
+                    Humanoid.WalkSpeed = NormalWalkSpeed
+                end
             end
         end
     end)

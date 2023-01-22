@@ -28,6 +28,10 @@ while task.wait(0) do
 				X == 0 and -Z or -X
 			)
 		)
+
+		if FloorAngle ~= 0 then
+			--print("angle", FloorAngle, (FloorAngle >= 30 and FloorAngle <= 60))
+		end
 		--print("angle", FloorAngle, (FloorAngle >= 30 and FloorAngle <= 60))
 		
         if FloorAngle >= 40 then

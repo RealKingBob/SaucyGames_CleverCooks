@@ -9,8 +9,8 @@ local PlayerSettings = require(Knit.ReplicatedModules.SettingsUtil);
 local SystemInfo = require(Knit.ReplicatedAssets.SystemInfo);
 
 ----- Tournament Modes -----
-local SandboxMode = require(Knit.Modules.GameModes.SandboxMode);
---local RoundMode = require(Knit.Modules.GameModes.RoundMode);
+local SandboxMode = require(Knit.Modules.Modes.SandboxMode);
+--local RoundMode = require(Knit.Modules.Modes.RoundMode);
 
 ----- Settings -----
 

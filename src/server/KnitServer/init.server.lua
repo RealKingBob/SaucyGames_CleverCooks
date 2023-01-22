@@ -98,11 +98,61 @@ end)
 ----- Variables -----
 local playerCollisionGroupName = "Players";
 --PhysicsService:CreateCollisionGroup(playerCollisionGroupName);
---PhysicsService:CollisionGroupSetCollidable(playerCollisionGroupName, playerCollisionGroupName, false);
+PhysicsService:CollisionGroupSetCollidable(playerCollisionGroupName, playerCollisionGroupName, false);
 
 local previousCollisionGroups = {};
 local playerProfiles = {}; -- [player] = profile
 local deathCooldown = {};
+
+local function setCollisionGroup(object)
+	if CollectionService:HasTag(object, "CC_Food") then
+		return
+	end
+    if object then
+        if object:IsA("BasePart") then
+            previousCollisionGroups[object] = object.CollisionGroupId;
+            --PhysicsService:SetPartCollisionGroup(object, playerCollisionGroupName);
+            object.CollisionGroup = playerCollisionGroupName;
+        end
+    end
+end
+
+local function setCollisionGroupRecursive(object)
+	if object:GetAttribute("Owner") then
+		return
+	end
+	if CollectionService:HasTag(object, "CC_Food") then
+		return
+	end
+    if object then
+        setCollisionGroup(object);
+
+        for _, child in ipairs(object:GetChildren()) do
+            setCollisionGroupRecursive(child);
+        end
+    end
+end
+
+local function resetCollisionGroup(object)
+	if object:GetAttribute("Owner") then
+		return
+	end
+
+	if CollectionService:HasTag(object, "CC_Food") then
+		return
+	end
+    if object then
+        local previousCollisionGroupId = previousCollisionGroups[object];
+        if not previousCollisionGroupId then return end 
+
+        local previousCollisionGroupName = PhysicsService:GetCollisionGroupName(previousCollisionGroupId);
+        if not previousCollisionGroupName then return end
+
+        --PhysicsService:SetPartCollisionGroup(object, previousCollisionGroupName);
+        object.CollisionGroup = previousCollisionGroupName;
+        previousCollisionGroups[object] = nil;
+    end
+end
 
 local ChatTags = {
 	[21831137] = {TagText = "DEV", TagColor = Color3.fromRGB(255, 0, 0)}, -- Real_KingBob
@@ -161,6 +211,10 @@ local function onCharacterAdded(character)
         else
 			local userId = player.UserId;
 
+			setCollisionGroupRecursive(character);
+			character.DescendantAdded:Connect(setCollisionGroup);
+			character.DescendantRemoving:Connect(resetCollisionGroup);
+
 			local AvatarService = Knit.AvatarService
 
 			local playerAccessories = AvatarService:GetAvatarAccessories(userId);
@@ -175,7 +229,7 @@ local function onCharacterAdded(character)
 			AvatarService:SetAvatarColor(userId,character, playerColor);
 			AvatarService:SetAvatarFace(userId,character,playerFace, false);
 
-			AvatarService:SetAvatarHat(player, AvatarService:GetAvatarHat(player))
+			--AvatarService:SetAvatarHat(player, AvatarService:GetAvatarHat(player))
 			AvatarService:SetBoosterEffect(player, AvatarService:GetBoosterEffect(player))
 
 			if hasHeadless == true then

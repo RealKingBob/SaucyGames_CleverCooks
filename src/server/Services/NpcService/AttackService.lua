@@ -6,11 +6,17 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GameLibrary = ReplicatedStorage:WaitForChild("GameLibrary")
 local LibraryEffects = GameLibrary:WaitForChild("Effects")
+local NPCThrowableObjects = GameLibrary:WaitForChild("NPCThrowableObjects")
+
+local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
+local PositionFinder = require(Knit.ReplicatedModules.PositionFinder);
 
 local rockColor = Color3.fromRGB(159, 161, 172);
 local rockDespawnTime = 5;
 
+local ratio = 2; --5uphi's ratio thing is very smart
 local stompRange = 20;
+local broomRange = 13.5;
 
 local taskAnim = Instance.new("Animation");
 taskAnim.Name = "TaskAnim";
@@ -27,11 +33,12 @@ function AttackService:Stomp(animator, position)
 	local controller = animator;
 	
 	local taskAnimTrack = controller:LoadAnimation(taskAnim);
+
 	taskAnimTrack.Priority = Enum.AnimationPriority.Action;
 
 	repeat task.wait(0.1) until taskAnimTrack.length ~= 0;
 	
-	taskAnimTrack:Play();
+	taskAnimTrack:Play(0.100000001, 1, 0.58);
 	task.wait(taskAnimTrack.Length / 1.5);
 	
 	if workspace:FindFirstChild("EffectDebris") == nil then
@@ -45,11 +52,11 @@ function AttackService:Stomp(animator, position)
 	
 	for i,v in pairs(StompBlockClone:GetChildren()) do if v:IsA("ParticleEmitter") then v:Emit(60) end end
 	
-	for i, v in next, game.Players:GetPlayers() do
+	for i, v in next, Players:GetPlayers() do
 		if not v.Character then continue end
 		local HRP = v.Character:FindFirstChild("HumanoidRootPart");
 		if HRP then
-			if (HRP.Position - StompBlockClone.Position).magnitude < stompRange then
+			if (HRP.Position - StompBlockClone.Position).Magnitude < stompRange then
 				v.Character:FindFirstChild("Humanoid").Health = -1;
 			end
 		end
@@ -64,6 +71,239 @@ function AttackService:Stomp(animator, position)
 	return true;
 end
 
+function AttackService:ThrowObject(char, animator, position)
+
+	local objectWeldData = {
+		Pan = {
+			C0 = {
+				Position = Vector3.new(1.073, -0.158, -7.463);
+				Orientation = Vector3.new(0, 180, 90);
+			};
+			C1 = {
+				Position = Vector3.new(0, 0, 0);
+				Orientation = Vector3.new(0, 0, 0);
+			};
+		};
+
+	}
+	
+	local rightHand = char:WaitForChild("RightHand")
+	--print("THROW", position)
+
+	local throwAnims = {
+		"rbxassetid://12135983461"; -- hoop throw
+		"rbxassetid://12128199048"; -- default throw
+	}
+
+	local throwAnimId = throwAnims[math.random(1, #throwAnims)]
+	
+	if not taskAnim then taskAnim = Instance.new("Animation"); taskAnim.Name = "TaskAnim"; end
+	taskAnim.AnimationId = throwAnimId;
+	
+	local controller = animator;
+	
+	local taskAnimTrack = controller:LoadAnimation(taskAnim);
+
+	taskAnimTrack.Priority = Enum.AnimationPriority.Action;
+	taskAnimTrack.Looped = false;
+
+	repeat task.wait(0.1) until taskAnimTrack.length ~= 0;
+
+	local pickupConnection, throwConnection = nil, nil
+	local objectItem = nil;
+	pickupConnection = taskAnimTrack:GetMarkerReachedSignal("Pickup"):Connect(function(paramString)
+		--print(paramString)
+		local objectInRotation = {NPCThrowableObjects:FindFirstChild("Pan")}
+		objectItem = objectInRotation[math.random(1, #objectInRotation)]:Clone() --NPCThrowableObjects:GetChildren()[math.random(1, #NPCThrowableObjects:GetChildren())]:Clone()
+		objectItem.CanCollide = false;
+		objectItem.Size = Vector3.new(1.734, 12.679, 20.206);
+		objectItem.Parent = (workspace:FindFirstChild("WorkspaceBin") ~= nil and workspace:FindFirstChild("WorkspaceBin")) or workspace;
+		objectItem.Size = Vector3.new(1.734, 12.679, 20.206);
+
+		local objectWeld = Instance.new("Weld")
+
+		objectWeld.C0 = CFrame.new(objectWeldData[tostring(objectItem)].C0.Position) * CFrame.Angles(objectWeldData[tostring(objectItem)].C0.Orientation.X, objectWeldData[tostring(objectItem)].C0.Orientation.Y, objectWeldData[tostring(objectItem)].C0.Orientation.Z);
+		objectWeld.Part0 = objectItem;
+		objectWeld.Part1 = rightHand;
+		objectWeld.Parent = objectItem;
+	end)
+
+	throwConnection = taskAnimTrack:GetMarkerReachedSignal("Throw"):Connect(function(paramString)
+		if objectItem then objectItem:Destroy() end
+
+		Knit.GetService("NpcService").Client.NpcAction:FireAll(tostring(objectItem), rightHand.Position, position)
+	
+		local direction = (position - rightHand.Position);
+		local force = direction * ratio + Vector3.new(0, workspace.Gravity * 0.5 / ratio, 0);
+	
+		local timeTaken = PositionFinder.getFinalTime(force, rightHand.Position, position)
+	
+		task.wait(timeTaken)
+		
+		if workspace:FindFirstChild("EffectDebris") == nil then
+			local EffectsFolder = Instance.new("Folder", workspace)
+			EffectsFolder.Name = "EffectDebris"
+		end
+		
+		local StompBlockClone = LibraryEffects:WaitForChild("StompBlock"):Clone();
+		StompBlockClone.Position = position;
+		StompBlockClone.Parent = workspace:FindFirstChild("EffectDebris");
+		
+		for i,v in pairs(StompBlockClone:GetChildren()) do if v:IsA("ParticleEmitter") then v:Emit(60) end end
+		
+		for i, v in next, Players:GetPlayers() do
+			if not v.Character then continue end
+			local HRP = v.Character:FindFirstChild("HumanoidRootPart");
+			if HRP then
+				if (HRP.Position - StompBlockClone.Position).Magnitude < stompRange then
+					v.Character:FindFirstChild("Humanoid").Health = -1;
+				end
+			end
+		end
+		
+		--for i,v in pairs(StompBlockClone:GetChildren()) do if v:IsA("ParticleEmitter") then v.Enabled = true end end
+		
+		task.wait(2)
+		
+		StompBlockClone:Destroy();
+	end)
+
+	local stoppedConnection = nil
+	stoppedConnection = taskAnimTrack.Stopped:Connect(function()
+		-- clean up old connections to stop memory leaks
+		pickupConnection:Disconnect()
+		throwConnection:Disconnect()
+		stoppedConnection:Disconnect()
+	end)
+
+	taskAnimTrack:Play(0.100000001, 1, 0.58);
+
+	taskAnimTrack.Stopped:Wait()
+	
+	return true;
+end
+
+function AttackService:BroomHitTop(char, animator, position)
+
+	local objectWeldData = {
+		Broom = {
+			C0 = {
+				Position = Vector3.new(0.501, 1.485, 0.128);
+				Orientation = Vector3.new(-85, 90, -180);
+			};
+			C1 = {
+				Position = Vector3.new(0, 0, 0);
+				Orientation = Vector3.new(0, 0, 0);
+			};
+		};
+
+	}
+	
+	local rightHand = char:WaitForChild("RightHand")
+	print("THROW", position)
+
+	local throwAnims = {
+		"rbxassetid://12137321149"; -- broom hit
+	}
+
+	local throwAnimId = throwAnims[math.random(1, #throwAnims)]
+	
+	if not taskAnim then taskAnim = Instance.new("Animation"); taskAnim.Name = "TaskAnim"; end
+	taskAnim.AnimationId = throwAnimId;
+	
+	local controller = animator;
+	
+	local taskAnimTrack = controller:LoadAnimation(taskAnim);
+
+	taskAnimTrack.Priority = Enum.AnimationPriority.Action;
+	taskAnimTrack.Looped = false;
+
+	repeat task.wait(0.1) until taskAnimTrack.length ~= 0;
+
+	local pickupConnection, throwConnection = nil, nil
+	local objectItem = nil;
+	pickupConnection = taskAnimTrack:GetMarkerReachedSignal("Pickup"):Connect(function(paramString)
+		--print(paramString)
+		objectItem = NPCThrowableObjects:FindFirstChild("Broom"):Clone()
+		objectItem.CanCollide = false;
+
+		objectItem.Parent = (workspace:FindFirstChild("WorkspaceBin") ~= nil and workspace:FindFirstChild("WorkspaceBin")) or workspace;
+
+
+		local objectWeld = Instance.new("Weld")
+
+		objectWeld.C0 = CFrame.new(objectWeldData[tostring(objectItem)].C0.Position) * CFrame.Angles(objectWeldData[tostring(objectItem)].C0.Orientation.X, objectWeldData[tostring(objectItem)].C0.Orientation.Y, objectWeldData[tostring(objectItem)].C0.Orientation.Z);
+		objectWeld.Part0 = objectItem;
+		objectWeld.Part1 = rightHand;
+		objectWeld.Parent = objectItem;
+	end)
+
+	throwConnection = taskAnimTrack:GetMarkerReachedSignal("Hit"):Connect(function(paramString)	
+		if workspace:FindFirstChild("EffectDebris") == nil then
+			local EffectsFolder = Instance.new("Folder", workspace)
+			EffectsFolder.Name = "EffectDebris"
+		end
+
+		local originalPosition = (char.PrimaryPart ~= nil and char.PrimaryPart.Position) or Vector3.new(0, 0, 0)
+		local currentPosition = position
+		local minRange = 11.5
+		local maxRadius = 22.5
+
+		local currentPositionXZ = Vector3.new(currentPosition.x, 0, currentPosition.z)
+		local distance = (currentPositionXZ - originalPosition).magnitude
+
+		if distance < minRange then
+			local newPosition = originalPosition + ((currentPositionXZ - originalPosition).unit * minRange)
+			-- Move object to new position, preserving Y value
+			newPosition = Vector3.new(newPosition.x, currentPosition.y, newPosition.z)
+			
+			position = newPosition
+		elseif distance > maxRadius then
+			local newPosition = originalPosition + ((currentPositionXZ - originalPosition).unit * maxRadius)
+			-- Move object to new position, preserving Y value
+			newPosition = Vector3.new(newPosition.x, currentPosition.y, newPosition.z)
+			
+			position = newPosition
+		end
+
+		local StompBlockClone = LibraryEffects:WaitForChild("StompBlock"):Clone();
+		StompBlockClone.Position = position;
+		StompBlockClone.Parent = workspace:FindFirstChild("EffectDebris");
+		
+		for i,v in pairs(StompBlockClone:GetChildren()) do if v:IsA("ParticleEmitter") then v:Emit(60) end end
+		
+		for i, v in next, Players:GetPlayers() do
+			if not v.Character then continue end
+			local HRP = v.Character:FindFirstChild("HumanoidRootPart");
+			if HRP then
+				if (HRP.Position - StompBlockClone.Position).Magnitude < broomRange then
+					v.Character:FindFirstChild("Humanoid").Health = -1;
+				end
+			end
+		end
+		
+		--for i,v in pairs(StompBlockClone:GetChildren()) do if v:IsA("ParticleEmitter") then v.Enabled = true end end
+		
+		task.wait(2)
+		
+		StompBlockClone:Destroy();
+	end)
+
+	local stoppedConnection = nil
+	stoppedConnection = taskAnimTrack.Stopped:Connect(function()
+		-- clean up old connections to stop memory leaks
+		pickupConnection:Disconnect()
+		throwConnection:Disconnect()
+		stoppedConnection:Disconnect()
+	end)
+
+	taskAnimTrack:Play(0.100000001, 1, 0.58);
+
+	taskAnimTrack.Stopped:Wait()
+	if objectItem then objectItem:Destroy() end
+
+	return true;
+end
 
 
 function AttackService:Swing(char, playerPos, animator, fistPart)
@@ -189,7 +429,6 @@ function AttackService:Shockwave(position)
 				rock2:Destroy()
 			end)
 		end))
-		
 	end
 end
 

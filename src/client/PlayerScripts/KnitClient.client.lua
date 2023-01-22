@@ -110,15 +110,8 @@ NotificationService.NotifyMessage:Connect(function(messageText, typeWriterEffect
 	NotificationUI:Message(messageText, typeWriterEffect);
 end)
 
-local ProximityService = Knit.GetService("ProximityService")
-local PlayerController = Knit.GetController("PlayerController")
-
-ProximityService.TrackItem:Connect(function(tracking, itemObj)
-	if tracking == true then
-		PlayerController:TrackItem(itemObj);
-	else
-		PlayerController:UnTrackItem();
-	end
+NotificationService.NotifyLargeMessage:Connect(function(messageText, typeWriterEffect)
+	NotificationUI:LargeMessage(messageText, typeWriterEffect);
 end)
 
 --[[local DataService = Knit.GetService("DataService")
