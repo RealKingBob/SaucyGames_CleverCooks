@@ -127,7 +127,8 @@ end
 
 function highlightItems(itemsData)
 	for i = 1,#highlightedItems do
-		highlightedItems[i]:Destroy();
+		CollectionService:RemoveTag(highlightedItems[i], "Marker")
+		--highlightedItems[i]:Destroy();
 	end
 
 	local MarkerTemplate = BillboardUI:WaitForChild("MarkerUI")
@@ -189,9 +190,10 @@ function highlightItems(itemsData)
 
 		local item = (Character ~= nil and Character.PrimaryPart ~= nil and findClosestIngredient(itemsList, Character.PrimaryPart.Position)) or workspace:WaitForChild("IngredientAvailable"):FindFirstChild(foundIngredient.Name)
 		if not item then continue end
-		local markerClone = MarkerTemplate:Clone();
-		highlightedItems[#highlightedItems +  1] = markerClone
-		markerClone.Parent = item;
+		--local markerClone = MarkerTemplate:Clone();
+		CollectionService:AddTag(item, "Marker")
+		highlightedItems[#highlightedItems +  1] = item--markerClone
+		--markerClone.Parent = item;
 	end
 end
 

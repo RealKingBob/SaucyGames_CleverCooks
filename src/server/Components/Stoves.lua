@@ -1,3 +1,4 @@
+local CollectionService = game:GetService("CollectionService")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 local Maid = require(Knit.Util.Maid);
 local Players = game:GetService("Players")
@@ -29,6 +30,7 @@ function Stoves.new(instance)
     end))
 
     self._maid:GiveTask(self.Object.Touched:Connect(function(hit)
+        if CollectionService:HasTag(hit, "CC_Food") then return end;
         if self.StoveEnabled == true then
             local humanoid = hit.Parent:FindFirstChildOfClass("Humanoid")
             local player = game.Players:GetPlayerFromCharacter(hit.Parent);

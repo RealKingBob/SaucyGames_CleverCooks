@@ -52,6 +52,7 @@ local SETTINGS = {
         Boosts = {}, -- Specific boosts a user owns
         GamepassOwned = {}, -- Specific gamepasses a user owns
         CratesOpened = {}, -- Specific crates opened by a user
+        RecipesCooked = {}, -- Specific crates opened by a user
         Battlepasses = {}, -- Battlepasses the user participated / completed
 		Inventory = {
 			CurrentBoosterEffect = "Default Boost",

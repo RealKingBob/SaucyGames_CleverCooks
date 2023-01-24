@@ -52,7 +52,8 @@ function Blender.new(instance)
             "bladeSpin", -- command
             { -- data
                 true -- boolean
-            });
+            }
+        );
     end;
     
     local function PlayerRemoving(player)
@@ -137,7 +138,9 @@ function Blender.new(instance)
     end
 
     self._maid:GiveTask(self.Object.Blade.Blade.Touched:Connect(function(hit)
+        if self.BlenderEnabled == false then return end
         if CollectionService:HasTag(hit, "CC_Food") then return end;
+        --print(hit)
         local humanoid = hit.Parent:FindFirstChildOfClass("Humanoid")
         local player = game.Players:GetPlayerFromCharacter(hit.Parent);
         if self.BlenderEnabled == false then
@@ -230,6 +233,12 @@ function Blender.new(instance)
 
     self._maid:GiveTask(self.Object.Button.ProximityPrompt.TriggerEnded:Connect(function(player)
         --task.spawn(TemporaryDisableButton, 3)
+        if self.BlenderEnabled == false then 
+            local NotificationService = Knit.GetService("NotificationService")
+            NotificationService:Message(false, player, "Blender is off!")
+            return 
+        end
+
         print("BLENDER", self.BlenderEnabled, self.playersDebounces[player.UserId]);
 
         if self.playersDebounces[player.UserId] == nil then
@@ -276,15 +285,47 @@ function Blender.new(instance)
         end
 	end));
 
-    self.BlenderEnabled = true;
+    self._maid:GiveTask(self.Object:GetAttributeChangedSignal("Enabled"):Connect(function(player)
+        local Enabled = self.Object:GetAttribute("Enabled")
 
-    self.Object.Lid.Transparency = 1;
-    self.Object.Lid.CanCollide =  false;
+        if Enabled then
+            self.BlenderEnabled = true;
 
-    task.spawn(SpinBlade, true);
-    PlayEffects(true);
-    self.Object.Button.SurfaceGui.Frame.BackgroundColor3 = Color3.fromRGB(0, 166, 0)
-    self.Object.Button.ProximityPrompt.ActionText = "Get Blended Food"
+            self.Object.Lid.Transparency = 1;
+            self.Object.Lid.CanCollide =  false;
+        
+            task.spawn(SpinBlade, true);
+            PlayEffects(true);
+            self.Object.Button.SurfaceGui.Frame.BackgroundColor3 = Color3.fromRGB(0, 166, 0)
+            self.Object.Button.ProximityPrompt.ActionText = "Get Blended Food"
+        else
+            self.BlenderEnabled = false;
+
+            self.Object.Lid.Transparency = 0;
+            self.Object.Lid.CanCollide = true;
+        
+            task.spawn(SpinBlade, false);
+            PlayEffects(false);
+            self.Object.Button.SurfaceGui.Frame.BackgroundColor3 = Color3.fromRGB(166, 0, 0)
+            self.Object.Button.ProximityPrompt.ActionText = "Disabled"
+
+            self.playersDebounces = {};
+            self.ObjectsInBlender = {};
+            self.BlenderColors = {};
+            self.colorOfFood = {};
+            self.MaxNumOfObjects = 5;
+            self.NumOfObjects = {};
+            local CookingService = Knit.GetService("CookingService");
+            CookingService.Client.ChangeClientBlender:FireAll(
+                self.Object, -- blender object
+                "fluidPercentage", -- command
+                { -- data
+                    FluidPercentage = (0 / self.MaxNumOfObjects), -- fluid 
+                    FluidText = tostring("..."), -- blender text
+                    FluidColor = Color3.fromRGB(66, 123, 255), -- color of food
+                });
+        end
+	end));
 
     --// In case Players have joined the server earlier than this script ran:
     for _, player in ipairs(Players:GetPlayers()) do

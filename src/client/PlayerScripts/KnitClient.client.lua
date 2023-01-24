@@ -41,7 +41,7 @@ Knit.AddControllersDeep(Knit.Controllers)
 local UIStrokeAdjuster = require(Knit.Modules.UIStrokeStyle)
 
 StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
-StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
+StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, true)
 
 local KnitClient = Knit.CreateController { Name = "KnitClient" }
 

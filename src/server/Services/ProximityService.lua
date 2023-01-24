@@ -154,8 +154,10 @@ function ProximityService:LinkItemToPlayer(Character,Object)
                     b.CustomPhysicalProperties = PickProperties;
                     b.Massless = true;
                     b.CollisionGroup = "Food";
+                    CollectionService:AddTag(b, "CC_Food")
                 end;
             end;
+            CollectionService:AddTag(Object, "CC_Food")
             Object:SetPrimaryPartCFrame(Character:FindFirstChild("HumanoidRootPart").CFrame)
             _PrimaryPart.HandJoint.Attachment1 = Character:FindFirstChild("Head").RightGripAttachment;
             _PrimaryPart.FaceJoint.Attachment1 = Character:FindFirstChild("Head").FaceFrontAttachment;
@@ -174,6 +176,7 @@ function ProximityService:LinkItemToPlayer(Character,Object)
             Object.CustomPhysicalProperties = PickProperties;
             Character.PrimaryPart.ProximityPrompt.Enabled = true;
             Object.ProximityPrompt.Enabled = false;
+            CollectionService:AddTag(Object, "CC_Food")
             --print("false!!")
         end;
     end;
@@ -206,12 +209,15 @@ function ProximityService:UnlinkItemToPlayer(Character,Object)
                 --task.spawn(fixHighlight, Object)
 			end;
 
+            CollectionService:RemoveTag(Object, "CC_Food")
+
 			for _,part in pairs(Object:GetChildren()) do
 				if part:IsA("BasePart") then
                     part.CollisionGroup = "Food";
 					part.CanCollide = true;
 					part.Massless = false;
 					part.CustomPhysicalProperties = DropProperties;
+                    CollectionService:RemoveTag(part, "CC_Food")
                     part:SetNetworkOwner(game.Players:GetPlayerFromCharacter(Character))
 				end;
 			end;
@@ -234,6 +240,7 @@ function ProximityService:UnlinkItemToPlayer(Character,Object)
             Object.CollisionGroup = "Food";
 			Object.CanCollide = true;
 			Object.Massless = false;
+            CollectionService:RemoveTag(Object, "CC_Food")
 			Object.CustomPhysicalProperties = DropProperties;
 
             Object:SetNetworkOwner(game.Players:GetPlayerFromCharacter(Character))

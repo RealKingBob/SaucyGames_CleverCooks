@@ -313,6 +313,11 @@ function OrderService:completeRecipe(player, recipe, reward, percentage)
 
             if percentage then
                 if percentage >= cookedRange.min and percentage <= cookedRange.max then
+                    local DataService = Knit.GetService("DataService")
+	                local profile = DataService:GetProfile(player);
+                    if profile then
+                        --if 
+                    end
                     Knit.GetService("DataService"):GiveCurrency(player, bonusReward, false, "+BONUS %")
                 end
             end

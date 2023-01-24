@@ -298,7 +298,7 @@ function CookingService:PickUp(Player, Character, Item)
 		if itemType == "Ingredient" then
 
 			local ClonedItem = IngredientObjects:FindFirstChild(Item.Name):Clone();
-
+			
 			if CollectionService:HasTag(itemObject, "IngredientsTable")  then
 				for i = 1, 5 do
 					if Item:IsA("Model") then
@@ -757,8 +757,9 @@ function CookingService:Cook(player, Character, recipe, pan)
 	if CanCook == false then return false; end
 
 	local DataService = Knit.GetService("DataService")
-	local profile = DataService.GetProfile(player);
-	if not profile then
+	local profile = DataService:GetProfile(player);
+
+	if profile then
 		if recipe and RecipeModule[tostring(recipe)] then -- if not food and all ingredients
 			print("Cooking new food")
 			local SelectedRecipe = RecipeModule[tostring(recipe)];
@@ -804,8 +805,8 @@ function CookingService:DeliverFood(player, food)
     print('[CookingService]: Submitting Food: '.. tostring(food));
 
 	local DataService = Knit.GetService("DataService")
-	local profile = DataService.GetProfile(player);
-	if not profile then
+	local profile = DataService:GetProfile(player);
+	if profile then
 
 		if RecipeModule[tostring(food)] then
 			--print(SelectedRecipe,SelectedRecipe["Ingredients"])

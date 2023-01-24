@@ -172,6 +172,10 @@ function SandboxMode:StartMode()
         local amountOfNpcs = math.random(3,4);
         local intervalTime = GAMEPLAY_TIME / (amountOfNpcs + 1)
         local called = 0
+        
+        for _, blender in pairs(CollectionService:GetTagged("Blender")) do
+            blender:SetAttribute("Enabled", true);
+        end
 
         SpawnItemsAPI:SpawnAllIngredients(5);
 
@@ -218,6 +222,11 @@ function SandboxMode:StartMode()
         for _, player in pairs(Players:GetPlayers()) do
             Knit.GetService("OrderService"):removeAllRecipes(player)
             Knit.GetService("NotificationService"):LargeMessage(false, player, "RESTUARANT CLOSED!", {Effect = true, Color = Color3.fromRGB(255,255,255)})
+            Knit.GetService("CookingService"):DropDown(player, player.Character)
+        end
+
+        for _, blender in pairs(CollectionService:GetTagged("Blender")) do
+            blender:SetAttribute("Enabled", false);
         end
 
         if workspace:FindFirstChild("IngredientAvailable") then

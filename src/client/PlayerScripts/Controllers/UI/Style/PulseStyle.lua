@@ -17,16 +17,18 @@ local PulsingDebounce = {}
 local LastPulse = 0
 
 local function Pulse(Container)
-    local Frame = Container:FindFirstChildWhichIsA("Frame")
+    local Frame = Container:FindFirstChild("Pulse")--:FindFirstChildWhichIsA("Frame")
     local Clone = Frame:Clone()
     Clone:ClearAllChildren()
     Clone.ZIndex = Frame.ZIndex + 1;
     Clone.BackgroundColor3 = Color3.fromRGB(255, 191, 0);
+    Clone.BackgroundTransparency = .3;
     Clone.Parent = Container
+    Clone.Visible = true;
     
     local Tween = TweenService:Create(Clone, PulseInfo, {
         BackgroundTransparency = 1,
-        Size = UDim2.new(Frame.Size.X.Scale * 1.5, 0, Frame.Size.Y.Scale * 1.5, 0)
+        Size = UDim2.new(Frame.Size.X.Scale * 1.7, 0, Frame.Size.Y.Scale * 1.7, 0)
     })
     Tween:Play()
     -- delete the clone after tween is done
