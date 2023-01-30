@@ -169,7 +169,7 @@ function SandboxMode:StartMode()
         --Lighting.Ambient = Color3.fromRGB(143, 101, 50)
         dayTween:Play();
 
-        local amountOfNpcs = math.random(3,4);
+        local amountOfNpcs = math.random(4,5);
         local intervalTime = GAMEPLAY_TIME / (amountOfNpcs + 1)
         local called = 0
         
@@ -177,7 +177,8 @@ function SandboxMode:StartMode()
             blender:SetAttribute("Enabled", true);
         end
 
-        SpawnItemsAPI:SpawnAllIngredients(5);
+        SpawnItemsAPI:SpawnDistributedIngredients("French");
+        --SpawnItemsAPI:SpawnAllIngredients(5)
 
         local startTime = os.time()
         for i = 0, GAMEPLAY_TIME do
@@ -190,7 +191,7 @@ function SandboxMode:StartMode()
 
             if os.time() - startTime > 10 then
                 if os.time() - startTime > intervalTime * called and called < amountOfNpcs then
-                    createChefNPC()
+                    --createChefNPC()
                     called = called + 1
                 end
             end

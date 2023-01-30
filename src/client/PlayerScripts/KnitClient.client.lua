@@ -83,17 +83,21 @@ CookingService.Cook:Connect(function(Status, RecipeName, Pan, CookingPercentages
 	if Status == "Initialize" then
 		CookingUI:StartCooking(RecipeName, Pan)
 	elseif Status == "CookUpdate" then
-		CookingUI:UpdatePanCook(RecipeName, Pan, CookingPercentages)
+		CookingUI:UpdatePanCook(Pan, CookingPercentages)
 	elseif Status == "Destroy" then
-		CookingUI:DestroyUI(RecipeName, Pan)
+		CookingUI:DestroyUI(Pan)
 	end
 end)
 
 CookingService.Deliver:Connect(function(RecipeName, DeliveryZone, DeliverTime)
-	print("CLIENT DELIVER", RecipeName, DeliveryZone, DeliverTime)
+	--print("CLIENT DELIVER", RecipeName, DeliveryZone, DeliverTime)
 	CookingUI:StartDelivering(RecipeName, DeliveryZone, DeliverTime)
 end)
 
+CookingService.PickUp:Connect(function(food)
+	--print("FOOOD",food)
+	if food then food:Destroy() end;
+end)
 
 CookingService.ParticlesSpawn:Connect(function(food, particleName)
 
@@ -107,11 +111,16 @@ local NotificationService = Knit.GetService("NotificationService");
 local NotificationUI = Knit.GetController("NotificationUI");
 
 NotificationService.NotifyMessage:Connect(function(messageText, typeWriterEffect)
+	--print("BOROSADA", messageText, typeWriterEffect)
 	NotificationUI:Message(messageText, typeWriterEffect);
 end)
 
 NotificationService.NotifyLargeMessage:Connect(function(messageText, typeWriterEffect)
 	NotificationUI:LargeMessage(messageText, typeWriterEffect);
+end)
+
+DataService.Notification:Connect(function(title, desc, buttonName)
+	NotificationUI:OpenView(title, desc, buttonName)
 end)
 
 --[[local DataService = Knit.GetService("DataService")

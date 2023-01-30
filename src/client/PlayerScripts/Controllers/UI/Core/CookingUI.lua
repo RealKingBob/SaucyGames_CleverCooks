@@ -214,7 +214,8 @@ function CookingUI:SpawnCookedParticles(food)
     MidAttachClone:Destroy()
 end
 
-function CookingUI:DestroyUI(RecipeName, Pan)
+function CookingUI:DestroyUI(Pan)
+    print("DestroyUI", Pan, PanUIs[Pan])
     if PanUIs[Pan] == nil then return; end
     local cookBillUI = PanUIs[Pan].cookBillUI;
     --local fireEffect = PanUIs[Pan].fireEffect;
@@ -233,7 +234,7 @@ function CookingUI:DestroyUI(RecipeName, Pan)
     cookBillUI:Destroy()
 end
 
-function CookingUI:UpdatePanCook(RecipeName, Pan, Percentages)
+function CookingUI:UpdatePanCook(Pan, Percentages)
     if PanUIs[Pan] == nil then return; end
     local cookBillUI = PanUIs[Pan].cookBillUI;
     local fireEffect = PanUIs[Pan].fireEffect;

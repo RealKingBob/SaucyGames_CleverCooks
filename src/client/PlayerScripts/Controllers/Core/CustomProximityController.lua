@@ -360,6 +360,12 @@ function CustomProximityController:KnitStart()
         if prompt.Style == Enum.ProximityPromptStyle.Default then
             return
         end
+
+		if prompt.Parent ~= nil then
+			if prompt.Parent.Transparency == 1 then
+				return;
+			end
+		end
 		
         local gui = getScreenGui();
 

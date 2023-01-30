@@ -56,40 +56,53 @@ function CurrencySessionService:DropCheese(oCFrame, player, amount, value)
     local localSessionStorage = {};
     local CheeseObj = game.ReplicatedStorage.Spawnables.Cheese;
 
-    for i= 0, amount do
-        local currentTime = tick();
+    local PartyService = Knit.GetService("PartyService");
+	local PartyMembers = {};
+	local PartyOwner = player;
 
-        local randomX = {math.random(-10, -4), math.random(4,10)}
-        local randomZ = {math.random(-10, -4), math.random(4,10)}
+	local PartyInfo = PartyService:FindPartyFromPlayer(player);
+	PartyOwner = Players:GetPlayerByUserId(PartyInfo.OwnerId)
+	for _, memberInParty in pairs(PartyInfo.Members) do
+		local memberIdToPlayer = memberInParty.Player;
+		table.insert(PartyMembers, memberIdToPlayer)
+	end
 
-        local initialVelocity = Vector3.new(randomX[math.random(1,2)], math.random(60,70), randomZ[math.random(1,2)])
-
-        local finalPosition = PositionFinder.getFinalPosition(initialVelocity, oCFrame.Position)
-
-        --visualizePosition(finalPosition)
-
-        if not SessionStorage[player] then break end;
-        if Length(SessionStorage[player].Cheese) > MaxCheeseStorage then continue end
-        
-        SessionStorage[player].Cheese["Cheese"..tostring(currentTime)] = {
-            ObjectId = "Cheese"..tostring(currentTime);
-            UserId = player.UserId;
-            Amount = value;
-            Position = finalPosition;
-            timestamp = tick();
-        }
-
-        table.insert(localSessionStorage, {
-            ObjectId = "Cheese"..tostring(currentTime);
-            OriginalCFrame = oCFrame;
-            Type = "Cheese";
-            Object = CheeseObj;
-            InitialVelocity = initialVelocity;
-        })
-    end
+    for _, playerInMembers in pairs(PartyMembers) do
+        if not SessionStorage[playerInMembers] then continue end;
+        for i= 0, amount do
+            local currentTime = tick();
     
-    if not player then return end
-    self.Client.DropCurrency:Fire(player, "Cheese", localSessionStorage)
+            local randomX = {math.random(-10, -4), math.random(4,10)}
+            local randomZ = {math.random(-10, -4), math.random(4,10)}
+    
+            local initialVelocity = Vector3.new(randomX[math.random(1,2)], math.random(60,70), randomZ[math.random(1,2)])
+    
+            local finalPosition = PositionFinder.getFinalPosition(initialVelocity, oCFrame.Position)
+    
+            --visualizePosition(finalPosition)
+    
+            if Length(SessionStorage[playerInMembers].Cheese) > MaxCheeseStorage then continue end
+            
+            SessionStorage[playerInMembers].Cheese["Cheese"..tostring(currentTime)] = {
+                ObjectId = "Cheese"..tostring(currentTime);
+                UserId = playerInMembers.UserId;
+                Amount = value;
+                Position = finalPosition;
+                timestamp = tick();
+            }
+    
+            table.insert(localSessionStorage, {
+                ObjectId = "Cheese"..tostring(currentTime);
+                OriginalCFrame = oCFrame;
+                Type = "Cheese";
+                Object = CheeseObj;
+                InitialVelocity = initialVelocity;
+            })
+        end
+        
+        if not playerInMembers then continue end
+        self.Client.DropCurrency:Fire(playerInMembers, "Cheese", localSessionStorage)
+    end
 end
 
 function CurrencySessionService:CollectedCurrency(player, objectId, objectType, rootCframe)

@@ -181,7 +181,9 @@ function highlightItems(itemsData)
 		local itemsList = {};
 
 		for _, item in pairs(workspace:WaitForChild("IngredientAvailable"):GetChildren()) do
-			if item.Name == foundIngredient.Name then
+			local owner = item:IsA("Model") and item.PrimaryPart and item.PrimaryPart:GetAttribute("Owner") or item:GetAttribute("Owner")
+
+			if item.Name == foundIngredient.Name and (owner == LocalPlayer.Name or owner == "Default") then
 				table.insert(itemsList, item)
 			end
 		end

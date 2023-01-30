@@ -155,21 +155,42 @@ function OrderService:recipeCount(player, recipe)
     return count;
 end
 
+function OrderService:getPlayerRecipeStorage(player)
+    if not player then return {} end;
+    if not playerRecipes[player] then return {} end;
+    return playerRecipes[player].storage
+end
+
 
 -- Function to add a recipe to a player's list of recipes
 function OrderService:addRecipe(player, recipe, value)
-    if not player or not recipe or not value then return end;
+    local PartyService = Knit.GetService("PartyService");
+	local PartyMembers = {};
+	local PartyOwner = player;
+
+	local PartyInfo = PartyService:FindPartyFromPlayer(player);
+	PartyOwner = Players:GetPlayerByUserId(PartyInfo.OwnerId)
+
+    if not PartyOwner or not recipe or not value then return end;
+
+	for _, memberInParty in pairs(PartyInfo.Members) do
+		local memberIdToPlayer = memberInParty.Player;
+		table.insert(PartyMembers, memberIdToPlayer)
+	end
+    
     if pauseOrders == true then return end;
     -- Check if the player already has a list of recipes
-    if playerRecipes[player] == nil then
+    if playerRecipes[PartyOwner] == nil then
         -- If not, create a new list for the player
-        playerRecipes[player] = {
+        playerRecipes[PartyOwner] = {
             storage = {}, -- player storage
             timer = playerTimer, -- 3 minute timer
         };
     end
 
-    if self:orderCount(player) >= 5 then
+    warn("self:orderCount(PartyOwner)", playerRecipes[PartyOwner], self:orderCount(PartyOwner))
+
+    if self:orderCount(PartyOwner) >= 5 then
         return;
     end
 
@@ -185,9 +206,14 @@ function OrderService:addRecipe(player, recipe, value)
         completed = false
     }
     if pauseOrders == true then return end;
-    table.insert(playerRecipes[player].storage, recipeData)
-    self.Client.AddOrder:Fire(player, recipeData)
-    Knit.GetService("NotificationService"):Message(false, player, "NEW ORDER ADDED!")
+    table.insert(playerRecipes[PartyOwner].storage, recipeData)
+
+    warn("playerRecipes[PartyOwner]", playerRecipes[PartyOwner])
+
+    for _, member in pairs(PartyMembers) do
+		self.Client.AddOrder:Fire(member, recipeData)
+        Knit.GetService("NotificationService"):Message(false, member, "NEW ORDER ADDED!")
+	end
 end
 
 -- Function to add a random recipe to a player's list
@@ -232,23 +258,52 @@ end
 
 -- Function to remove a recipe from a player's list
 function OrderService:removeAllRecipes(player)
-    if not player then return end;
-    if not playerRecipes[player] then return end;
+    local PartyService = Knit.GetService("PartyService");
+	local PartyMembers = {};
+	local PartyOwner = player;
+
+	local PartyInfo = PartyService:FindPartyFromPlayer(player);
+	PartyOwner = Players:GetPlayerByUserId(PartyInfo.OwnerId)
+    if not PartyOwner then return end;
+    if not playerRecipes[PartyOwner] then return end;
     -- Find the recipe in the player's list and remove it
-    playerRecipes[player].storage = {};
-    self.Client.RemoveAllOrders:Fire(player);
+    playerRecipes[PartyOwner].storage = {};
+    
+	for _, memberInParty in pairs(PartyInfo.Members) do
+		local memberIdToPlayer = memberInParty.Player;
+		table.insert(PartyMembers, memberIdToPlayer)
+	end
+
+    for _, member in pairs(PartyMembers) do
+		self.Client.RemoveAllOrders:Fire(member);
+	end
 end
 
 -- Function to remove a recipe from a player's list
 function OrderService:removeRecipe(player, recipeId)
-    if not player then return end;
-    if not playerRecipes[player] then return end;
-    -- Find the recipe in the player's list and remove it
-    for i, r in ipairs(playerRecipes[player].storage) do
+    local PartyService = Knit.GetService("PartyService");
+	local PartyMembers = {};
+	local PartyOwner = player;
+
+	local PartyInfo = PartyService:FindPartyFromPlayer(player);
+	PartyOwner = Players:GetPlayerByUserId(PartyInfo.OwnerId)
+
+    if not PartyOwner then return end;
+    if not playerRecipes[PartyOwner] then return end;
+
+	for _, memberInParty in pairs(PartyInfo.Members) do
+		local memberIdToPlayer = memberInParty.Player;
+		table.insert(PartyMembers, memberIdToPlayer)
+	end
+
+    for i, r in ipairs(playerRecipes[PartyOwner].storage) do
         --print(r.id, recipeId, r.id == recipeId)
         if r.id == recipeId then
-            self.Client.RemoveOrder:Fire(player, r.id)
-            table.remove(playerRecipes[player].storage, i) 
+            for _, member in pairs(PartyMembers) do
+                self.Client.RemoveOrder:Fire(member, r.id)
+            end
+            
+            table.remove(playerRecipes[PartyOwner].storage, i) 
             break
         end
     end
@@ -299,10 +354,22 @@ end
 
 -- Function to mark a recipe as completed for a player
 function OrderService:completeRecipe(player, recipe, reward, percentage)
-    if not player or not recipe then return end;
-    if not playerRecipes[player] then return end;
+    local PartyService = Knit.GetService("PartyService");
+	local PartyMembers = {};
+	local PartyOwner = player;
+
+	local PartyInfo = PartyService:FindPartyFromPlayer(player);
+	PartyOwner = Players:GetPlayerByUserId(PartyInfo.OwnerId)
+
+    if not PartyOwner or not recipe then return end;
+    if not playerRecipes[PartyOwner] then return end;
+	for _, memberInParty in pairs(PartyInfo.Members) do
+		local memberIdToPlayer = memberInParty.Player;
+		table.insert(PartyMembers, memberIdToPlayer)
+	end
+
     -- Find the recipe in the player's list and mark it as completed
-    for _, r in ipairs(playerRecipes[player].storage) do
+    for _, r in ipairs(playerRecipes[PartyOwner].storage) do
         if r.name == recipe and r.completed == false then
             --print("COMPLETE RECIPE:", player, recipe)
             r.completed = true
@@ -316,13 +383,20 @@ function OrderService:completeRecipe(player, recipe, reward, percentage)
                     local DataService = Knit.GetService("DataService")
 	                local profile = DataService:GetProfile(player);
                     if profile then
-                        --if 
+                        -- check if this is the first time unlocking the recipe 
                     end
-                    Knit.GetService("DataService"):GiveCurrency(player, bonusReward, false, "+BONUS %")
+
+                    for _, member in pairs(PartyMembers) do
+                        Knit.GetService("DataService"):GiveCurrency(member, bonusReward, false, "+BONUS %")
+                    end
+
                 end
             end
 
-            self.Client.CompleteOrder:Fire(player, r.id)
+            for _, member in pairs(PartyMembers) do
+                self.Client.CompleteOrder:Fire(member, r.id)
+            end
+            
             self:removeRecipe(player, recipe.id)
             break
         end

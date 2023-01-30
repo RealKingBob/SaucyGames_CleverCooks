@@ -40,6 +40,7 @@ Knit.ReplicatedBoosterEffects = Knit.Shared.Assets.BoosterEffects;
 
 ----- Loaded Services -----
 Knit.DataService = require(Knit.Services.DataService);
+Knit.PartyService = require(Knit.Services.PartyService);
 Knit.AvatarService = require(Knit.Services.AvatarService);
 Knit.MusicService = require(Knit.Services.MusicService);
 Knit.NotificationService = require(Knit.Services.NotificationService);

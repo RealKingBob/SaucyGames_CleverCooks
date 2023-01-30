@@ -20,6 +20,14 @@ function CollisionController:KnitInit()
         end
     end
 
+    local function onDescendantRemoving(descendant)
+        if descendant:IsA("BasePart") then
+            --PhysicsService:SetPartCollisionGroup(descendant, "NoCollision")
+            descendant.CollisionGroup = "Food";
+            --print("descendant.CollisionGroup:", descendant:GetFullName(), descendant.CollisionGroup)
+        end
+    end
+
     local function onCharacterAdded(character)
         --print("no collision here")
         if not character then return end
@@ -28,6 +36,7 @@ function CollisionController:KnitInit()
             onDescendantAdded(descendant)
         end
         character.DescendantAdded:Connect(onDescendantAdded)
+        --character.DescendantRemoving:Connect(onDescendantRemoving)
     end
 
     local function onPlayerAdded(player)

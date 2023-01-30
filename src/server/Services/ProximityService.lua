@@ -193,11 +193,28 @@ function fixHighlight(obj)
 end
 
 function ProximityService:UnlinkItemToPlayer(Character,Object)
+    local player = PlayerService:GetPlayerFromCharacter(Character)
+    local PartyService = Knit.GetService("PartyService");
+	local PartyMembers = {};
+	local PartyOwner = player;
+
+	if PartyService:IsPlayerInParty(player) == true then
+        local PartyInfo = PartyService:FindPartyFromPlayer(player);
+		PartyOwner = PlayerService:GetPlayerByUserId(PartyInfo.OwnerId)
+        local Party = PartyService:GetParty(player)
+		for _, memberInParty in pairs(Party.Members) do
+			local memberIdToPlayer = memberInParty.Player;
+			table.insert(PartyMembers, memberIdToPlayer)
+		end
+    else
+        table.insert(PartyMembers, player)
+    end
+
 	if Character and Object then
 		if Object:IsA("Model") and Object.PrimaryPart then
             --print(Object.PrimaryPart:GetAttribute("i1"))
 			local _PrimaryPart = Object.PrimaryPart;
-			_PrimaryPart:SetAttribute("Owner", PlayerService:GetPlayerFromCharacter(Character).Name);
+			_PrimaryPart:SetAttribute("Owner", PartyOwner.Name);
 			_PrimaryPart.HandJoint.Attachment1 = nil;
 
 			if _PrimaryPart:GetAttribute("Type") == "Ingredient" then
@@ -227,7 +244,7 @@ function ProximityService:UnlinkItemToPlayer(Character,Object)
 			Character.PrimaryPart.ProximityPrompt.Enabled = false;
             _PrimaryPart.ProximityPrompt.Enabled = true;
 		elseif Object:IsA("BasePart") then
-			Object:SetAttribute("Owner", PlayerService:GetPlayerFromCharacter(Character).Name);
+			Object:SetAttribute("Owner", PartyOwner.Name);
 			Object.HandJoint.Attachment1 = nil;
 			if Object:GetAttribute("Type") == "Ingredient" then
 				Object.Parent = workspace.IngredientAvailable;

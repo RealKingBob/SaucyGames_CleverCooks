@@ -33,13 +33,15 @@ local function displayButtons(status)
             if not button:IsA("TextButton") then continue end
             if button.Name == "Menu" then continue end
     
-            if currentStatus == true then
+            if currentStatus == false then
+                --print("not visislble ")
                 button.Size = UDim2.fromScale(0.8, 0.6);
                 
                 button:TweenSize(UDim2.fromScale(0.8, 0.6), Enum.EasingDirection.Out, Enum.EasingStyle.Cubic, 0.7);
                 task.wait(0.01)
                 button.Visible = false;
             else
+                --print("ivisivlble")
                 button.Size = UDim2.fromScale(0,0);
                 button.Visible = true;
     
@@ -68,13 +70,21 @@ function ViewsUI:OpenView(ViewName, ButtonEnabled, DisableTween)
     ViewToggledEvent:Fire(ViewName, true);
 
     if ViewName == "Menu" then
-        print("menu clicked")
+        --print("menu clicked")
         return
     end
 
     if ButtonEnabled then
-        if ViewName ~= "Settings" then
+        --print(ViewName, ViewName == "Settings", ViewName == "Party")
+        if ViewName == "Settings" or ViewName == "Party" then
+            task.spawn(function()
+                local PartyUI = Knit.GetController("PartyUI")
+                PartyUI:RefreshInvitePlayers();
+                PartyUI:RefreshPartyMembers();
+            end)
             task.spawn(displayButtons, false)
+        else
+            task.spawn(displayButtons, true)
         end
     end
     
@@ -106,7 +116,7 @@ function ViewsUI:CloseView(ItemName, ButtonEnabled, DisableTween)
         ViewToggledEvent:Fire(TargetView.Name, false);
 
         if ButtonEnabled then
-            task.spawn(displayButtons, true)
+            task.spawn(displayButtons, false)
         end
         
         local OriginalPosition = ViewOriginalPositions[TargetView.Name];
@@ -141,16 +151,17 @@ function ViewsUI:KnitStart()
         if (v:IsA("TextButton")) then
             v.MouseButton1Click:Connect(function()
                 if (Views:FindFirstChild(v.Name)) then
-                    if (CurrentView and CurrentView.Name == v.Name) then
-                        if leftContainerDeb == false then leftContainerDeb = true else return end
-                        self:CloseView(nil, true);
-                        task.wait(.5)
-                        leftContainerDeb = false;
-                    else		
-                        if leftContainerDeb == false then leftContainerDeb = true else return end
-                        self:OpenView(v.Name, true);
-                        task.wait(.5)
-                        leftContainerDeb = false;
+                    if leftContainerDeb == false then
+                        leftContainerDeb = true;
+                        if (CurrentView and CurrentView.Name == v.Name) then
+                            self:CloseView(nil, true);
+                            task.wait(.5)
+                            leftContainerDeb = false;
+                        else		
+                            self:OpenView(v.Name, true);
+                            task.wait(.5)
+                            leftContainerDeb = false;
+                        end
                     end
                 end
             end)

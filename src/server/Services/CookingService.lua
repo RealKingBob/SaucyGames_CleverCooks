@@ -36,7 +36,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage");
 
 local GameLibrary = ReplicatedStorage:FindFirstChild("GameLibrary");
 
-local IngredientsAvailable = workspace:WaitForChild("IngredientAvailable");
+local IngredientAvailable = workspace:WaitForChild("IngredientAvailable");
 local FoodAvailable = workspace:WaitForChild("FoodAvailable");
 
 local ReplicatedAssets = Knit.Shared.Assets;
@@ -114,12 +114,29 @@ local function PlayerAdded(player)
    	end)
 end;
 
+local function deletePlayerObject(player, object)
+	if not player or not object then return end;
+	local owner = object:IsA("Model") and object.PrimaryPart and object.PrimaryPart:GetAttribute("Owner") or object:GetAttribute("Owner")
+
+	if owner and owner == player.Name then
+		object:Destroy()
+	end
+end
+
 local function PlayerRemoving(player)
     CurrentIngredientObjects[player.Name] = nil;
 	additionalPansInfo[player.UserId] = nil;
     possibleRecipes[player.Name] = nil;
 	playerDebounces[player] = nil;
 	cookingTimers[player] = nil;
+
+	for _,v in pairs(FoodAvailable:GetChildren()) do
+		deletePlayerObject(player, v)
+	end;
+
+	for _,v in pairs(IngredientAvailable:GetChildren()) do
+		deletePlayerObject(player, v)
+	end;
 end;
 
 
@@ -240,15 +257,26 @@ local function visualizeFood(foodObject, percentage)
 end
 
 local function checkItemIsOwner(Player, Item)
-	if Item:GetAttribute("Owner") == "Default" then
-		return true;
-	end
-	
-	if Item:GetAttribute("Owner") == Player.Name then
-		return true;
+	local PartyService = Knit.GetService("PartyService");
+	local PartyMembers = {};
+	local PartyOwner = Player;
+
+	local PartyInfo = PartyService:FindPartyFromPlayer(Player);
+	PartyOwner = Players:GetPlayerByUserId(PartyInfo.OwnerId)
+	for _, memberInParty in pairs(PartyInfo.Members) do
+		local memberIdToPlayer = memberInParty.Player;
+		table.insert(PartyMembers, memberIdToPlayer)
 	end
 
-	return false;
+	if Item:GetAttribute("Owner") == "Default" then
+		return true, PartyMembers;
+	end
+
+	if Item:GetAttribute("Owner") == PartyOwner.Name then
+		return true, PartyMembers;
+	end
+
+	return false, nil;
 end
 
 local function searchForItemInWorkspace(item)
@@ -263,11 +291,20 @@ end
 
 -- Proximity Functions
 
+function CookingService:GetAdditionalPansInfo(Player)
+	if additionalPansInfo[Player.UserId] then
+		return additionalPansInfo[Player.UserId];
+	end
+	return {};
+end;
+
 function CookingService:PickUp(Player, Character, Item)
 	if not Player or not Character or not Item then return end
 	if not searchForItemInWorkspace(Item) then return end
 	if CollectionService:HasTag(Item, "OnCookingDelete") then return end
-	if checkItemIsOwner(Player, Item) == false then return end
+	if CollectionService:HasTag(Item, "InPickup") then return end
+	local isOwner, partyMembers = checkItemIsOwner(Player, Item)
+	if isOwner == false then return end
 
 	local playerData = PlayersInServers[Player.UserId];
 	if not playerData then 
@@ -280,6 +317,18 @@ function CookingService:PickUp(Player, Character, Item)
 		debounceCooking(Player, 1);
 		--print('d',cookingTimers[Player])
 		local ProximityService = Knit.GetService("ProximityService");
+		CollectionService:AddTag(Item, "InPickup")
+
+		local PartyService = Knit.GetService("PartyService");
+		local PartyMembers = {};
+
+		print("FindPartyFromPlayer", PartyService:FindPartyFromPlayer(Player))
+		local PartyInfo = PartyService:FindPartyFromPlayer(Player);
+		for _, memberInParty in pairs(PartyInfo.Members) do
+			local memberIdToPlayer = memberInParty.Player;
+			table.insert(PartyMembers, memberIdToPlayer)
+		end
+
 		local itemObject = (Item:IsA("Model") and Item.PrimaryPart ~= nil and Item.PrimaryPart) or Item;
 		
 		if not itemObject or not Character:FindFirstChild("HumanoidRootPart") then return end;
@@ -324,6 +373,10 @@ function CookingService:PickUp(Player, Character, Item)
 			end
 			
 			ProximityService:PickUpIngredient(Character, ClonedItem);
+			print("pickup members,",PartyMembers)
+			for i, member in pairs(PartyMembers) do
+				self.Client.PickUp:Fire(member, Item)
+			end
 			self.Client.ProximitySignal:Fire(Player,"DropDown",true);
 			PlayersInServers[Player.UserId] = {nil, Item};
 		elseif itemType == "Food" then
@@ -338,6 +391,10 @@ function CookingService:PickUp(Player, Character, Item)
 			visualizeFood(ClonedItem, cookingPercentage);
 			
 			ProximityService:PickUpFood(Character, ClonedItem);
+			print("pickup members,",PartyMembers)
+			for i, member in pairs(PartyMembers) do
+				self.Client.PickUp:Fire(member, Item)
+			end
 			self.Client.ProximitySignal:Fire(Player,"DropDown",true);
 			PlayersInServers[Player.UserId] = {nil, Item};
 		end
@@ -356,26 +413,34 @@ function CookingService:DropDown(Player,Character)
 		debounceCooking(Player, 1);
 		PlayersInServers[Player.UserId][1] = true;
 		local ProximityService = Knit.GetService("ProximityService");
+
+		local PartyService = Knit.GetService("PartyService");
+		local PartyMembers = {};
+		local PartyOwner = Player;
+
+		local PartyInfo = PartyService:FindPartyFromPlayer(Player);
+		PartyOwner = Players:GetPlayerByUserId(PartyInfo.OwnerId)
+
 		for _,item in pairs(game.Workspace:FindFirstChild("FoodAvailable"):GetChildren()) do
 			if item:IsA("Model") then
 				--print("CHECKl", item.PrimaryPart:GetAttribute("Owner") , Player.Name, item , PlayersInServers[Player.UserId][2], item.PrimaryPart == PlayersInServers[Player.UserId][2])
 				if not item then continue end
 				if item and not item.PrimaryPart then item:Destroy() continue end
-				if item.PrimaryPart:GetAttribute("Owner") == Player.Name and item.PrimaryPart == PlayersInServers[Player.UserId][2] then item:Destroy() end;
+				if item.PrimaryPart:GetAttribute("Owner") == PartyOwner.Name and item.PrimaryPart == PlayersInServers[Player.UserId][2] then item:Destroy() end;
 			elseif item:IsA("MeshPart") then
 				if not item then continue end
-				if item:GetAttribute("Owner") == Player.Name and item == PlayersInServers[Player.UserId][2] then item:Destroy() end;
+				if item:GetAttribute("Owner") == PartyOwner.Name and item == PlayersInServers[Player.UserId][2] then item:Destroy() end;
 			end;
 		end;
 		for _,item in pairs(game.Workspace:FindFirstChild("IngredientAvailable"):GetChildren()) do
 			if item:IsA("Model") then
 				if not item then continue end
 				if item and not item.PrimaryPart then item:Destroy() continue end
-				if item.PrimaryPart:GetAttribute("Owner") == Player.Name and item.PrimaryPart == PlayersInServers[Player.UserId][2] then item:Destroy() end;
+				if item.PrimaryPart:GetAttribute("Owner") == PartyOwner.Name and item.PrimaryPart == PlayersInServers[Player.UserId][2] then item:Destroy() end;
 			elseif item:IsA("MeshPart") then
 				--print("CHECK2", item:GetAttribute("Owner") , Player.Name, item , PlayersInServers[Player.UserId][2], item == PlayersInServers[Player.UserId][2])
 				if not item then continue end
-				if item:GetAttribute("Owner") == Player.Name and item == PlayersInServers[Player.UserId][2] then item:Destroy() end;
+				if item:GetAttribute("Owner") == PartyOwner.Name and item == PlayersInServers[Player.UserId][2] then item:Destroy() end;
 			end;
 		end;
 
@@ -387,6 +452,20 @@ function CookingService:DropDown(Player,Character)
 end;
 
 ----- Cooking Functions -----
+
+function CookingService:GetNumberOfFoodCooking(player)
+	if not cookingPansQueue[player.UserId] then
+		return 0;
+	end
+	return #cookingPansQueue[player.UserId]
+end
+
+function CookingService:GetPickUpData(player)
+	if not PlayersInServers[player.UserId] then
+		return {false, nil};
+	end
+	return PlayersInServers[player.UserId];
+end
 
 function CookingService:CanCookOnPan(player, pan)
 	--print("CanCookOnPan:", cookingPansQueue[player.UserId])
@@ -403,15 +482,27 @@ function CookingService:CanCookOnPan(player, pan)
 
 	local function removeFood()
 		if tablefind(cookingPansQueue[player.UserId], pan) then 
+			local PartyService = Knit.GetService("PartyService");
+			local PartyMembers = {};
+			local PartyOwner = player;
+
+			local PartyInfo = PartyService:FindPartyFromPlayer(player);
+			PartyOwner = Players:GetPlayerByUserId(PartyInfo.OwnerId)
+			for _, memberInParty in pairs(PartyInfo.Members) do
+				local memberIdToPlayer = memberInParty.Player;
+				table.insert(PartyMembers, memberIdToPlayer)
+			end
 			-- something is on the pan i will clear it for u
 			print("Removing food from pan")
 	
-			table.remove( cookingPansQueue[player.UserId], tablefind(cookingPansQueue[player.UserId], pan) );
-	
-			self.Client.UpdatePans:Fire(player, cookingPansQueue[player.UserId])
-	
+			table.remove( cookingPansQueue[PartyOwner.UserId], tablefind(cookingPansQueue[PartyOwner.UserId], pan) );
+
+			for _, member in pairs(PartyMembers) do
+				self.Client.UpdatePans:Fire(member, cookingPansQueue[PartyOwner.UserId])
+			end
+
 			--print("cookingPansQueue", cookingPansQueue[player.UserId])
-			local SelectedRecipe = RecipeModule[tostring(additionalPansInfo[player.UserId][pan].Recipe)];
+			local SelectedRecipe = RecipeModule[tostring(additionalPansInfo[PartyOwner.UserId][pan].Recipe)];
 			local RawCalculatedEXP = (EXPMultiplier * #SelectedRecipe["Ingredients"]);
 			self.Client.ProximitySignal:Fire(player,"CookVisible",false);
 			--RewardService:GiveReward(profile, {EXP = MathAPI:Find_Closest_Divisible_Integer(RawCalculatedEXP, 2);})
@@ -425,32 +516,34 @@ function CookingService:CanCookOnPan(player, pan)
 				food = SpawnItemsAPI:Spawn(
 					player.UserId, 
 					player, 
-					additionalPansInfo[player.UserId][pan].Recipe, 
+					additionalPansInfo[PartyOwner.UserId][pan].Recipe, 
 					FoodObjects, 
 					FoodAvailable, 
 					pan.Position + Vector3.new(0,5,0),
-					additionalPansInfo[player.UserId][pan].Percentage
+					additionalPansInfo[PartyOwner.UserId][pan].Percentage
 				);
 			else
 				food = SpawnItemsAPI:Spawn(
 					player.UserId, 
 					player, 
-					additionalPansInfo[player.UserId][pan].Recipe, 
+					additionalPansInfo[PartyOwner.UserId][pan].Recipe, 
 					FoodObjects, 
 					FoodAvailable,
 					player.Character.HumanoidRootPart.Position + player.Character.HumanoidRootPart.CFrame.lookVector * 4,
-					additionalPansInfo[player.UserId][pan].Percentage
+					additionalPansInfo[PartyOwner.UserId][pan].Percentage
 				);
 			end
 	
 			--print("GENERATED FOOD:", food)
+
+			for _, member in pairs(PartyMembers) do
+				Knit.GetService("NotificationService"):Message(false, member, string.upper(tostring(food)).." WAS MADE!")
 	
-			Knit.GetService("NotificationService"):Message(false, player, string.upper(tostring(food)).." WAS MADE!")
-	
-			self.Client.ParticlesSpawn:Fire(player, food, "CookedParticle")
-			self.Client.Cook:Fire(player, "Destroy", tostring(additionalPansInfo[player.UserId][pan].Recipe), pan)
-			
-			additionalPansInfo[player.UserId][pan] = nil;
+				self.Client.ParticlesSpawn:Fire(member, food, "CookedParticle")
+				self.Client.Cook:Fire(member, "Destroy", tostring(additionalPansInfo[PartyOwner.UserId][pan].Recipe), pan)
+			end
+
+			additionalPansInfo[PartyOwner.UserId][pan] = nil;
 			return true;
 		end
 		return false;
@@ -470,15 +563,21 @@ function CookingService:CanCookOnPan(player, pan)
 end
 
 function CookingService:CanBlendOnBlender(player, blender)
-	if not blendingFoodQueue[player.UserId] then 
-		blendingFoodQueue[player.UserId] = {};
+	local PartyService = Knit.GetService("PartyService");
+	local PartyOwner = player;
+
+	local PartyInfo = PartyService:FindPartyFromPlayer(player);
+	PartyOwner = Players:GetPlayerByUserId(PartyInfo.OwnerId)
+
+	if not blendingFoodQueue[PartyOwner.UserId] then 
+		blendingFoodQueue[PartyOwner.UserId] = {};
 		return true; 
 	end
-	if #blendingFoodQueue[player.UserId] == 0 then return true; end
+	if #blendingFoodQueue[PartyOwner.UserId] == 0 then return true; end
 
-	if table.find(blendingFoodQueue[player.UserId], blender) then return false; end
+	if table.find(blendingFoodQueue[PartyOwner.UserId], blender) then return false; end
 
-	if #blendingFoodQueue[player.UserId] > 1 then
+	if #blendingFoodQueue[PartyOwner.UserId] > 1 then
 		print("needs gamepass to cook blend foods")
 		-- check if has gamepass
 		return true;
@@ -502,12 +601,24 @@ function CookingService:Recipe(player, recipe)
 end;
 
 function CookingService:Blend(player, Character, recipe, blender)
+	if not player or not Character or not recipe or not blender then return end;
 	print('[CookingService]: Blending Food: '.. tostring(recipe));
 
-	if self:CanBlendOnBlender(player, blender) == false then return false; end
+	local PartyService = Knit.GetService("PartyService");
+	local PartyMembers = {};
+	local PartyOwner = player;
+
+	local PartyInfo = PartyService:FindPartyFromPlayer(player);
+	PartyOwner = Players:GetPlayerByUserId(PartyInfo.OwnerId)
+	for _, memberInParty in pairs(PartyInfo.Members) do
+		local memberIdToPlayer = memberInParty.Player;
+		table.insert(PartyMembers, memberIdToPlayer)
+	end
+
+	if self:CanBlendOnBlender(PartyOwner, blender) == false then return false; end
 
 	local DataService = Knit.GetService("DataService")
-	local profile = DataService.GetProfile(player);
+	local profile = DataService.GetProfile(PartyOwner);
 	if not profile then
 		local getRadius = function(part)
 			return (part.Size.Z<part.Size.Y and part.Size.Z or part.Size.Y)/2
@@ -528,7 +639,7 @@ function CookingService:Blend(player, Character, recipe, blender)
 			end
 		end
 	else
-		warn("Could not find user["..tostring(player.UserId).."] profile to cook the food, please retry")
+		warn("Could not find user["..tostring(PartyOwner.UserId).."] profile to cook the food, please retry")
 	end;
 end;
 
@@ -644,13 +755,24 @@ end
 
 function CookingService:StartCookingProcess(player, pan, recipe, previousPercentage)
 	print("player, pan, recipe, previousPercentage:", player, pan, recipe, previousPercentage)
-	debounceCooking(player, 1);
-	if additionalPansInfo[player.UserId][pan] == nil then
-		additionalPansInfo[player.UserId][pan] = {};
+	local PartyService = Knit.GetService("PartyService");
+	local PartyMembers = {};
+	local PartyOwner = player;
+
+	local PartyInfo = PartyService:FindPartyFromPlayer(player);
+	PartyOwner = Players:GetPlayerByUserId(PartyInfo.OwnerId)
+	for _, memberInParty in pairs(PartyInfo.Members) do
+		local memberIdToPlayer = memberInParty.Player;
+		table.insert(PartyMembers, memberIdToPlayer)
 	end
 
-	table.insert(cookingPansQueue[player.UserId], pan)
-	additionalPansInfo[player.UserId][pan] = {
+	debounceCooking(PartyOwner, 1);
+	if additionalPansInfo[PartyOwner.UserId][pan] == nil then
+		additionalPansInfo[PartyOwner.UserId][pan] = {};
+	end
+
+	table.insert(cookingPansQueue[PartyOwner.UserId], pan)
+	additionalPansInfo[PartyOwner.UserId][pan] = {
 		Recipe = recipe,
 		Percentage = previousPercentage,
 	}
@@ -659,10 +781,15 @@ function CookingService:StartCookingProcess(player, pan, recipe, previousPercent
 
 	--print("cookingPansQueue", cookingPansQueue[player.UserId])
 
-	Knit.GetService("NotificationService"):Message(false, player, "COOKING STARTED!")
+	print(PartyMembers)
 
-	self.Client.Cook:Fire(player, "Initialize", tostring(recipe), pan)
-	self.Client.UpdatePans:Fire(player, cookingPansQueue[player.UserId])
+	for _, member in pairs(PartyMembers) do
+		Knit.GetService("NotificationService"):Message(false, member, "COOKING STARTED!")
+
+		self.Client.Cook:Fire(member, "Initialize", tostring(recipe), pan)
+		self.Client.UpdatePans:Fire(member, cookingPansQueue[PartyOwner.UserId])
+	end
+	
 
 	local function tablefind(tab,el) for index, value in pairs(tab) do if value == el then	return index end end end
 
@@ -713,14 +840,14 @@ function CookingService:StartCookingProcess(player, pan, recipe, previousPercent
 
 				CurrencySessionService:DropCheese(
 					pan.CFrame, 
-					player, 
+					PartyOwner, 
 					cheeseObjectPerDrop, 
 					math.floor((cheeseValuePerDrop / cheeseObjectPerDrop))
 				)
 			end
 
-			if additionalPansInfo[player.UserId][pan] then
-				additionalPansInfo[player.UserId][pan] = {
+			if additionalPansInfo[PartyOwner.UserId][pan] then
+				additionalPansInfo[PartyOwner.UserId][pan] = {
 					Recipe = recipe,
 					Percentage = getNumberInRange(count,  cookingTime),
 				}
@@ -730,13 +857,15 @@ function CookingService:StartCookingProcess(player, pan, recipe, previousPercent
 
 				--print("nums", count, count-1, previousNumberInRange, currentNumberInRange)
 
-				self.Client.Cook:Fire(player, "CookUpdate", tostring(recipe), pan, {previous = previousNumberInRange, current = currentNumberInRange, overCookingLimit = isOverLimit})
+				for _, member in pairs(PartyMembers) do
+					self.Client.Cook:Fire(member, "CookUpdate", tostring(recipe), pan, {previous = previousNumberInRange, current = currentNumberInRange, overCookingLimit = isOverLimit})
+				end
 				task.wait(1)
 			end
-		until not player 
-			or additionalPansInfo[player.UserId][pan] == nil 
-			or cookingPansQueue[player.UserId] == nil 
-			or tablefind(cookingPansQueue[player.UserId], pan) == nil
+		until not PartyOwner 
+			or additionalPansInfo[PartyOwner.UserId][pan] == nil 
+			or cookingPansQueue[PartyOwner.UserId] == nil 
+			or tablefind(cookingPansQueue[PartyOwner.UserId], pan) == nil
 	end)
 end
 local count = 0;
@@ -747,31 +876,42 @@ function CookingService:Cook(player, Character, recipe, pan)
 	print('[CookingService]: Cooking Food: '.. tostring(recipe), player,"COUNT:",count);
 	print('[CookingService]: Additional info:', player, Character, recipe, pan);
 
-	if not player or not pan then return false; end
-	if cookingTimers[player] then
-		warn('CANT COOK BECAUSE COOLDOWN:', cookingTimers[player].Value)
+	local PartyService = Knit.GetService("PartyService");
+	local PartyMembers = {};
+	local PartyOwner = player;
+
+	local PartyInfo = PartyService:FindPartyFromPlayer(player);
+	PartyOwner = Players:GetPlayerByUserId(PartyInfo.OwnerId)
+	for _, memberInParty in pairs(PartyInfo.Members) do
+		local memberIdToPlayer = memberInParty.Player;
+		table.insert(PartyMembers, memberIdToPlayer)
+	end
+
+	if not PartyOwner or not pan then return false; end
+	if cookingTimers[PartyOwner] then
+		warn('CANT COOK BECAUSE COOLDOWN:', cookingTimers[PartyOwner].Value)
 		return 
 	end;
-	local CanCook = self:CanCookOnPan(player, pan)
+	local CanCook = self:CanCookOnPan(PartyOwner, pan)
 	print('Check if can cook:', CanCook)
 	if CanCook == false then return false; end
 
 	local DataService = Knit.GetService("DataService")
-	local profile = DataService:GetProfile(player);
+	local profile = DataService:GetProfile(PartyOwner);
 
 	if profile then
 		if recipe and RecipeModule[tostring(recipe)] then -- if not food and all ingredients
 			print("Cooking new food")
 			local SelectedRecipe = RecipeModule[tostring(recipe)];
 			local previousPercentage = 0;
-			local IngredientsUsed = ingredientCheck(player, recipe);
+			local IngredientsUsed = ingredientCheck(PartyOwner, recipe);
 
 			if #SelectedRecipe["Ingredients"] == #IngredientsUsed then
 				print('[CookingService]: Found all ingredients',IngredientsUsed);
 				destroyIngredients(IngredientsUsed);
 				IngredientsUsed = {};
 			else
-				recipe, previousPercentage = checkForFood(player);
+				recipe, previousPercentage = checkForFood(PartyOwner);
 
 				if not recipe then 
 					warn("couldnt find food")
@@ -782,22 +922,22 @@ function CookingService:Cook(player, Character, recipe, pan)
 
 			--print("COOKING TIME")
 
-			self:StartCookingProcess(player, pan, recipe, previousPercentage)
+			self:StartCookingProcess(PartyOwner, pan, recipe, previousPercentage)
 		else -- if food
 			print("Cooking existing food")
-			if not CurrentIngredientObjects[player.Name] then CurrentIngredientObjects[player.Name] = {} end
+			if not CurrentIngredientObjects[PartyOwner.Name] then CurrentIngredientObjects[PartyOwner.Name] = {} end
 			local previousPercentage = 0;
 
-			recipe, previousPercentage = checkForFood(player);
+			recipe, previousPercentage = checkForFood(PartyOwner);
 			if not recipe then 
 				warn("couldnt find food")
 				return 
 			end
 
-			self:StartCookingProcess(player, pan, recipe, previousPercentage)
+			self:StartCookingProcess(PartyOwner, pan, recipe, previousPercentage)
 		end;
 	else
-		warn("Could not find user["..tostring(player.UserId).."] profile to cook the food, please retry")
+		warn("Could not find user["..tostring(PartyOwner.UserId).."] profile to cook the food, please retry")
 	end;
 end;
 
@@ -805,12 +945,24 @@ function CookingService:DeliverFood(player, food)
     print('[CookingService]: Submitting Food: '.. tostring(food));
 
 	local DataService = Knit.GetService("DataService")
+	local PartyService = Knit.GetService("PartyService");
 	local profile = DataService:GetProfile(player);
+
+	local PartyMembers = {};
+	local PartyOwner = player;
+
+	local PartyInfo = PartyService:FindPartyFromPlayer(player);
+	PartyOwner = Players:GetPlayerByUserId(PartyInfo.OwnerId)
+	for _, memberInParty in pairs(PartyInfo.Members) do
+		local memberIdToPlayer = memberInParty.Player;
+		table.insert(PartyMembers, memberIdToPlayer)
+	end
+
 	if profile then
 
 		if RecipeModule[tostring(food)] then
 			--print(SelectedRecipe,SelectedRecipe["Ingredients"])
-			debounceCooking(player, 1);
+			debounceCooking(PartyOwner, 1);
 			for k, v in ipairs(food:GetDescendants()) do
 				if v:IsA("BasePart") or v:IsA("MeshPart") or v:IsA("Weld") then
 					continue;
@@ -837,11 +989,11 @@ function CookingService:DeliverFood(player, food)
 
 			print("DELIVER TIME")
 
-			if not deliverQueues[player.UserId] then 
-				deliverQueues[player.UserId] = {};
+			if not deliverQueues[PartyOwner.UserId] then 
+				deliverQueues[PartyOwner.UserId] = {};
 			end
 
-			table.insert(deliverQueues[player.UserId], food)
+			table.insert(deliverQueues[PartyOwner.UserId], food)
 
 			local deliverTime = RecipeModule:GetCookTime(tostring(food));
 
@@ -849,8 +1001,10 @@ function CookingService:DeliverFood(player, food)
 
 			--print("cookingPansQueue", cookingPansQueue[player.UserId])
 
-			self.Client.Deliver:Fire(player, tostring(food), food, deliverTime)
-
+			for _, member in pairs(PartyMembers) do
+				self.Client.Deliver:Fire(member, tostring(food), food, deliverTime)
+			end
+			
 			local cheeserew;
 
 			task.spawn(function()
@@ -882,7 +1036,7 @@ function CookingService:DeliverFood(player, food)
 				for i = 1, numOfDrops do
 					CurrencySessionService:DropCheese(
 						foodObj.CFrame, 
-						player, 
+						PartyOwner, 
 						cheeseObjectPerDrop, 
 						math.floor((cheeseValuePerDrop / cheeseObjectPerDrop))
 					)
@@ -892,22 +1046,26 @@ function CookingService:DeliverFood(player, food)
 				food:Destroy();
 			end)
 
-			Knit.GetService("OrderService"):completeRecipe(player, tostring(food), cheeserew, cookingPercentage)
+			Knit.GetService("OrderService"):completeRecipe(PartyOwner, tostring(food), cheeserew, cookingPercentage)
 			--RewardService:GiveReward(profile, {EXP = MathAPI:Find_Closest_Divisible_Integer(RawCalculatedEXP, 2);})
 
 			print("food delivered:", food)
-
-			Knit.GetService("NotificationService"):Message(false, player, string.upper(tostring(food)).." WAS DELIVERED!")
 			
+			for _, member in pairs(PartyMembers) do
+				Knit.GetService("NotificationService"):Message(false, member, string.upper(tostring(food)).." WAS DELIVERED!")
+			end
+
 			task.wait(deliverTime);
 
 			local function tablefind(tab,el) for index, value in pairs(tab) do if value == el then	return index end end end
-			table.remove( deliverQueues[player.UserId], tablefind(deliverQueues[player.UserId], food) );
+			table.remove( deliverQueues[PartyOwner.UserId], tablefind(deliverQueues[PartyOwner.UserId], food) );
 
 			--print("cookingPansQueue", cookingPansQueue[player.UserId])
 
 			--local RawCalculatedEXP = (EXPMultiplier * #SelectedRecipe["Ingredients"]);
-			self.Client.ProximitySignal:Fire(player,"CookVisible",false);
+			for _, member in pairs(PartyMembers) do
+				self.Client.ProximitySignal:Fire(member,"CookVisible",false);
+			end
 			
 			--StatTrackService:SetRecentCookedFood(player, tostring(recipe));
 		end;
@@ -973,7 +1131,19 @@ function CookingService:KnitInit()
 		if TableAPI.CheckArrayEquality(prevIngredients[player.UserId],playerIngredients[player.UserId]) == false then
 			--print("SENT DATA")
 			--print("data comparison", prevIngredients[player.UserId], playerIngredients[player.UserId], TableAPI.CheckArrayEquality(prevIngredients[player.UserId],playerIngredients[player.UserId]))
-			self.Client.SendIngredients:Fire(player, playerIngredients[player.UserId])
+			
+			local PartyMembers = {};
+			local PartyOwner = player;
+			local PartyService = Knit.GetService("PartyService");
+			local PartyInfo = PartyService:FindPartyFromPlayer(player);
+			PartyOwner = Players:GetPlayerByUserId(PartyInfo.OwnerId)
+			for _, memberInParty in pairs(PartyInfo.Members) do
+				local memberIdToPlayer = memberInParty.Player;
+				table.insert(PartyMembers, memberIdToPlayer)
+			end
+			for _, member in pairs(PartyMembers) do
+				self.Client.SendIngredients:Fire(member, playerIngredients[PartyOwner.UserId])
+			end
 		end
 
 		prevIngredients[player.UserId] = playerIngredients[player.UserId];

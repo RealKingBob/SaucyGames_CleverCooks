@@ -11,6 +11,7 @@
 ]]
 
 --//Services
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
@@ -41,11 +42,49 @@ PartyService.PartyStatus = {
 
 --//Private Functions
 local function OnPlayerAdded(Player : Player)
-    PartyService:CreateParty(Player);
+    local createdParty = PartyService:CreateParty(Player);
+
+    if createdParty == false then
+        for i, v in pairs(PartyService:GetPartyMembers(Player)) do
+            PartyService:RemovePlayerFromParty(v);
+        end
+        PartyService:RemovePlayerFromParty(Player);
+    end
 end
 
 local function OnPlayerRemoved(Player : Player)
+    --[[for i, v in pairs(PartyService:GetPartyMembers(Player)) do
+        PartyService:RemovePlayerFromParty(v);
+    end
     PartyService:RemovePlayerFromParty(Player);
+    PartyService:DestroyParty(Player);]]
+
+    local OwnerParty = PartyService:FindPartyFromPlayer(Player)
+    local PartyOwnerId = OwnerParty.OwnerId
+    if OwnerParty then
+        local PlayerIndexWithinParty = PartyService:FindIndexOfPartyMembers(OwnerParty.Members, Player)
+        print("PlayerIndexWithinParty,", PlayerIndexWithinParty)
+        if PlayerIndexWithinParty then
+            table.remove(OwnerParty.Members, PlayerIndexWithinParty)
+        end
+    end
+
+    local Owner = Players:GetPlayerByUserId(PartyOwnerId);
+    if Owner then
+        PartyService.Client.LeaveParty:Fire(Owner, PartyService.Parties[Owner.UserId]);
+    end
+    
+    if PartyService.Parties[PartyOwnerId] then
+        for _, memberInParty in pairs(PartyService.Parties[PartyOwnerId].Members) do
+            local memberIdToPlayer = memberInParty.Player;
+            if memberIdToPlayer then
+                Knit.GetService("NotificationService"):Message(false, memberIdToPlayer, tostring(memberIdToPlayer).." has left party!", {Effect = false, Color = Color3.fromRGB(255, 23, 23)})
+                PartyService.Client.LeaveParty:Fire(memberIdToPlayer, PartyService.Parties[PartyOwnerId]);
+            end
+        end 
+    end
+
+    PartyService.PlayersInParties[Player.UserId] = nil;
     PartyService:DestroyParty(Player);
 end
 
@@ -157,6 +196,8 @@ function PartyService:FindPartyFromPlayer(Player : Player)
     if Player then
         if self.PlayersInParties[Player.UserId] then
             return self.Parties[self.PlayersInParties[Player.UserId].PartyOwnerId];
+        else
+            return self.Parties[Player.UserId];
         end
     end
     return false;
@@ -185,6 +226,20 @@ function PartyService:AddPlayerToParty(Player : Player, Owner : Player)
             return false;
         end
 
+        local CookingService = Knit.GetService("CookingService");
+
+        if CookingService:GetPickUpData(Player)[1] == true then
+            local DataService = Knit.GetService("DataService")
+            DataService.Client.Notification:Fire(Player, "Error!", "Please drop your item and request for an invite again!", "OK");
+            return false;
+        end
+        
+        if CookingService:GetNumberOfFoodCooking(Player) > 0 then
+            local DataService = Knit.GetService("DataService")
+            DataService.Client.Notification:Fire(Player, "Error!", "Finish cooking your food before you can join a party!", "OK");
+            return false;
+        end
+
         if #self.Parties[Owner.UserId].Members > 10 then
             local DataService = Knit.GetService("DataService")
             DataService.Client.Notification:Fire(Player, "Error!", "This party is full!", "OK");
@@ -203,6 +258,7 @@ function PartyService:AddPlayerToParty(Player : Player, Owner : Player)
             end]]
 
             table.insert(self.Parties[Owner.UserId].Members, {
+                Player = Player,
                 UserId = Player.UserId,
                 DisplayName = Player.DisplayName,
                 UserName = Player.Name,
@@ -213,12 +269,21 @@ function PartyService:AddPlayerToParty(Player : Player, Owner : Player)
                 PartyOwnerId = Owner.UserId
             };
 
+            local OrderService = Knit.GetService("OrderService")
+
             self.Client.JoinParty:Fire(Owner, self.Parties[Owner.UserId]);
+            Knit.GetService("NotificationService"):Message(false, Owner, tostring(Player).." has joined party!", {Effect = false, Color = Color3.fromRGB(31, 255, 23)})
 
             for _, memberInParty in pairs(self.Parties[Owner.UserId].Members) do
+                print(memberInParty)
                 if memberInParty.UserId == Owner.UserId then continue end
                 local memberIdToPlayer = memberInParty.Player;
                 self.Client.JoinParty:Fire(memberIdToPlayer, self.Parties[Owner.UserId]);
+                Knit.GetService("NotificationService"):Message(false, memberIdToPlayer, tostring(Player).." has joined party!", {Effect = false, Color = Color3.fromRGB(31, 255, 23)})
+                OrderService.Client.RemoveAllOrders:Fire(memberIdToPlayer);
+                for _, recipeData in pairs(OrderService:getPlayerRecipeStorage(Owner)) do
+                    OrderService.Client.AddOrder:Fire(memberIdToPlayer, recipeData);
+                end
             end            
             return true;
         end
@@ -231,7 +296,7 @@ function PartyService:RemovePlayerFromParty(Player : Player)
         if self:IsPlayerInParty(Player) == false then return false end
         
         if self.PlayersInParties[Player.UserId] then
-            local OwnerParty = self.Parties[self.PlayersInParties[Player.UserId].PartyOwnerId]
+            local OwnerParty = self:FindPartyFromPlayer(Player)
             local PartyOwnerId = OwnerParty.OwnerId
             if OwnerParty then
                 local PlayerIndexWithinParty = self:FindIndexOfPartyMembers(OwnerParty.Members, Player)
@@ -240,15 +305,36 @@ function PartyService:RemovePlayerFromParty(Player : Player)
                     table.remove(OwnerParty.Members, PlayerIndexWithinParty)
                 end
             end
-            self.Client.LeaveParty:Fire(Player, self.Parties[Player.UserId]);
+
+            local OrderService = Knit.GetService("OrderService")
+
+            if Player then
+                self.Client.LeaveParty:Fire(Player, self.Parties[Player.UserId]);
+                local CookingService = Knit.GetService("CookingService")
+                for _, panHitbox in pairs(CollectionService:GetTagged("Pan")) do
+                    local panInfo = CookingService:GetAdditionalPansInfo(Player);
+                    if panInfo[panHitbox] then
+                        CookingService.Cook:Fire(Player, "Destroy", tostring(panInfo[panHitbox].Recipe), panHitbox)
+                    end
+                end
+                OrderService.Client.RemoveAllOrders:Fire(Player);
+                for _, recipeData in pairs(OrderService:getPlayerRecipeStorage(Player)) do
+                    OrderService.Client.AddOrder:Fire(Player, recipeData);
+                end
+            end
 
             local Owner = Players:GetPlayerByUserId(PartyOwnerId);
-            self.Client.LeaveParty:Fire(Owner, self.Parties[Owner.UserId]);
+            if Owner then
+                self.Client.LeaveParty:Fire(Owner, self.Parties[Owner.UserId]);
+            end
             
             if self.Parties[PartyOwnerId] then
                 for _, memberInParty in pairs(self.Parties[PartyOwnerId].Members) do
                     local memberIdToPlayer = memberInParty.Player;
-                    self.Client.LeaveParty:Fire(memberIdToPlayer, self.Parties[PartyOwnerId]);
+                    if memberIdToPlayer then
+                        Knit.GetService("NotificationService"):Message(false, memberIdToPlayer, tostring(Player).." has left party!", {Effect = false, Color = Color3.fromRGB(255, 23, 23)})
+                        self.Client.LeaveParty:Fire(memberIdToPlayer, self.Parties[PartyOwnerId]);
+                    end
                 end 
             end
 
@@ -284,6 +370,14 @@ function PartyService:DestroyParty(Owner : Player)
     if self.Parties[Owner.UserId] then
         for _, memberInParty in pairs(self.Parties[Owner.UserId].Members) do
             local memberIdToPlayer = memberInParty.Player;
+            local CookingService = Knit.GetService("CookingService")
+            for _, panHitbox in pairs(CollectionService:GetTagged("Pan")) do
+                local panInfo = CookingService:GetAdditionalPansInfo(memberIdToPlayer);
+                if panInfo[panHitbox] then
+                    CookingService.Cook:Fire(memberIdToPlayer, "Destroy", tostring(panInfo[panHitbox].Recipe), panHitbox)
+                end
+            end
+            Knit.GetService("NotificationService"):Message(false, memberIdToPlayer, tostring(Owner).." party disbanded!", {Effect = false, Color = Color3.fromRGB(23, 143, 255)})
             self:RemovePlayerFromParty(memberIdToPlayer);
         end
         self.PlayerInvites[Owner.UserId] = nil;
@@ -294,7 +388,7 @@ function PartyService:DestroyParty(Owner : Player)
 end
 
 function PartyService:KnitStart()
-    local TournamentService  = Knit.GetService("TournamentService");
+    --local TournamentService  = Knit.GetService("TournamentService");
 
     self.Client.JoinParty:Connect(function(Player : Player, Owner : Player)
         if Player and Owner then
@@ -315,6 +409,7 @@ function PartyService:KnitStart()
     self.Client.KickPlayer:Connect(function(Player : Player, Target : Player)
         if Player and Target then
             if self.PlayersInParties[Target.UserId].PartyOwnerId == Player.UserId then
+                Knit.GetService("NotificationService"):Message(false, Target, tostring(Player).." has kicked you from party!", {Effect = false, Color = Color3.fromRGB(255, 23, 23)})
                 self:RemovePlayerFromParty(Target);
             end
         end
@@ -332,10 +427,10 @@ function PartyService:KnitStart()
         end
     end)
 
-    self.Client.PartyStatus:Connect(function(Player : Player, Status : "String")
+    --[[self.Client.PartyStatus:Connect(function(Player : Player, Status : "String")
         local OwnerId = self:FindPartyFromPlayer(Player);
 
-        if OwnerId ~= false then 
+        if OwnerId ~= false and Status ~= "QueueCancel" then 
             local DataService = Knit.GetService("DataService")
             DataService.Client.Notification:Fire(Player, "Error!", "Only party owner start the queue!", "OK");
             return;
@@ -350,7 +445,7 @@ function PartyService:KnitStart()
         elseif Status == "QueueCancel" then
             TournamentService:RemoveFromQueue(PartyMembers);
         end
-    end)
+    end)]]
 end
 
 function PartyService:KnitInit()

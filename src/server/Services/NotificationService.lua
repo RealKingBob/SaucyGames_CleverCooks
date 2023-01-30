@@ -17,6 +17,7 @@ function NotificationService:LargeMessage(allPlayers, player, message, typeWrite
 end
 
 function NotificationService:Message(allPlayers, player, message, typeWriteEffect)
+    print("NOTIF", allPlayers, player, message, typeWriteEffect)
     if allPlayers == true then
         self.Client.NotifyMessage:FireAll(message, typeWriteEffect);
     else

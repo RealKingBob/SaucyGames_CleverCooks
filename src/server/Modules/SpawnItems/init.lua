@@ -1,4 +1,5 @@
 local CollectionService = game:GetService("CollectionService")
+local Players = game:GetService("Players")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 --[[
@@ -12,6 +13,8 @@ local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local SpawnItems = {};
 local SpawnItemsLogs = {};
+
+local ReplicatedAssets = Knit.Shared.Assets;
 
 ----- Private functions -----
 
@@ -109,6 +112,81 @@ function SpawnItems:PrintLogs(UserId) -- Prints out a table of logs for that was
     end;
 end;
 
+function SpawnItems:SpawnDistributedIngredients(Theme)
+    local IngredientOjects = Knit.GameLibrary:WaitForChild("IngredientObjects")
+    local FoodSpawnPoints = CollectionService:GetTagged("FoodSpawnPoints");
+    local RareFoodSpawnPoints = {};
+
+    for _, spawn in pairs(FoodSpawnPoints) do
+        if spawn:GetAttribute("RareSpawn") == true then
+            table.insert(RareFoodSpawnPoints, spawn)
+            CollectionService:RemoveTag(spawn, "FoodSpawnPoints")
+        end
+    end
+
+    FoodSpawnPoints = CollectionService:GetTagged("FoodSpawnPoints");
+
+    local Ingredients = {};
+
+    local RecipeModule = require(ReplicatedAssets:WaitForChild("Recipes"));
+
+    local recipeCopy = RecipeModule:GetRecipes()
+
+    for _, recipeData in pairs(recipeCopy) do
+        if recipeData.Origin == Theme then
+            local rIng = recipeData.Ingredients
+            for _, ingredientName in pairs(rIng) do
+                local foundIngredientName, replaced = string.gsub(ingredientName, "%[", "");
+                    foundIngredientName = string.gsub(foundIngredientName, "%]", "")
+                    foundIngredientName = string.gsub(foundIngredientName, "-", "")
+                    foundIngredientName = string.gsub(foundIngredientName, "Blended", "")
+                if not Ingredients[foundIngredientName] then Ingredients[foundIngredientName] = 0 end
+                Ingredients[foundIngredientName] += 1;
+            end
+        end
+    end
+
+    local indexCount, greatestCount = 0, 0;
+
+    for _, ingredientCount in next, Ingredients do
+        if ingredientCount > greatestCount then
+            greatestCount = ingredientCount
+        end
+        indexCount += 1;
+    end;
+
+    greatestCount = math.ceil(greatestCount / 3.5);
+
+    for ingredientName, ingredientCount in next, Ingredients do
+        ingredientCount = math.ceil(ingredientCount * 1.5)
+        if ingredientName and ingredientCount then
+            local Ingredient = IngredientOjects:FindFirstChild(ingredientName);
+
+            for i = 1, ingredientCount do
+                local RandomFoodLocation = FoodSpawnPoints[math.random(1, #FoodSpawnPoints)]
+
+                --print(ingredientCount, greatestCount, ingredientCount <= greatestCount)
+                if ingredientCount < greatestCount then
+                    RandomFoodLocation = RareFoodSpawnPoints[math.random(1, #RareFoodSpawnPoints)]
+                end
+
+                if Ingredient then
+                    local ItemClone = Ingredient:Clone();
+                    if RandomFoodLocation then
+                        if ItemClone:IsA("Model") and ItemClone.PrimaryPart then
+                            ItemClone:SetPrimaryPartCFrame(CFrame.new(RandomFoodLocation.Position + Vector3.new(math.random(-5,5) ,5, math.random(-5,5))))
+                        else
+                            ItemClone.Position = RandomFoodLocation.Position + Vector3.new(math.random(-5,5) ,5, math.random(-5,5));
+                        end
+                    end
+                    ItemClone.Parent = workspace:WaitForChild("IngredientAvailable");
+                end
+
+            end
+        end;
+    end;
+end
+
 function SpawnItems:SpawnAllIngredients(NumOfIngredients)
     local IngredientOjects = Knit.GameLibrary:WaitForChild("IngredientObjects")
     local FoodSpawnPoints = CollectionService:GetTagged("FoodSpawnPoints");
@@ -194,11 +272,28 @@ end;
 
 function SpawnItems:SpawnBlenderFood(UserId, Owner, Ingredients, RootFolder, Directory, Location, ColorOfBlendedFood)
     PrintL(UserId,"[SpawnItemsAPI]: Spawned items [".. tostring(Ingredients) .."] for user[".. tostring(Owner) .."] from RootFolder[".. tostring(RootFolder) .."]");
+    
+    local PartyService = Knit.GetService("PartyService");
+	local PartyMembers = {};
+	local PartyOwner = Owner;
+
+	if PartyService:IsPlayerInParty(Owner) == true then
+        local OwnerId = PartyService:FindPartyFromPlayer(Owner);
+		PartyOwner = Players:GetPlayerByUserId(Owner)
+        local Party = PartyService:GetParty(Owner)
+		for _, memberInParty in pairs(Party.Members) do
+			local memberIdToPlayer = memberInParty.Player;
+			table.insert(PartyMembers, memberIdToPlayer)
+		end
+    else
+        table.insert(PartyMembers, Owner)
+    end
+    
     if Ingredients and RootFolder and Directory then
         local ItemClone = RootFolder:FindFirstChild("Blender Cup"):Clone();
         if Owner then
             if ItemClone:IsA("Model") then
-                ItemClone.PrimaryPart:SetAttribute("Owner", tostring(Owner));
+                ItemClone.PrimaryPart:SetAttribute("Owner", tostring(PartyOwner));
                 ItemClone.PrimaryPart.Color = ColorOfBlendedFood;
                 for index, value in Ingredients do
                     ItemClone.PrimaryPart:SetAttribute("i"..tostring(index), tostring(value));
@@ -206,7 +301,7 @@ function SpawnItems:SpawnBlenderFood(UserId, Owner, Ingredients, RootFolder, Dir
                 end
             elseif ItemClone:IsA("BasePart") then
                 ItemClone.Color = ColorOfBlendedFood;
-                ItemClone:SetAttribute("Owner", tostring(Owner));
+                ItemClone:SetAttribute("Owner", tostring(PartyOwner));
 
                 for index, value in Ingredients do
                     ItemClone:SetAttribute("i"..tostring(index), tostring(value));
@@ -243,13 +338,24 @@ end;
 
 function SpawnItems:Spawn(UserId, Owner, ItemName, RootFolder, Directory, Location, FoodPercentage) -- [UserId, Owner, ItemName, [Name]Ojects, [Name]Available, Position]
     PrintL(UserId,"[SpawnItemsAPI]: Spawned item [".. tostring(ItemName) .."] for user[".. tostring(Owner) .."] from RootFolder[".. tostring(RootFolder) .."]");
+    local PartyService = Knit.GetService("PartyService");
+	local PartyMembers = {};
+	local PartyOwner = Owner;
+
+	local PartyInfo = PartyService:FindPartyFromPlayer(Owner);
+	PartyOwner = Players:GetPlayerByUserId(PartyInfo.OwnerId)
+	for _, memberInParty in pairs(PartyInfo.Members) do
+		local memberIdToPlayer = memberInParty.Player;
+		table.insert(PartyMembers, memberIdToPlayer)
+	end
+    
     if ItemName and RootFolder and Directory then
         local ItemClone = RootFolder:FindFirstChild(ItemName):Clone();
         if Owner then
             if ItemClone:IsA("Model") then
-                ItemClone.PrimaryPart:SetAttribute("Owner", tostring(Owner));
+                ItemClone.PrimaryPart:SetAttribute("Owner", tostring(PartyOwner));
             elseif ItemClone:IsA("BasePart") then
-                ItemClone:SetAttribute("Owner", tostring(Owner));
+                ItemClone:SetAttribute("Owner", tostring(PartyOwner));
             end;
             if Location then
                 if ItemClone:IsA("Model") and ItemClone.PrimaryPart then

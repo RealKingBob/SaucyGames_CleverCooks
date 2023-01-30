@@ -7,11 +7,15 @@ local IngredientAvailable = workspace:WaitForChild("IngredientAvailable");
 local ReplicatedStorage = game:GetService("ReplicatedStorage");
 local GameLibrary = ReplicatedStorage:FindFirstChild("GameLibrary");
 
+local HiddenObjects = ReplicatedStorage:WaitForChild("HiddenObjects");
+
 local GameController = Knit.CreateController { Name = "GameController" }
 
 local LocalPlayer = Players.LocalPlayer
 local CollectedItems = {};
 local Cooldown = false;
+
+local partyOwner = LocalPlayer
 
 function TableFind(tab,el) -- table,value
 	for index, value in pairs(tab) do
@@ -19,6 +23,17 @@ function TableFind(tab,el) -- table,value
 			return index;
 		end;
 	end;
+end;
+
+function GameController:ChangePartyOwner(PartyData)
+	--print(PartyData.OwnerId, PartyData)
+	local ownerPlayer = Players:GetPlayerByUserId(PartyData.OwnerId)
+	partyOwner = ownerPlayer;
+	local CookingUI = Knit.GetController("CookingUI");
+	for _, pan in pairs(CollectionService:GetTagged("Pan")) do
+		CookingUI:DestroyUI(pan)
+		--pan.ProximityPrompt.Enabled = false;
+	end
 end;
 
 function GameController:ForIngredient(Ingredient)
@@ -35,6 +50,7 @@ function GameController:ForIngredient(Ingredient)
 	Ingredient:WaitForChild("ProximityPrompt").Enabled = true;
 	Ingredient.ProximityPrompt.TriggerEnded:Connect(function(plr)
 		--print("HUH")
+		if Ingredient.Transparency == 1 then return end
 		if Cooldown == false then
 			Cooldown = true;
 			--print("triggered")
@@ -55,11 +71,13 @@ function GameController:ForIngredient(Ingredient)
 
 						if Ingredient.Parent then
 							if Ingredient.Parent.Name == Ingredient.Name then
+								print(Ingredient.Parent.Name, Ingredient.Name )
 								Ingredient.Parent:Destroy();
 							end
 						end
 
 						if Ingredient then
+							print(Ingredient)
 							Ingredient:Destroy();
 						end
 						
@@ -88,6 +106,7 @@ function GameController:ForFood(Food)
 	if not Food:FindFirstChild("ProximityPrompt") then return end
 	Food:WaitForChild("ProximityPrompt").Enabled = true;
 	Food.ProximityPrompt.TriggerEnded:Connect(function(plr)
+		if Food.Transparency == 1 then return end
 		if Cooldown == false then
 			Cooldown = true;
 			if plr.Character:FindFirstChild("Ingredient") then
@@ -105,11 +124,13 @@ function GameController:ForFood(Food)
 
 						if Food.Parent then
 							if Food.Parent.Name == Food.Name then
+								print(Food.Parent.Name, Food.Name )
 								Food.Parent:Destroy();
 							end
 						end
 
 						if Food then
+							print(Food)
 							Food:Destroy();
 						end
 					end;
@@ -157,6 +178,59 @@ end
 function GameController:KnitInit()
 
 	local function checkObject(object)
+		local owner = object:IsA("Model") and object.PrimaryPart and object.PrimaryPart:GetAttribute("Owner") or object:GetAttribute("Owner")
+		local typeObject = object:IsA("Model") and object.PrimaryPart and object.PrimaryPart:GetAttribute("Type") or object:GetAttribute("Type")
+		
+		if owner and owner == "None" then
+			print("desotriy")
+			object:Destroy();
+			return
+		end
+
+		if owner and owner ~= "Default" and owner ~= partyOwner.Name then
+			--object.Parent = HiddenObjects
+			if typeObject == "Food" then
+				object.Parent = FoodAvailable
+			elseif typeObject == "Ingredient" then
+				--object.Parent = IngredientAvailable
+				if object:IsA("Model") and object.PrimaryPart then
+					for _,b in pairs(object:GetChildren()) do
+						if b:IsA("BasePart") then b.Transparency = 1; end;
+						for _, t in pairs(object:GetChildren()) do
+							if t:IsA("Texture") then t.Transparency = 1 end;
+						end
+					end;
+				else
+					object.Transparency = 1;
+					for _, t in pairs(object:GetChildren()) do
+						if t:IsA("Texture") then t.Transparency = 1 end;
+					end
+				end
+			end
+		elseif owner and owner ~= "Default" and owner == partyOwner.Name then
+			if typeObject == "Food" then
+				object.Parent = FoodAvailable
+			elseif typeObject == "Ingredient" then
+				--object.Parent = IngredientAvailable
+				if object:IsA("Model") and object.PrimaryPart then
+					for _,b in pairs(object:GetChildren()) do
+						if b:IsA("BasePart") then b.Transparency = 0; end;
+						for _, t in pairs(object:GetChildren()) do
+							if t:IsA("Texture") then t.Transparency = (object.PrimaryPart:GetAttribute("ExtraTexture") ~= nil and object.PrimaryPart:GetAttribute("ExtraTexture")) or 0; end;
+						end
+					end;
+				else
+					object.Transparency = 0;
+					for _, t in pairs(object:GetChildren()) do
+						if t:IsA("Texture") then t.Transparency = (object:GetAttribute("ExtraTexture") ~= nil and object:GetAttribute("ExtraTexture")) or 0; end;
+					end
+				end
+			end
+			--object:Destroy()
+		end
+	end
+
+	--[[local function checkObject(object)
 		if object:IsA("Model") then
 			if object.PrimaryPart == nil 
 			or object.PrimaryPart:GetAttribute("Owner") == "Default" 
@@ -177,7 +251,7 @@ function GameController:KnitInit()
 				--object.CanCollide = false;
 			end;
 		end;
-	end
+	end]]
 
     game:GetService("RunService").RenderStepped:Connect(function()
 
@@ -204,15 +278,21 @@ function GameController:KnitInit()
 			local OwnerId = v:GetAttribute("OwnerId") 
 			if OwnerId then
 				if OwnerId ~= LocalPlayer.UserId then
+					print("destroying hte v")
 					v:Destroy()
 				end
 			end
 		end
 
-        for _,v in pairs(game.Workspace:FindFirstChild("FoodAvailable"):GetChildren()) do
+        for _,v in pairs(FoodAvailable:GetChildren()) do
             checkObject(v)
         end;
-        for _,v in pairs(game.Workspace:FindFirstChild("IngredientAvailable"):GetChildren()) do
+
+        for _,v in pairs(IngredientAvailable:GetChildren()) do
+            checkObject(v)
+        end;
+
+		for _,v in pairs(HiddenObjects:GetChildren()) do
             checkObject(v)
         end;
     end);

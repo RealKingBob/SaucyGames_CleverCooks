@@ -42,7 +42,6 @@ local Recipes = {
 		Image = "rbxassetid://12226432172",
 		Ingredients = {
 			"Onion",
-			"White Onion",
 			"Pepper",
 		},
 		Origin = "French",
@@ -85,8 +84,6 @@ local Recipes = {
 		Image = "rbxassetid://8019446800",
 		Ingredients = {
 			"Raw Steak",
-			"Salt",
-			"Pepper",
 			"Butter"
 		},
 		Origin = "French",
@@ -98,9 +95,29 @@ local Recipes = {
 		Image = "rbxassetid://12226432346",
 		Ingredients = {
 			"Bread",
-			"Mint",
 			"Sugar Bag-[Blended]",
-			"Butter"
+		},
+		Origin = "French",
+		Difficulty = "Easy"
+	},
+
+	["Creme Brulee"] = {
+		Name = "Creme Brulee",
+		Image = "rbxassetid://12226438788",
+		Ingredients = {
+			"Milk",
+			"Sugar Bag"
+		},
+		Origin = "French",
+		Difficulty = "Medium"
+	},
+
+	["Creme Caramel"] = {
+		Name = "Creme Caramel",
+		Image = "rbxassetid://8019446483",
+		Ingredients = {
+			"Milk",
+			"Sugar Bag"
 		},
 		Origin = "French",
 		Difficulty = "Easy"
@@ -112,7 +129,6 @@ local Recipes = {
 		Ingredients = {
 			"Chocolate-[Blended]",
 			"Sugar Bag-[Blended]",
-			"Salt",
 			"Milk-[Blended]"
 		},
 		Origin = "French",
@@ -144,13 +160,15 @@ local Recipes = {
 		Difficulty = "Medium"
 	},
 
-	["Creme Caramel"] = {
-		Name = "Creme Caramel",
-		Image = "rbxassetid://8019446483",
+	["Madeleine"] = {	
+		Name = "Madeleine",
+		Image = "rbxassetid://8019445863",
 		Ingredients = {
-			"Egg",
-			"Milk",
-			"Sugar Bag"
+			"Egg-[Blended]",
+			"Sugar Bag-[Blended]",
+			"Wheat Bag-[Blended]",
+			"Lemon",
+			"Butter-[Blended]"
 		},
 		Origin = "French",
 		Difficulty = "Medium"
@@ -168,19 +186,6 @@ local Recipes = {
 		Origin = "French",
 		Difficulty = "Medium"
 	},
-
-	["Creme Brulee"] = {
-		Name = "Creme Brulee",
-		Image = "rbxassetid://12226438788",
-		Ingredients = {
-			"Egg",
-			"Milk",
-			"Sugar Bag"
-		},
-		Origin = "French",
-		Difficulty = "Medium"
-	},
-
 
 	["French Crepes"] = {
 		Name = "French Crepes",
@@ -207,20 +212,6 @@ local Recipes = {
 		},
 		Origin = "French",
 		Difficulty = "Hard"	
-	},
-	
-	["Madeleine"] = {	
-		Name = "Madeleine",
-		Image = "rbxassetid://8019445863",
-		Ingredients = {
-			"Egg-[Blended]",
-			"Sugar Bag-[Blended]",
-			"Wheat Bag-[Blended]",
-			"Lemon",
-			"Butter-[Blended]"
-		},
-		Origin = "French",
-		Difficulty = "Hard"
 	},
 
 	["Ratatouille"] = {	
@@ -258,7 +249,6 @@ local Recipes = {
 		Ingredients = {
 			"Wheat Bag-[Blended]",
 			"Egg",
-			"Butter",
 			"Olive Oil",
 			"Sugar Bag",
 		},
@@ -359,6 +349,16 @@ end
 
 function Recipes:GetRecipeRewards(Difficulty)
 	return RecipeRewards[Difficulty];
+end;
+
+function Recipes:GetRecipes()
+	local Array = {};
+	for k, v in pairs(self) do
+		if type(v) == "table" then
+			table.insert(Array, v);
+		end;
+	end;
+	return Array;
 end;
 
 function Recipes:GetRandomRecipe()
