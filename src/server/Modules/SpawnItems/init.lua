@@ -166,7 +166,8 @@ function SpawnItems:SpawnDistributedIngredients(Theme)
                 local RandomFoodLocation = FoodSpawnPoints[math.random(1, #FoodSpawnPoints)]
 
                 --print(ingredientCount, greatestCount, ingredientCount <= greatestCount)
-                if ingredientCount < greatestCount then
+                --print(RareFoodSpawnPoints)
+                if #RareFoodSpawnPoints > 0 and ingredientCount < greatestCount then
                     RandomFoodLocation = RareFoodSpawnPoints[math.random(1, #RareFoodSpawnPoints)]
                 end
 

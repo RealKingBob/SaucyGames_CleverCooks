@@ -44,7 +44,7 @@ function FadeOut(sound, length)
     TweenService:Create(sound, TweenInfo.new(length), {Volume = 0}):Play()
     task.wait(length)
     sound:Stop();
-    sound.Volume = 0.125;
+    sound.Volume = 0.02;
     Fading = false
 end
 
@@ -87,7 +87,7 @@ function MusicService:StartBackgroundSFX(Theme, DayNight)
 
     if not backgroundSFX then
         backgroundSFX = Instance.new("Sound", workspace)
-        backgroundSFX.Volume = 0.01
+        backgroundSFX.Volume = 0.02
         backgroundSFX.Name = "BackgroundSFX"
     end
 
@@ -107,7 +107,7 @@ function MusicService:StartBackgroundMusic(Theme, DayNight)
 
     if not backgroundMusic then
         backgroundMusic = Instance.new("Sound", workspace)
-        backgroundMusic.Volume = 0.01
+        backgroundMusic.Volume = 0.02
         backgroundMusic.Name = "BackgroundMusic"
     end
 

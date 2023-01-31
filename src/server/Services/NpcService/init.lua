@@ -1191,12 +1191,16 @@ function NpcService:KnitStart()
                                             --print("upper attack")
                                             --task.spawn(ThrowObjectAttack, NPC, tempTarget.Position)
                                             --if table.find(AttackDifficulties[npcDifficulty[NPC]], "Throw") then
+                                            if JobType[NPC] == "Chef" then
                                                 ThrowObjectAttack(NPC, tempTarget.Position)
+                                            end
                                             --end
                                             
                                             --SwingAttack(tempTarget.Position)
                                         elseif directionType == DirectionType.Down then
-                                            ThrowObjectAttack(NPC, tempTarget.Position)
+                                            if JobType[NPC] == "Chef" then
+                                                ThrowObjectAttack(NPC, tempTarget.Position)
+                                            end
                                             --task.spawn(ThrowObjectAttack, NPC, tempTarget.Position)
                                         end
                                     elseif (hitMagInStuds <= 25) and inCutscene[NPC] == false then
@@ -1208,7 +1212,12 @@ function NpcService:KnitStart()
                                             --SwingAttack(tempTarget.Position)
                                         elseif directionType == DirectionType.Down then           
                                             --task.spawn(StompAttack, NPC)
-                                            BroomAttack(NPC, tempTarget.Position)
+                                            local attackStyle = math.random(1, 2) == 1 and "Broom" or "Stomp"
+                                            if attackStyle == "Broom" then
+                                                BroomAttack(NPC, tempTarget.Position)
+                                            else
+                                                StompAttack(NPC)
+                                            end
                                             --StompAttack(NPC)
                                         end
                                     end
