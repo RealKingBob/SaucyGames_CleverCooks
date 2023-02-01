@@ -109,6 +109,7 @@ end)
 
 local NotificationService = Knit.GetService("NotificationService");
 local NotificationUI = Knit.GetController("NotificationUI");
+local PlayerController = Knit.GetController("PlayerController");
 
 NotificationService.NotifyMessage:Connect(function(messageText, typeWriterEffect)
 	--print("BOROSADA", messageText, typeWriterEffect)
@@ -117,6 +118,10 @@ end)
 
 NotificationService.NotifyLargeMessage:Connect(function(messageText, typeWriterEffect)
 	NotificationUI:LargeMessage(messageText, typeWriterEffect);
+end)
+
+NotificationService.Alert:Connect(function()
+	PlayerController:WarnExclaim();
 end)
 
 DataService.Notification:Connect(function(title, desc, buttonName)

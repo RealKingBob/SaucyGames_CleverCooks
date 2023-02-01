@@ -5,6 +5,8 @@ local NotificationService = Knit.CreateService {
     Client = {
         NotifyMessage = Knit.CreateSignal();
         NotifyLargeMessage = Knit.CreateSignal();
+
+        Alert = Knit.CreateSignal();
     },
 }
 
@@ -17,11 +19,19 @@ function NotificationService:LargeMessage(allPlayers, player, message, typeWrite
 end
 
 function NotificationService:Message(allPlayers, player, message, typeWriteEffect)
-    print("NOTIF", allPlayers, player, message, typeWriteEffect)
+    --print("NOTIF", allPlayers, player, message, typeWriteEffect)
     if allPlayers == true then
         self.Client.NotifyMessage:FireAll(message, typeWriteEffect);
     else
         self.Client.NotifyMessage:Fire(player, message, typeWriteEffect);
+    end
+end
+
+function NotificationService:Alert(allPlayers, player)
+    if allPlayers == true then
+        self.Client.Alert:FireAll();
+    else
+        self.Client.Alert:Fire(player);
     end
 end
 

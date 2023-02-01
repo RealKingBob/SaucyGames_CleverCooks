@@ -84,6 +84,11 @@ local SETTINGS = {
                 }
             },
 		}, -- Inventory of the user
+        SkillUpgrades = {
+            French = { -- French Kitchen
+                
+            },
+		}, -- Player Skill Upgrades
 	};
 
     Products = { -- developer_product_id = function(profile)

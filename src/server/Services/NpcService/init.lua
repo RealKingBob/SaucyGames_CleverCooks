@@ -489,6 +489,7 @@ local function TargetFound(NPC, hit, target)
     
     local player = Players:GetPlayerFromCharacter(Character.Parent);
     if player then
+        Knit.GetService("NotificationService"):Alert(false, player)
         Knit.GetService("NotificationService"):Message(false, player, "A ".. tostring(string.upper(JobType[NPC])).." SPOTTED YOU!", {Effect = true, Color = Color3.fromRGB(250, 11, 11)})
     end
     PlayAnim(NPC, "Alert")
