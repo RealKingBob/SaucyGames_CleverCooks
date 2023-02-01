@@ -86,7 +86,14 @@ local SETTINGS = {
 		}, -- Inventory of the user
         SkillUpgrades = {
             French = { -- French Kitchen
-                
+                ["Jump Amount"] = 1; -- 1x jump boost
+                ["Cook Speed"] = 1; -- 1x speed
+                ["Boost Stamina"] = 100; -- 100%
+                ["Order Duration"] = 120; --2 minutes
+                ["Extra Health"] = 0; -- 100 health
+                ["Multitasking"] = false; -- Cook multiple foods
+                ["Cooking Perfectiion"] = false; 
+                -- automatically cooks your food to perfection
             },
 		}, -- Player Skill Upgrades
 	};
