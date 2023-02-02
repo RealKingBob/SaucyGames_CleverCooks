@@ -89,11 +89,11 @@ local SETTINGS = {
                 ["Jump Amount"] = 1; -- 1x jump boost
                 ["Cook Speed"] = 1; -- 1x speed
                 ["Boost Stamina"] = 100; -- 100%
+                ["Recipe Luck"] = 0; -- Stages to increasing chances on getting hard recipes
                 ["Order Duration"] = 120; --2 minutes
                 ["Extra Health"] = 0; -- 100 health
                 ["Multitasking"] = false; -- Cook multiple foods
-                ["Cooking Perfectiion"] = false; 
-                -- automatically cooks your food to perfection
+                ["Cooking Perfection"] = false; -- automatically cooks your food to perfection
             },
 		}, -- Player Skill Upgrades
 	};
