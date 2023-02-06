@@ -45,6 +45,8 @@ local ServerModules = Knit.Modules;
 local IngredientObjects = GameLibrary:FindFirstChild("IngredientObjects");
 local FoodObjects = GameLibrary:FindFirstChild("FoodObjects");
 
+local ThemeData = "French"
+
 ----- Loaded Modules -----
 
 local ZoneAPI = require(ReplicatedModules:FindFirstChild("Zone"));
@@ -557,7 +559,14 @@ function CookingService:CanCookOnPan(player, pan)
 	if #cookingPansQueue[player.UserId] >= 1 then
 		print("needs gamepass to cook multiple foods")
 		-- check if has gamepass
-		return true;
+		local ProgressionService = Knit.GetService("ProgressionService");
+		local playerCurrency, playerStorage, progressionStorage = ProgressionService:GetProgressionData(player, ThemeData)
+
+		local Multitasking = progressionStorage["Multitasking"].Data[playerStorage["Multitasking"]].Value;
+		if Multitasking == false then
+			Knit.GetService("NotificationService"):Message(false, player, "Buy the multitasking skill in player upgrades to be able to cook multiple foods!")
+		end
+		return Multitasking;
 	end
 	return false;
 end
@@ -777,7 +786,11 @@ function CookingService:StartCookingProcess(player, pan, recipe, previousPercent
 		Percentage = previousPercentage,
 	}
 
-	local cookingTime = RecipeModule:GetCookTime(tostring(recipe)) * 2;
+	local ProgressionService = Knit.GetService("ProgressionService");
+	local playerCurrency, playerStorage, progressionStorage = ProgressionService:GetProgressionData(player, ThemeData)
+
+	-- cookingTime = (Default_Time / Player_Cook_Speed) * 2
+	local cookingTime = (RecipeModule:GetCookTime(tostring(recipe)) / progressionStorage["Cook Speed"].Data[playerStorage["Cook Speed"]].Value) * 2;
 
 	--print("cookingPansQueue", cookingPansQueue[player.UserId])
 
@@ -826,6 +839,23 @@ function CookingService:StartCookingProcess(player, pan, recipe, previousPercent
 				isOverLimit = true;
 			else
 				count += 1;
+			end
+
+			print("count", count)
+			if count == math.ceil((cookingTime / 2)) then
+				local CookPerfection = progressionStorage["Cooking Perfection"].Data[playerStorage["Cooking Perfection"]].Value
+				if CookPerfection == true then
+					for _, member in pairs(PartyMembers) do
+						Knit.GetService("NotificationService"):Message(false, member, "Perfect Cooking!", {Effect = false, Color = Color3.fromRGB(255, 200, 21)})
+					end
+					if additionalPansInfo[PartyOwner.UserId][pan] then
+						additionalPansInfo[PartyOwner.UserId][pan] = {
+							Recipe = recipe,
+							Percentage = getNumberInRange(count + 1,  cookingTime),
+						}
+					end
+					self:CanCookOnPan(PartyOwner, pan)
+				end
 			end
 
 			if (count % waitTime == 0) and (count <= (cookingTime / 2)) then

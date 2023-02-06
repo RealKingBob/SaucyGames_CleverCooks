@@ -1,3 +1,4 @@
+local Players = game:GetService("Players")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 local UserInputService = game:GetService("UserInputService")
 
@@ -9,6 +10,8 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui");
 
 local SprintAnimTrack = nil;
 local PrevAnim;
+
+local ThemeData = "French"
 
 local NormalWalkSpeed = 16
 local NewWalkSpeed = 30
@@ -314,7 +317,16 @@ end
 
 
 function StaminaUI:KnitStart()
-    
+    local ProgressionService = Knit.GetService("ProgressionService");
+    ProgressionService:GetProgressionData(ThemeData):andThen(function(playerCurrency, playerStorage, progressionStorage)
+        print("PlayerCurrency", playerCurrency, "PlayerStorage:", playerStorage, "ProgressionStorage:", progressionStorage)
+
+        MaxStamina = progressionStorage["Boost Stamina"].Data[playerStorage["Boost Stamina"]].Value;
+        Stamina = progressionStorage["Boost Stamina"].Data[playerStorage["Boost Stamina"]].Value;
+        print(Stamina, MaxStamina)
+    end)
+
+
 end
 
 

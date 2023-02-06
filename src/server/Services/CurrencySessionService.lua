@@ -101,6 +101,7 @@ function CurrencySessionService:DropCheese(oCFrame, player, amount, value)
         end
         
         if not playerInMembers then continue end
+        print("playerInMembers SessionStorage", SessionStorage[playerInMembers].Cheese)
         self.Client.DropCurrency:Fire(playerInMembers, "Cheese", localSessionStorage)
     end
 end

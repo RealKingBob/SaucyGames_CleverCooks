@@ -459,12 +459,14 @@ local function displayIngredients(clearItems)
 		allIngredientsFound = true;
 		for _, pan in pairs(CollectionService:GetTagged("Pan")) do
 			if pan:FindFirstChild("CookHeadUI") then continue end;
+			print("tryee")
 			pan.ProximityPrompt.Enabled = true;
 		end
 	else
 		allIngredientsFound = false;
 		for _, pan in pairs(CollectionService:GetTagged("Pan")) do
 			if tablefind(currentPansInUse, pan) then continue end;
+			print("not truurueuee")
 			pan.ProximityPrompt.Enabled = false;
 		end
 	end
@@ -517,12 +519,14 @@ local function displayIngredients(clearItems)
 				allIngredientsFound = true;
 				for _, pan in pairs(CollectionService:GetTagged("Pan")) do
 					if pan:FindFirstChild("CookHeadUI") then continue end;
+					print("asdasdas")
 					pan.ProximityPrompt.Enabled = true;
 				end
 			else
 				allIngredientsFound = false;
 				for _, pan in pairs(CollectionService:GetTagged("Pan")) do
 					if tablefind(currentPansInUse, pan) then continue end;
+					print("falsese asdasdas")
 					pan.ProximityPrompt.Enabled = false;
 				end
 			end
@@ -737,6 +741,7 @@ function RecipesView:KnitStart()
 		currentPansInUse = currentPans
 		for _, pan in pairs(CollectionService:GetTagged("Pan")) do
 			if tablefind(currentPansInUse, pan) then
+				print("xxxxxxxxxx")
 				pan.ProximityPrompt.Enabled = true;
 			end
 		end
@@ -849,12 +854,16 @@ function RecipesView:KnitStart()
 						panHitbox.ProximityPrompt.Enabled = true;
 					else
 						if allIngredientsFound == true or tablefind(currentPansInUse, panHitbox) then continue end;
+						print("falsese")
 						panHitbox.ProximityPrompt.Enabled = false;
 					end;
 				end
 			else
 				if allIngredientsFound == true or tablefind(currentPansInUse, panHitbox) then continue end;
-				panHitbox.ProximityPrompt.Enabled = false;
+				if panHitbox.ProximityPrompt.Enabled ~= false then
+					print("falsese  22" ) 
+					panHitbox.ProximityPrompt.Enabled = false;
+				end
 			end
         end
     end);

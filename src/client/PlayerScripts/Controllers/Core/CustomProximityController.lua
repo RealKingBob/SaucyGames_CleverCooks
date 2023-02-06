@@ -362,7 +362,11 @@ function CustomProximityController:KnitStart()
         end
 
 		if prompt.Parent ~= nil then
-			if prompt.Parent.Transparency == 1 then
+			if prompt.Parent.Transparency == 1 
+			and CollectionService:HasTag(prompt.Parent, "Pan") 
+			and CollectionService:HasTag(prompt.Parent, "Delivering") 
+			and CollectionService:HasTag(prompt.Parent, "IngredientsTable") 
+			then
 				return;
 			end
 		end

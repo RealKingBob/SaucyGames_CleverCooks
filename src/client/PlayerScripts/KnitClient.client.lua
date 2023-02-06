@@ -62,7 +62,7 @@ local CurrencyCounterUI = Knit.GetController("CurrencyCounterUI")
 
 task.spawn(function()
 	task.wait(5)
-	DataService:GetCurrency():andThen(function(Coins)
+	DataService:GetCurrency("French"):andThen(function(Coins)
 		CurrencyCounterUI:Update(Coins);
 	end)
 end)

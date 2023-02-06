@@ -19,6 +19,7 @@ local BoosterEffects = require(Knit.ReplicatedBoosterEffects);
 local CurrentData;
 local ResetTime;
 local MyInventory;
+local ThemeData;
 
 --//Private Functions
 local function FormatSeconds(s)
@@ -162,7 +163,7 @@ function DailyView:KnitStart()
 
             local DataService = Knit.GetService("DataService")
 
-            AffordPromise = DataService:GetCurrency():andThen(function(Coins)
+            AffordPromise = DataService:GetCurrency(ThemeData):andThen(function(Coins)
                 if Coins then
                     CanAfford = (Coins >= ItemInfo.IndividualPrice)
                     return;
@@ -238,6 +239,7 @@ function DailyView:KnitInit()
 
     Rarities = require(Knit.ReplicatedAssets.Rarities);
     CommaValue = require(Knit.ReplicatedModules.CommaValue);
+    ThemeData = "French";
 end
 
 return DailyView

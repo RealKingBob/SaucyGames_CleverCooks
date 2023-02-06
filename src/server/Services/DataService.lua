@@ -9,11 +9,14 @@ local ProfileService = require(script.Parent.ProfileService);
 
 --local purchaseHistoryStore = DataStoreService:GetDataStore("PurchaseHistory")
 local giftHistoryStore = DataStoreService:GetDataStore("GiftHistory")
+local ThemeData = "French"
 
 local SETTINGS = {
     StatsTemplate = {	
 		PlayerInfo = {
-			Currency = 0, -- User current currency
+			Currency = {
+                French = 0;
+            }, -- User current currency
 			Level = 0, -- User current level
 			EXP = 0, -- User experience to level up
 
@@ -86,14 +89,13 @@ local SETTINGS = {
 		}, -- Inventory of the user
         SkillUpgrades = {
             French = { -- French Kitchen
-                ["Jump Amount"] = 1; -- 1x jump boost
-                ["Cook Speed"] = 1; -- 1x speed
-                ["Boost Stamina"] = 100; -- 100%
-                ["Recipe Luck"] = 0; -- Stages to increasing chances on getting hard recipes
-                ["Order Duration"] = 120; --2 minutes
-                ["Extra Health"] = 0; -- 100 health
-                ["Multitasking"] = false; -- Cook multiple foods
-                ["Cooking Perfection"] = false; -- automatically cooks your food to perfection
+                ["Jump Amount"] = 2; -- 1x jump boost
+                ["Cook Speed"] = 5; -- 1x speed
+                ["Boost Stamina"] = 1; -- 100%
+                ["Recipe Luck"] = 2; -- Stages to increasing chances on getting hard recipes
+                ["Extra Health"] = 3; -- 100 health
+                ["Multitasking"] = 1; -- Cook multiple foods
+                ["Cooking Perfection"] = 2; -- automatically cooks your food to perfection
             },
 		}, -- Player Skill Upgrades
 	};
@@ -101,31 +103,31 @@ local SETTINGS = {
     Products = { -- developer_product_id = function(profile)
 		-- COIN PURCHASES --
 		[00000000000] = function(ownerprofile, profile) -- 99
-            profile.Data.PlayerInfo.Currency += 1000
+            profile.Data.PlayerInfo.Currency[ThemeData] += 1000
             if ownerprofile.Data.PlayerInfo.CurrencyBought == nil then ownerprofile.Data.PlayerInfo.CurrencyBought = 0 end
             ownerprofile.Data.PlayerInfo.CurrencyBought += 1000
-            updateClientCurrency(profile, 1000)
+            updateClientCurrency(profile, 1000, ThemeData)
             updateClientDonations(ownerprofile)
         end,
         [00000000000] = function(ownerprofile, profile) -- 199
-            profile.Data.PlayerInfo.Currency += 2400
+            profile.Data.PlayerInfo.Currency[ThemeData] += 2400
             if ownerprofile.Data.PlayerInfo.CurrencyBought == nil then ownerprofile.Data.PlayerInfo.CurrencyBought = 0 end
             ownerprofile.Data.PlayerInfo.CurrencyBought += 2400
-            updateClientCurrency(profile, 2400)
+            updateClientCurrency(profile, 2400, ThemeData)
             updateClientDonations(ownerprofile)
         end,
         [00000000000] = function(ownerprofile, profile) -- 499
-            profile.Data.PlayerInfo.Currency += 6500
+            profile.Data.PlayerInfo.Currency[ThemeData] += 6500
             if ownerprofile.Data.PlayerInfo.CurrencyBought == nil then ownerprofile.Data.PlayerInfo.CurrencyBought = 0 end
             ownerprofile.Data.PlayerInfo.CurrencyBought += 6500
-            updateClientCurrency(profile, 6500)
+            updateClientCurrency(profile, 6500, ThemeData)
             updateClientDonations(ownerprofile)
         end,
         [00000000000] = function(ownerprofile, profile) -- 999
-            profile.Data.PlayerInfo.Currency += 14000
+            profile.Data.PlayerInfo.Currency[ThemeData] += 14000
             if ownerprofile.Data.PlayerInfo.CurrencyBought == nil then ownerprofile.Data.PlayerInfo.CurrencyBought = 0 end
             ownerprofile.Data.PlayerInfo.CurrencyBought += 14000
-            updateClientCurrency(profile, 14000)
+            updateClientCurrency(profile, 14000, ThemeData)
             updateClientDonations(ownerprofile)
         end,
     },
@@ -139,8 +141,8 @@ local SETTINGS = {
 
             if profile.Data.Inventory.DuckSkins["VIP Duck"] == nil then
                 AddItem(profile, "VIP Duck", "Skins")
-                profile.Data.PlayerInfo.Currency += 1000
-                updateClientCurrency(profile, 1000)
+                profile.Data.PlayerInfo.Currency[ThemeData] += 1000
+                updateClientCurrency(profile, 1000, ThemeData)
             end
         end,
     },
@@ -152,7 +154,7 @@ local SETTINGS = {
 }
 
 local ProfileStore = ProfileService.GetProfileStore(
-	"PlayerData7",
+	"PlayerData12",
 	SETTINGS.StatsTemplate
 );
 
@@ -182,10 +184,10 @@ DataService.RequestDailyShop = Signal.new();
 
 ----- Private Functions -----
 
-function updateClientCurrency(profile, coinAmount)
+function updateClientCurrency(profile, coinAmount, theme)
     local Player = DataService:GetPlayer(profile)
     if Player then
-        DataService.Client.Currencyignal:Fire(Player, profile.Data.PlayerInfo.Currency, coinAmount)
+        DataService.Client.Currencyignal:Fire(Player, profile.Data.PlayerInfo.Currency[theme], coinAmount)
     end
 end
 
@@ -226,15 +228,17 @@ local function PreloadData(Player, Profile, ProfileData)
     local TEST_BIG_SERVER_PLACE_ID = 8793381822;
     local TEST_SERVER_PLACE_ID = 8303278706;
 
-    if game.PlaceId == TEST_VOICE_CHAT_PLACE_ID or 
+    --[[if game.PlaceId == TEST_VOICE_CHAT_PLACE_ID or 
 	game.PlaceId == TEST_BIG_SERVER_PLACE_ID or 
 	game.PlaceId == TEST_SERVER_PLACE_ID then
 		if Knit.Config.WHITELIST == true and Player:IsInGroup(13585944) then
-			Profile.Data.PlayerInfo.Currency = 1000000
+			Profile.Data.PlayerInfo.Currency[ThemeData] = 1000000
 		end
-	end
+	end]]
+    print(Profile.Data.PlayerInfo.Currency[ThemeData])
+    Profile.Data.PlayerInfo.Currency[ThemeData] = 5000
     if Player then
-        DataService.Client.CurrencySignal:Fire(Player, Profile.Data.PlayerInfo.Currency, nil, nil, true)
+        DataService.Client.CurrencySignal:Fire(Player, Profile.Data.PlayerInfo.Currency[ThemeData], nil, nil, true)
     end
 
     if Profile.Data.PlayerInfo.SecondsPlayed < 30 then
@@ -278,7 +282,7 @@ local function PreloadData(Player, Profile, ProfileData)
 		--print(Player.Name .. " owns the game pass with ID " .. VIP_Gamepass)
 		if ProfileData.Inventory.DuckSkins["VIP Duck"] == nil then
             AddItemPlayer(Player, "VIP Duck", "Skins")
-            ProfileData.PlayerInfo.Currency += 1000
+            ProfileData.PlayerInfo.Currency[ThemeData] += 1000
             updateClientCurrency(Profile, 1000)
         end
 	end
@@ -287,7 +291,7 @@ local function PreloadData(Player, Profile, ProfileData)
 		--print(Player.Name .. " owns the game pass with ID " .. Karl_Gamepass)
 		if ProfileData.Inventory.DuckSkins["Karl"] == nil then
             AddItemPlayer(Player, "Karl", "Skins")
-            ProfileData.PlayerInfo.Currency += 1200
+            ProfileData.PlayerInfo.Currency[ThemeData] += 1200
             updateClientCurrency(Profile, 1200)
         end
 	end]]
@@ -500,7 +504,7 @@ end
 
 ----- Initialize -----
 
-function DataService:GetCurrency(player)
+function DataService:GetCurrency(player, theme)
     local Profile = self:GetProfile(player)
     local tries = 0
 
@@ -512,7 +516,7 @@ function DataService:GetCurrency(player)
     end
 
     if Profile then
-		return Profile.Data.PlayerInfo.Currency;
+		return Profile.Data.PlayerInfo.Currency[theme];
 	end;
     return 0;
 end
@@ -531,20 +535,20 @@ function DataService:GiveCurrency(player, Amount, disableEffect, Percentage)
 
     if not reset[player] then
         reset[player] = true
-        profile.Data.PlayerInfo.Currency = 0;
+        profile.Data.PlayerInfo.Currency[ThemeData] = 0;
     end
 
-    if profile.Data.PlayerInfo.Currency == nil then
-        profile.Data.PlayerInfo.Currency = 0;
+    if profile.Data.PlayerInfo.Currency[ThemeData] == nil then
+        profile.Data.PlayerInfo.Currency[ThemeData] = 0;
     end;
 
-    profile.Data.PlayerInfo.Currency = profile.Data.PlayerInfo.Currency + Amount;
+    profile.Data.PlayerInfo.Currency[ThemeData] = profile.Data.PlayerInfo.Currency[ThemeData] + Amount;
 
     if player then
         if disableEffect == nil then
-            DataService.Client.CurrencySignal:Fire(player, profile.Data.PlayerInfo.Currency, Amount, Percentage, true)
+            DataService.Client.CurrencySignal:Fire(player, profile.Data.PlayerInfo.Currency[ThemeData], Amount, Percentage, true)
         else
-            DataService.Client.CurrencySignal:Fire(player, profile.Data.PlayerInfo.Currency, Amount, Percentage, disableEffect)
+            DataService.Client.CurrencySignal:Fire(player, profile.Data.PlayerInfo.Currency[ThemeData], Amount, Percentage, disableEffect)
         end
     end
 
@@ -569,9 +573,9 @@ function DataService:CheckIfDataLoaded(Player)
 end;
 
 
-function DataService.Client:GetCurrency(Player)
+function DataService.Client:GetCurrency(Player, Theme)
 	-- We can just call our other method from here:
-    return self.Server:GetCurrency(Player)
+    return self.Server:GetCurrency(Player, Theme)
 end;
 
 function DataService.Client:PurchaseProduct(Player, TargetPlayer)
@@ -605,6 +609,7 @@ function DataService.Client:GetGamepass(Player)
 end;
 
 function DataService:GetProfile(Player)
+    if not Player then return nil end;
 	local Profile = StatsProfiles[Player];
 
 	if Profile then

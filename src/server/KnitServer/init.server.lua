@@ -40,6 +40,7 @@ Knit.ReplicatedBoosterEffects = Knit.Shared.Assets.BoosterEffects;
 
 ----- Loaded Services -----
 Knit.DataService = require(Knit.Services.DataService);
+Knit.ProgressionService = require(Knit.Services.ProgressionService);
 Knit.PartyService = require(Knit.Services.PartyService);
 Knit.AvatarService = require(Knit.Services.AvatarService);
 Knit.MusicService = require(Knit.Services.MusicService);
@@ -62,6 +63,7 @@ local Whitelist = true; -- if true then only whitelisted players can play
 local Profiles = {}; -- [player] = profile
 local WhitelistedPlayers = {52624453, 21831137, 1464956079, 51714312, 131997771, 47330208, 1154275938, 2283059942, 475945078, 418172096, 259288924, 933996022, 121998890, 76172952};
 
+local ThemeData = "French"
 
 --// Ensures that all components are loaded
 function Knit.OnComponentsLoaded()
@@ -206,6 +208,13 @@ local function onCharacterAdded(character)
 
 	if player then
         local humanoid = character:FindFirstChildWhichIsA("Humanoid");
+
+		local ProgressionService = Knit.GetService("ProgressionService");
+		local playerCurrency, playerStorage, progressionStorage = ProgressionService:GetProgressionData(player, ThemeData)
+
+		humanoid.MaxHealth = progressionStorage["Extra Health"].Data[playerStorage["Extra Health"]].Value;
+		humanoid.Health = progressionStorage["Extra Health"].Data[playerStorage["Extra Health"]].Value;
+
         if CollectionService:HasTag(player, Knit.Config.CHEF_TAG) then
             --// NOTE: This is if player bought chef gamepass
 			--Knit.AvatarService:SetHunterSkin(player);

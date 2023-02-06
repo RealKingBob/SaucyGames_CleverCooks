@@ -29,6 +29,11 @@ local function displayButtons(status)
 
         currentStatus = status;
 
+        if status == true then
+            BottomFrame.Visible = true;
+            Views.UIPadding.PaddingRight = UDim.new(0.06, 0)
+        end
+
         for _, button in pairs(BottomFrame:GetChildren()) do
             if not button:IsA("TextButton") then continue end
             if button.Name == "Menu" then continue end
@@ -48,6 +53,11 @@ local function displayButtons(status)
                 button:TweenSize(UDim2.fromScale(0.8, 0.6), Enum.EasingDirection.Out, Enum.EasingStyle.Elastic, 0.7);
                 task.wait(0.01)
             end
+        end
+
+        if status == false then
+            BottomFrame.Visible = false;
+            Views.UIPadding.PaddingRight = UDim.new(0, 0)
         end
 
         task.wait(.4)
