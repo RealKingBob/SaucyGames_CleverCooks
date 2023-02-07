@@ -866,7 +866,7 @@ function CookingService:StartCookingProcess(player, pan, recipe, previousPercent
 					(cheeseDrop[2] - (cheeseDrop[2] * .15)))
 
 				local cheeseValuePerDrop = rCheeseDropReward / numOfDrops;
-				local cheeseObjectPerDrop = 10;
+				local cheeseObjectPerDrop = 6;
 
 				CurrencySessionService:DropCheese(
 					pan.CFrame, 
@@ -1048,10 +1048,10 @@ function CookingService:DeliverFood(player, food)
 				cheeserew = rCheeseDropReward;
 
 				local cheeseValuePerDrop = rCheeseDropReward / numOfDrops;
-				local cheeseObjectPerDrop = 10;
+				local cheeseObjectPerDrop = 6;
 				-- oCFrame, obj, amount, value
 
-				--print("cooking drop", numOfDrops, cheeseDrop, rCheeseDropReward, cheeseValuePerDrop)
+				print("deliver drop", RecipeModule[tostring(food)], numOfDrops, cheeseDrop, rCheeseDropReward, cheeseValuePerDrop)
 
 				local foodObj;
 
