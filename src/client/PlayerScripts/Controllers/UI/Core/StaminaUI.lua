@@ -11,7 +11,7 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui");
 local SprintAnimTrack = nil;
 local PrevAnim;
 
-local ThemeData = "French"
+local ThemeData = workspace:GetAttribute("Theme")
 
 local NormalWalkSpeed = 16
 local NewWalkSpeed = 30

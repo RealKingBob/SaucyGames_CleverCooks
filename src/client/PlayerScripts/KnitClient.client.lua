@@ -15,6 +15,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 ----- Loaded Modules -----
 local CollectionService = game:GetService("CollectionService")
+local ThemeData = workspace:GetAttribute("Theme")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 ----- Knit -----
@@ -62,13 +63,15 @@ local CurrencyCounterUI = Knit.GetController("CurrencyCounterUI")
 
 task.spawn(function()
 	task.wait(5)
-	DataService:GetCurrency("French"):andThen(function(Coins)
+	DataService:GetCurrency(ThemeData):andThen(function(Coins)
+		print("AAAAA", Coins)
 		CurrencyCounterUI:Update(Coins);
 	end)
 end)
 
 DataService.CurrencySignal:Connect(function(Coins, amount, percentage, disableEffect)
 	if disableEffect then
+		print('UPDATED COINS', Coins)
 		CurrencyCounterUI:Update(Coins);
 	else
 		CurrencyCounterUI:CollectCheese(Coins, amount, percentage);

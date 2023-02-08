@@ -239,7 +239,7 @@ function DailyView:KnitInit()
 
     Rarities = require(Knit.ReplicatedAssets.Rarities);
     CommaValue = require(Knit.ReplicatedModules.CommaValue);
-    ThemeData = "French";
+    ThemeData = workspace:GetAttribute("Theme")
 end
 
 return DailyView

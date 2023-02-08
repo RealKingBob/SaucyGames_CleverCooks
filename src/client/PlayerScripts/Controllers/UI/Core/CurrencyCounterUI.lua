@@ -165,6 +165,7 @@ function CurrencyCounterUI:Expand()
 end
 
 function CurrencyCounterUI:Update(currentCoins)
+	print("WEEEE" , LastCheese, currentCoins)
 	local TargetCoins = LastCheese;
 	
 	if currentCoins ~= nil then

@@ -63,7 +63,7 @@ local Whitelist = true; -- if true then only whitelisted players can play
 local Profiles = {}; -- [player] = profile
 local WhitelistedPlayers = {52624453, 21831137, 1464956079, 51714312, 131997771, 47330208, 1154275938, 2283059942, 475945078, 418172096, 259288924, 933996022, 121998890, 76172952};
 
-local ThemeData = "French"
+local ThemeData = workspace:GetAttribute("Theme")
 
 --// Ensures that all components are loaded
 function Knit.OnComponentsLoaded()

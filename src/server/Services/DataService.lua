@@ -9,7 +9,7 @@ local ProfileService = require(script.Parent.ProfileService);
 
 --local purchaseHistoryStore = DataStoreService:GetDataStore("PurchaseHistory")
 local giftHistoryStore = DataStoreService:GetDataStore("GiftHistory")
-local ThemeData = "French"
+local ThemeData = workspace:GetAttribute("Theme")
 
 local SETTINGS = {
     StatsTemplate = {	
@@ -89,13 +89,13 @@ local SETTINGS = {
 		}, -- Inventory of the user
         SkillUpgrades = {
             French = { -- French Kitchen
-                ["Jump Amount"] = 2; -- 1x jump boost
-                ["Cook Speed"] = 5; -- 1x speed
+                ["Jump Amount"] = 1; -- 1x jump boost
+                ["Cook Speed"] = 1; -- 1x speed
                 ["Boost Stamina"] = 1; -- 100%
-                ["Recipe Luck"] = 2; -- Stages to increasing chances on getting hard recipes
-                ["Extra Health"] = 3; -- 100 health
+                ["Recipe Luck"] = 1; -- Stages to increasing chances on getting hard recipes
+                ["Extra Health"] = 1; -- 100 health
                 ["Multitasking"] = 1; -- Cook multiple foods
-                ["Cooking Perfection"] = 2; -- automatically cooks your food to perfection
+                ["Cooking Perfection"] = 1; -- automatically cooks your food to perfection
             },
 		}, -- Player Skill Upgrades
 	};
@@ -154,7 +154,7 @@ local SETTINGS = {
 }
 
 local ProfileStore = ProfileService.GetProfileStore(
-	"PlayerData12",
+	"PlayerData15",
 	SETTINGS.StatsTemplate
 );
 
@@ -236,7 +236,7 @@ local function PreloadData(Player, Profile, ProfileData)
 		end
 	end]]
     print(Profile.Data.PlayerInfo.Currency[ThemeData])
-    Profile.Data.PlayerInfo.Currency[ThemeData] = 5000
+    Profile.Data.PlayerInfo.Currency[ThemeData] = 1000000
     if Player then
         DataService.Client.CurrencySignal:Fire(Player, Profile.Data.PlayerInfo.Currency[ThemeData], nil, nil, true)
     end
@@ -639,9 +639,9 @@ function DataService:KnitInit()
     MarketplaceService.PromptGamePassPurchaseFinished:Connect(onPromptGamePassPurchaseFinished)
     MarketplaceService.PromptPurchaseFinished:Connect(onPromptPurchaseFinished)
     
-    self.Client.GiveCurrency:Connect(function(player, amount)
+    --[[self.Client.GiveCurrency:Connect(function(player, amount)
         self:GiveCurrency(player, amount)
-    end)
+    end)]]
 
 	Players.PlayerAdded:Connect(OnPlayerAdded);
     Players.PlayerRemoving:Connect(function(Player)

@@ -40,6 +40,8 @@ local customMode = nil;
 customMap = Knit.Config.CUSTOM_MAP;
 customMode = Knit.Config.CUSTOM_MODE;
 
+local ThemeData = workspace:GetAttribute("Theme")
+
 local RoundMode = Knit.CreateService {
     Name = "RoundMode",
     Client = {},
@@ -169,7 +171,7 @@ function RoundMode:StartMode()
         end
         -- print("[GameService]: Gameplay Started")
         local MusicService = Knit.GetService("MusicService");
-        MusicService:StartBackgroundMusic("French", "Day")
+        MusicService:StartBackgroundMusic(ThemeData, "Day")
         --Lighting.Ambient = Color3.fromRGB(143, 101, 50)
         dayTween:Play();
 
@@ -234,7 +236,7 @@ function RoundMode:StartMode()
         end
 
         nightTween:Play();
-        MusicService:StartBackgroundMusic("French", "Night")
+        MusicService:StartBackgroundMusic(ThemeData, "Night")
         for i = 0, 10 do
             local currentTime = nightShiftHours((i / NIGHT_TIME))
             GameService.Client.AdjustTimeSignal:FireAll({
@@ -263,7 +265,7 @@ end
             --warn("OOO SPOOKY NIGHT")
             self.percentageTillNight = 2;
             Lighting.Ambient = Color3.fromRGB(35, 24, 12)
-            MusicService:StartBackgroundMusic("French", "Night")
+            MusicService:StartBackgroundMusic(ThemeData, "Night")
             for i = 0, NIGHT_TIME do
                 local currentTime = nightShiftHours((i / NIGHT_TIME))
                 GameService.Client.AdjustTimeSignal:FireAll({

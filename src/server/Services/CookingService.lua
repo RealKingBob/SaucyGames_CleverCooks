@@ -45,7 +45,7 @@ local ServerModules = Knit.Modules;
 local IngredientObjects = GameLibrary:FindFirstChild("IngredientObjects");
 local FoodObjects = GameLibrary:FindFirstChild("FoodObjects");
 
-local ThemeData = "French"
+local ThemeData = workspace:GetAttribute("Theme")
 
 ----- Loaded Modules -----
 
