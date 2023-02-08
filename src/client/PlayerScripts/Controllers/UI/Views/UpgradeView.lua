@@ -15,6 +15,8 @@ local PlayerProgressionData;
 local ProgressionStorage;
 local PlayerCurrency;
 
+local buttonDebounce = false;
+
 local ThemeData = workspace:GetAttribute("Theme")
 
 local LocalPlayer = Players.LocalPlayer;
@@ -24,6 +26,7 @@ local viewsUI = PlayerGui:WaitForChild("Main"):WaitForChild("Views")
 
 local UpgradesGui = viewsUI:WaitForChild("Upgrades")
 local ScrollingFrame = UpgradesGui:WaitForChild("Book"):WaitForChild("Page"):WaitForChild("Page"):WaitForChild("ContentHolder"):WaitForChild("Contents"):WaitForChild("ScrollingFrame")
+local ResetButton = UpgradesGui:WaitForChild("Book"):WaitForChild("Page"):WaitForChild("Page"):WaitForChild("Reset")
 
 function UpgradeView:Update()
     for progressionName, progressionData in next, ProgressionStorage do
@@ -87,6 +90,29 @@ function UpgradeView:SetupUpgradeTabs()
         end
     end
 
+    ResetButton.MouseButton1Click:Connect(function()
+        if buttonDebounce then return end
+        buttonDebounce = true;
+        local Promise = nil;
+
+        Promise = ProgressionService:ResetProgressionData(ThemeData):andThen(function(ResultInfo)
+            print(ResultInfo)
+            if ResultInfo.Currency ~= nil then
+                PlayerCurrency = ResultInfo.Currency
+            end
+            if ResultInfo.ProgressionData ~= nil then
+                PlayerProgressionData = ResultInfo.ProgressionData
+            end
+            NotificationUI:Message(ResultInfo.StatusString, ResultInfo.StatusEffect);
+            self:Update()
+            buttonDebounce = false;
+            return;
+        end);
+        repeat task.wait(0) until Promise:getStatus() ~= "Started" or Players.LocalPlayer == nil
+        warn("Reset Complete!")
+        buttonDebounce = false;
+    end)
+
     ProgressionService:GetProgressionData(ThemeData):andThen(function(playerCurrency, playerStorage, progressionStorage)
         print("PlayerCurrency", playerCurrency, "PlayerStorage:", playerStorage, "ProgressionStorage:", progressionStorage)
         PlayerCurrency = playerCurrency;
@@ -149,8 +175,11 @@ function UpgradeView:SetupUpgradeTabs()
                 ItemClone.Parent = ScrollingFrame;
     
                 ItemClone:WaitForChild("Button").MouseButton1Click:Connect(function()
+                    if buttonDebounce then return end
+                    buttonDebounce = true;
                     if (PlayerProgressionData[progressionName] >= progressionData.Max) then
                         NotificationUI:Message("Max Upgrade!", {Effect = false, Color = Color3.fromRGB(255, 200, 21)});
+                        buttonDebounce = false;
                         return;
                     end
 
@@ -160,6 +189,14 @@ function UpgradeView:SetupUpgradeTabs()
                     AffordPromise = DataService:GetCurrency(ThemeData):andThen(function(Coins)
                         if Coins then
                             PlayerCurrency = Coins;
+                            if not progressionData then
+                                CanAfford = false;
+                                return;
+                            end
+                            if progressionData.Data[PlayerDataIndex + 1] == nil then
+                                CanAfford = false;
+                                return;
+                            end
                             CanAfford = (Coins >= progressionData.Data[PlayerDataIndex + 1].Price)
                             return;
                         else
@@ -181,6 +218,7 @@ function UpgradeView:SetupUpgradeTabs()
                             end
                             NotificationUI:Message(ResultInfo.StatusString, ResultInfo.StatusEffect);
                             self:Update()
+                            buttonDebounce = false;
                             return;
                         end);
                         repeat task.wait(0) until Promise:getStatus() ~= "Started" or Players.LocalPlayer == nil
@@ -190,6 +228,7 @@ function UpgradeView:SetupUpgradeTabs()
                         task.wait(0.3);
                         Knit.GetController("ShopView"):GoToArea("Currency");
                     end
+                    buttonDebounce = false;
                 end)
             end
         end;

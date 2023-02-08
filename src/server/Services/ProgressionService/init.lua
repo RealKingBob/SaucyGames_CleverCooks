@@ -2,7 +2,9 @@ local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local ProgressionService = Knit.CreateService {
     Name = "ProgressionService";
-    Client = {};
+    Client = {
+        Update = Knit.CreateSignal();
+    };
 }
 
 local PlayerUpgradeDebounce = {}
@@ -19,6 +21,11 @@ function ProgressionService.Client:PurchaseUpgrade(player, theme, category)
     return self.Server:PurchaseUpgrade(player, theme, category)
 end
 
+function ProgressionService.Client:ResetProgressionData(player, theme, category)
+    print("ResetProgressionData", player, theme, category)
+    return self.Server:ResetProgressionData(player, theme, category)
+end
+
 function ProgressionService:GetPlayerProgressionData(theme, category)
     if theme == "French" then
         if category then
@@ -29,15 +36,31 @@ function ProgressionService:GetPlayerProgressionData(theme, category)
     end
 end
 
+function ProgressionService:UpdatePlayerStats(player, categoryName, categoryValue)
+    if not player or not categoryName or not categoryValue then return end;
+    if categoryName == "Extra Health" then
+        local Character = player.Character or player.CharacterAdded:Wait()
+        local Humanoid = Character:FindFirstChild("Humanoid")
+        if not Humanoid then return end
+        Humanoid.MaxHealth = categoryValue;
+        Humanoid.Health = categoryValue;
+    else
+
+    end
+    self.Client.Update:Fire(player, categoryName, categoryValue)
+end
+
 function ProgressionService:PurchaseUpgrade(player, theme, category)
     if not player or not theme or not category then return end;
     if PlayerUpgradeDebounce[player] then 
         return {
             Player = player, 
+            Currency = nil,
+            ProgressionData = nil,
             Status = "Error", 
             StatusString = "[ErrorCode PS-PU0] Error occurred, please try again.",
             StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
-            ItemInfo = nil
+            Data = nil
         }
     end
 
@@ -59,7 +82,7 @@ function ProgressionService:PurchaseUpgrade(player, theme, category)
             Status = "Error", 
             StatusString = "[ErrorCode PS-PU1] Error occurred, please try again.",
             StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
-            ItemInfo = nil;
+            Data = nil;
         }
     end
 
@@ -78,7 +101,7 @@ function ProgressionService:PurchaseUpgrade(player, theme, category)
             Status = "Error", 
             StatusString = "[ErrorCode PS-PU2] Error occurred, please try again.",
             StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
-            ItemInfo = nil;
+            Data = nil;
         }
     end
 
@@ -93,7 +116,7 @@ function ProgressionService:PurchaseUpgrade(player, theme, category)
             Status = "Error", 
             StatusString = "[ErrorCode PS-PU3] Already at max upgrade!",
             StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
-            ItemInfo = nil
+            Data = nil
         }
     end
 
@@ -106,7 +129,7 @@ function ProgressionService:PurchaseUpgrade(player, theme, category)
             Status = "Error", 
             StatusString = "[ErrorCode PS-PU4] Insufficient funds!",
             StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
-            ItemInfo = nil
+            Data = nil
         }
     end
 
@@ -119,6 +142,7 @@ function ProgressionService:PurchaseUpgrade(player, theme, category)
     PlayerProfile.Data.SkillUpgrades[theme] = PlayerProgressionData
 
     warn(PlayerProfile.Data.PlayerInfo.Currency[theme], PlayerProfile.Data.SkillUpgrades[theme])
+    self:UpdatePlayerStats(player, category, CategoryData.Data[PlayerDataIndex + 1].Value)
     PlayerUpgradeDebounce[player] = nil;
     return {
         Player = player, 
@@ -127,7 +151,69 @@ function ProgressionService:PurchaseUpgrade(player, theme, category)
         Status = "Success", 
         StatusString = "Purchase Successful",
         StatusEffect = {Effect = false, Color = Color3.fromRGB(40, 255, 21)};
-        ItemInfo = nil
+        Data = nil
+    }
+end
+
+function ProgressionService:ResetProgressionData(player, theme, category)
+    if not player or not theme then return end;
+    if PlayerUpgradeDebounce[player] then 
+        return {
+            Player = player, 
+            Currency = nil,
+            ProgressionData = nil,
+            Status = "Error", 
+            StatusString = "[ErrorCode PS-RP0] Error occurred, please try again.",
+            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
+            Data = nil
+        }
+    end
+
+    PlayerUpgradeDebounce[player] = true;
+    local DataService = Knit.GetService("DataService");
+    local PlayerCurrency, PlayerProgressionData = nil, nil;
+    local PlayerProfile = DataService:GetProfile(player)
+    if PlayerProfile then
+        PlayerCurrency = PlayerProfile.Data.PlayerInfo.Currency[theme];
+        PlayerProgressionData = PlayerProfile.Data.SkillUpgrades[theme];
+    end
+
+    if not PlayerCurrency or not PlayerProgressionData then
+        PlayerUpgradeDebounce[player] = nil;
+        return {
+            Player = player,
+            Currency = PlayerCurrency,
+            ProgressionData = PlayerProgressionData,
+            Status = "Error", 
+            StatusString = "[ErrorCode PS-RP1] Error occurred, please try again.",
+            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
+            Data = nil;
+        }
+    end
+
+    if theme == "French" then
+        if category then
+            PlayerProgressionData[category] = 1;
+            local _, _, progData = self:GetProgressionData(player, theme, category)
+            self:UpdatePlayerStats(player, category, progData.Data[1].Value)
+        else
+            for progressionName, progressionData in next, PlayerProgressionData do
+                PlayerProgressionData[progressionName] = 1;
+                local _, _, progData = self:GetProgressionData(player, theme, progressionName)
+                self:UpdatePlayerStats(player, progressionName, progData.Data[1].Value)
+            end
+        end
+        PlayerProfile.Data.SkillUpgrades[theme] = PlayerProgressionData
+    end
+    PlayerUpgradeDebounce[player] = nil;
+    return {
+        Player = player, 
+        Currency = PlayerCurrency,
+        ProgressionData = PlayerProgressionData,
+        Status = "Success", 
+        StatusString = "All upgrades reset",
+        StatusEffect = {Effect = false, Color = Color3.fromRGB(40, 255, 21)};
+        Data = nil
     }
 end
 

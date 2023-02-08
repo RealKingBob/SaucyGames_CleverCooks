@@ -22,8 +22,13 @@ local ReductionDelay = 0.05;
 local RegenAmount = 1;
 local RegenDelay = 0.2;
 
-local Stamina = 100--000000000000;
-local MaxStamina = 100--000000000000;
+local MaxStamina = Instance.new("IntValue", LocalPlayer)
+MaxStamina.Name = "MaxStamina"
+MaxStamina.Value = 100
+
+local Stamina = Instance.new("IntValue", LocalPlayer)
+Stamina.Name = "Stamina"
+Stamina.Value = MaxStamina.Value
 
 local percentageToUseAgain = 30 
 
@@ -67,7 +72,7 @@ function StaminaUI:SetupStamina(Character)
     local BoostSFX, BoomSFX;
     local AvatarService = Knit.GetService("AvatarService");
 
-    Stamina = MaxStamina;
+    Stamina.Value = MaxStamina.Value;
 
     local Humanoid = Character:WaitForChild("Humanoid");
 
@@ -100,12 +105,12 @@ function StaminaUI:SetupStamina(Character)
     local function startStamina()
         if not Humanoid then return end
         if cooldownStamina == true and 
-        (Stamina <= percentageToUseAgain) or
+        (Stamina.Value <= percentageToUseAgain) or
         Humanoid.MoveDirection.Magnitude <= 0 then
             return;
         end
 
-        if (sprinting == false) and (Stamina > ReductionRate) then
+        if (sprinting == false) and (Stamina.Value > ReductionRate) then
             sprinting = true
 
             if staminaDebounce == true then
@@ -130,8 +135,6 @@ function StaminaUI:SetupStamina(Character)
             --local BoostSFX = Instance.new("Sound")
             --BoostSFX.SoundId = "rbxassetid://5274463739"
             --BoostSFX.PlayOnRemove = false
-
-            
 
             if not Knit.GamePlayers.BoostSFX:FindFirstChild(LocalPlayer.Name) then return end;
 
@@ -218,16 +221,16 @@ function StaminaUI:SetupStamina(Character)
 
             repeat
                 task.wait(ReductionDelay)
-                Stamina = Stamina - ReductionRate
-                PlayerGui:WaitForChild("Main"):WaitForChild("BottomFrame"):WaitForChild("BarsFrame"):WaitForChild("Stamina"):WaitForChild("Bar"):TweenSize(UDim2.new(Stamina / MaxStamina, 0, 1, 0), 'Out', 'Quint', .1, true)
+                Stamina.Value = Stamina.Value - ReductionRate
+                PlayerGui:WaitForChild("Main"):WaitForChild("BottomFrame"):WaitForChild("BarsFrame"):WaitForChild("Stamina"):WaitForChild("Bar"):TweenSize(UDim2.new(Stamina.Value / MaxStamina.Value, 0, 1, 0), 'Out', 'Quint', .1, true)
                 if (sprinting == true) then
                     StaminaBar.BackgroundColor3 = boostStaminaColor;
                 end
                 
-                StaminaTitle.Text = math.floor(Stamina).. '/' ..(MaxStamina)
-            until (sprinting == false) or not Humanoid or Humanoid.Health == 0 or (Stamina <= 0) or (Humanoid.MoveDirection == Vector3.new(0,0,0))
+                StaminaTitle.Text = math.floor(Stamina.Value).. '/' ..(MaxStamina.Value)
+            until (sprinting == false) or not Humanoid or Humanoid.Health == 0 or (Stamina.Value <= 0) or (Humanoid.MoveDirection == Vector3.new(0,0,0))
 
-            if Stamina <= 0 then
+            if Stamina.Value <= 0 then
                 cooldownStamina = true;
             end
 
@@ -321,19 +324,25 @@ function StaminaUI:KnitStart()
     ProgressionService:GetProgressionData(ThemeData):andThen(function(playerCurrency, playerStorage, progressionStorage)
         print("PlayerCurrency", playerCurrency, "PlayerStorage:", playerStorage, "ProgressionStorage:", progressionStorage)
 
-        MaxStamina = progressionStorage["Boost Stamina"].Data[playerStorage["Boost Stamina"]].Value;
-        Stamina = progressionStorage["Boost Stamina"].Data[playerStorage["Boost Stamina"]].Value;
-        print(Stamina, MaxStamina)
+        MaxStamina.Value = progressionStorage["Boost Stamina"].Data[playerStorage["Boost Stamina"]].Value;
+        Stamina.Value = progressionStorage["Boost Stamina"].Data[playerStorage["Boost Stamina"]].Value;
+        print(Stamina.Value, MaxStamina.Value)
     end)
 
-
+    ProgressionService.Update:Connect(function(StatName, StatValue)
+        if StatName == "Boost Stamina" then
+            MaxStamina.Value = StatValue;
+            Stamina.Value = StatValue;
+            print(Stamina.Value, MaxStamina.Value)
+        end
+    end)
 end
 
 
 function StaminaUI:KnitInit()
     
     LocalPlayer.CharacterAdded:Connect(function(Character)
-        Stamina = MaxStamina;
+        Stamina.Value = MaxStamina.Value;
         local MainUI = PlayerGui:WaitForChild("Main")
         local BarsFrame = MainUI:WaitForChild("BottomFrame"):WaitForChild("BarsFrame");
         local StaminaFrame = BarsFrame:WaitForChild("Stamina")
@@ -352,7 +361,7 @@ function StaminaUI:KnitInit()
         while true do
             task.wait(RegenDelay)
     
-            if cooldownStamina == true and (Stamina > percentageToUseAgain) then
+            if cooldownStamina == true and (Stamina.Value > percentageToUseAgain) then
                 cooldownStamina = false;
                 local MainUI = PlayerGui:WaitForChild("Main")
                 local BarsFrame = MainUI:WaitForChild("BottomFrame"):WaitForChild("BarsFrame");
@@ -361,18 +370,18 @@ function StaminaUI:KnitInit()
                 StaminaBar.BackgroundColor3 = regularStaminaColor;
             end
     
-            if (sprinting == false) and (Stamina < 100) then
+            if (sprinting == false) and (Stamina.Value < MaxStamina.Value) then
                 local MainUI = PlayerGui:WaitForChild("Main")
                 local BarsFrame = MainUI:WaitForChild("BottomFrame"):WaitForChild("BarsFrame");
                 local StaminaFrame = BarsFrame:WaitForChild("Stamina")
                 local StaminaBar = StaminaFrame:WaitForChild("Bar")
                 local StaminaTitle = StaminaFrame:WaitForChild("Title")
-                Stamina += RegenAmount
-                PlayerGui:WaitForChild("Main"):WaitForChild("BottomFrame"):WaitForChild("BarsFrame"):WaitForChild("Stamina"):WaitForChild("Bar"):TweenSize(UDim2.new(Stamina / MaxStamina, 0, 1, 0), 'Out', 'Quint', .1, true)
+                Stamina.Value += RegenAmount
+                PlayerGui:WaitForChild("Main"):WaitForChild("BottomFrame"):WaitForChild("BarsFrame"):WaitForChild("Stamina"):WaitForChild("Bar"):TweenSize(UDim2.new(Stamina.Value / MaxStamina.Value, 0, 1, 0), 'Out', 'Quint', .1, true)
                 if (sprinting == true) then
                     StaminaBar.BackgroundColor3 = regularStaminaColor;
                 end
-                StaminaTitle.Text = math.floor(Stamina).. '/' ..(MaxStamina)
+                StaminaTitle.Text = math.floor(Stamina.Value).. '/' ..(MaxStamina.Value)
             end
         end
     end)
