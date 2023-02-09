@@ -68,7 +68,7 @@ function AnimationController:Animate(Controller, Animation, AnimationName, Agent
          if (currentAnimKeyframeHandler[Agent] ~= nil) then
             currentAnimKeyframeHandler[Agent]:disconnect()
         end
-        currentAnimKeyframeHandler[Agent] = taskAnimTrack.KeyframeReached:connect(keyFrameReachedFunc)
+        currentAnimKeyframeHandler[Agent] = taskAnimTrack.KeyframeReached:Connect(keyFrameReachedFunc)
         
         --print("STOP")
     end

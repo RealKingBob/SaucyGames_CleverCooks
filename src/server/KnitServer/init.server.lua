@@ -107,6 +107,19 @@ local previousCollisionGroups = {};
 local playerProfiles = {}; -- [player] = profile
 local deathCooldown = {};
 
+local isFalling = {}
+local fallingDebounce = {}
+
+local playerDoubleJumped = {}
+local playerTripleJumped = {}
+
+local canJump = {};
+local canDoubleJump = {};
+local canTripleJump = {};
+local currentJump = {};
+
+local CHECK_DELAY_IN_SECONDS = 0.2;
+
 local function setCollisionGroup(object)
 	if CollectionService:HasTag(object, "CC_Food") then
 		return
@@ -209,11 +222,106 @@ local function onCharacterAdded(character)
 	if player then
         local humanoid = character:FindFirstChildWhichIsA("Humanoid");
 
+		currentJump[player] = 0;
+		canJump[player] = true
+
+		local debounceJump = false
+
 		local ProgressionService = Knit.GetService("ProgressionService");
 		local playerCurrency, playerStorage, progressionStorage = ProgressionService:GetProgressionData(player, ThemeData)
 
 		humanoid.MaxHealth = progressionStorage["Extra Health"].Data[playerStorage["Extra Health"]].Value;
 		humanoid.Health = progressionStorage["Extra Health"].Data[playerStorage["Extra Health"]].Value;
+
+		local function manageConsecutiveJumps(_, newState)
+			if newState == Enum.HumanoidStateType.Freefall then
+				canDoubleJump[player] = true
+				canTripleJump[player] = true
+				currentJump[player] = 0
+			elseif newState == Enum.HumanoidStateType.Jumping then
+				warn("OKOK")
+				canJump[player] = false;
+				task.wait(CHECK_DELAY_IN_SECONDS);
+				currentJump[player] = currentJump[player] + 1;
+				canJump[player] = currentJump[player] < 3;
+				warn(character, currentJump)
+				if currentJump[player] == 2 then
+					canDoubleJump[player] = false
+					playerDoubleJumped[player] = true
+				elseif currentJump[player] == 3 then
+					canTripleJump[player] = false
+					playerTripleJumped[player] = true
+				end
+			elseif newState == Enum.HumanoidStateType.Landed then
+				currentJump[player] = 0;
+				canJump[player] = true;
+				canDoubleJump[player] = nil
+				canTripleJump[player] = nil
+				playerDoubleJumped[player] = nil
+				playerTripleJumped[player] = nil
+			end
+		end
+
+		local function onJumpRequest()
+			if not character or not humanoid or not character:IsDescendantOf(workspace) or
+			humanoid:GetState() == Enum.HumanoidStateType.Dead then
+				return
+			end
+			
+			if canDoubleJump[player] and not playerDoubleJumped[player] then
+				playerDoubleJumped[player] = true
+			elseif canTripleJump[player] and playerDoubleJumped[player] and not playerTripleJumped[player] then
+				playerTripleJumped[player] = true
+			end
+		end	
+
+		humanoid:GetPropertyChangedSignal("Jump"):Connect(function()
+			if humanoid.Jump == true then
+				if debounceJump == true then return end
+				warn("JUMP REQUEST")
+				onJumpRequest()
+				task.spawn(function()
+					if debounceJump == true then return end
+					debounceJump = true
+					task.wait(1)
+					debounceJump = false
+				end)
+			end
+		end)
+		
+		humanoid.StateChanged:Connect(manageConsecutiveJumps);
+
+		humanoid.FreeFalling:Connect(function(falling)
+			isFalling[player] = falling
+			if isFalling[player] and not fallingDebounce[player] then
+				fallingDebounce[player] = true
+				local maxHeight = 0
+				local humRoot = character:FindFirstChild("HumanoidRootPart")
+				while isFalling[player] do
+					local height = math.abs(humRoot.Position.y)
+					if height > maxHeight then
+						maxHeight = height
+					end
+					if canDoubleJump[player] and playerDoubleJumped[player] then -- Check if the player double jumped
+						warn('DOUBLE')
+						maxHeight = height -- Update the max height to the new height
+						canDoubleJump[player] = false
+					end
+					if canTripleJump[player] and playerTripleJumped[player] then -- Check if the player double jumped
+						warn("TRIPLE")
+						maxHeight = height -- Update the max height to the new height
+						canTripleJump[player] = false
+					end
+					task.wait()
+				end
+		
+				local fallHeight = maxHeight - humRoot.Position.y
+				if fallHeight >= Knit.Config.LOWEST_FALL_HEIGHT then
+					humanoid:TakeDamage(fallHeight)
+				end
+				fallingDebounce[player] = nil
+			end
+		end)		
 
         if CollectionService:HasTag(player, Knit.Config.CHEF_TAG) then
             --// NOTE: This is if player bought chef gamepass

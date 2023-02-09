@@ -21,7 +21,7 @@ local function createJumpParticle()
     jumpEffect.ParticleEmitter:Emit(45)
 end
 
-Humanoid.FreeFalling:connect(function(falling)
+Humanoid.FreeFalling:Connect(function(falling)
 	isFalling = falling
 	if isFalling and not deb then
 		deb = true
@@ -34,7 +34,8 @@ Humanoid.FreeFalling:connect(function(falling)
 			task.wait()
 		end
 		local fallHeight = maxHeight - humRoot.Position.y
---		print(Character.Name.. " fell " .. math.floor(fallHeight + 0.5) .. " studs")
+		--print(Character.Name.. " fell " .. math.floor(fallHeight + 0.5) .. " studs")
+		--print("Damage:", fallHeight)
 		if fallHeight >= lowestFallHeight then
 			createJumpParticle()
 		end

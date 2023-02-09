@@ -1199,7 +1199,7 @@ function Icon.mimic(coreIconToMimic)
 		-- Keep when other icons selected
 		icon.deselectWhenOtherIconSelected = false
 		-- Mimic chat notifications
-		icon._fakeChatMaid:give(ChatMain.MessagesChanged:connect(function()
+		icon._fakeChatMaid:give(ChatMain.MessagesChanged:Connect(function()
 			if ChatMain:GetVisibility() == true then
 				return "ChatWindow was open"
 			end
@@ -1208,7 +1208,7 @@ function Icon.mimic(coreIconToMimic)
 		-- Mimic visibility when StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, state) is called
 		coroutine.wrap(function()
 			runService.Heartbeat:Wait()
-			icon._fakeChatMaid:give(ChatMain.CoreGuiEnabled:connect(function(newState)
+			icon._fakeChatMaid:give(ChatMain.CoreGuiEnabled:Connect(function(newState)
 				if icon.ignoreVisibilityStateChange then
 					return "ignoreVisibilityStateChange enabled"
 				end

@@ -44,5 +44,7 @@ return {
 
     RESET_DAILY_SHOP_DATA = false; -- If shop data needs to be reset then if true player will reset shop data when join.
     GIVE_ALL_INVENTORY = true; --// Gives all items on inventory
-    DAILY_SHOP_OFFSET = 19 -- 7 PM EST, 24 hour time
+    DAILY_SHOP_OFFSET = 19; -- 7 PM EST, 24 hour time
+
+    LOWEST_FALL_HEIGHT = 10; -- 10 studs minimum impact
 }

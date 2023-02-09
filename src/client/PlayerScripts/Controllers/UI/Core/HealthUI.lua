@@ -69,7 +69,7 @@ function HealthUI:KnitInit()
         end
 
         HealthConnection = Humanoid:GetPropertyChangedSignal("Health"):Connect(function()
-            print(Humanoid, Humanoid.Health)
+            --print(Humanoid, Humanoid.Health)
             if Humanoid.Health < prevHealth then self:DamageEffect(Character) end
             self:Update(Humanoid)
         end)
@@ -93,7 +93,7 @@ function HealthUI:KnitInit()
     end
 
     HealthConnection = Humanoid:GetPropertyChangedSignal("Health"):Connect(function()
-        print(Humanoid, Humanoid.Health)
+        --print(Humanoid, Humanoid.Health)
         if Humanoid.Health < prevHealth then self:DamageEffect(Character) end
         self:Update(Humanoid)
     end)

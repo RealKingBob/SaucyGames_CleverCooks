@@ -1129,7 +1129,7 @@ coroutine.wrap(function()
 	local chatMain = chatScript:FindFirstChild("ChatMain")
 	if not chatMain then return end
 	local ChatMain = require(chatMain)
-	ChatMain.CoreGuiEnabled:connect(function()
+	ChatMain.CoreGuiEnabled:Connect(function()
 		local topbarEnabled = checkTopbarEnabled()
 		if topbarEnabled == IconController.previousTopbarEnabled then
 			IconController.updateTopbar()

@@ -232,7 +232,7 @@ local Tool = PerfectionWeld()
 if Tool and script.ClassName == "Script" then
 	--- Don't bother with local scripts
 
-	script.Parent.AncestryChanged:connect(function()
+	script.Parent.AncestryChanged:Connect(function()
 		PerfectionWeld()
 	end)
 end

@@ -193,7 +193,7 @@ function SandboxMode:StartMode()
 
             if os.time() - startTime > 10 then
                 if os.time() - startTime > intervalTime * called and called < amountOfNpcs then
-                    createChefNPC()
+                    --createChefNPC()
                     called = called + 1
                 end
             end
