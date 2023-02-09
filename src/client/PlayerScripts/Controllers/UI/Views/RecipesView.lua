@@ -741,7 +741,7 @@ function RecipesView:KnitStart()
 		currentPansInUse = currentPans
 		for _, pan in pairs(CollectionService:GetTagged("Pan")) do
 			if tablefind(currentPansInUse, pan) then
-				print("xxxxxxxxxx")
+				--print("xxxxxxxxxx")
 				pan.ProximityPrompt.Enabled = true;
 			end
 		end
@@ -854,14 +854,14 @@ function RecipesView:KnitStart()
 						panHitbox.ProximityPrompt.Enabled = true;
 					else
 						if allIngredientsFound == true or tablefind(currentPansInUse, panHitbox) then continue end;
-						print("falsese")
+						--print("falsese")
 						panHitbox.ProximityPrompt.Enabled = false;
 					end;
 				end
 			else
 				if allIngredientsFound == true or tablefind(currentPansInUse, panHitbox) then continue end;
 				if panHitbox.ProximityPrompt.Enabled ~= false then
-					print("falsese  22" ) 
+					--print("falsese  22" ) 
 					panHitbox.ProximityPrompt.Enabled = false;
 				end
 			end

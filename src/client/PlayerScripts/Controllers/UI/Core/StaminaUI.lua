@@ -23,11 +23,11 @@ local RegenAmount = 1;
 local RegenDelay = 0.2;
 
 local MaxStamina = Instance.new("IntValue", LocalPlayer)
-MaxStamina.Name = "MaxStamina"
+MaxStamina.Name = "MS"
 MaxStamina.Value = 100
 
 local Stamina = Instance.new("IntValue", LocalPlayer)
-Stamina.Name = "Stamina"
+Stamina.Name = "S"
 Stamina.Value = MaxStamina.Value
 
 local percentageToUseAgain = 30 
@@ -385,7 +385,6 @@ function StaminaUI:KnitInit()
             end
         end
     end)
-
 end
 
 

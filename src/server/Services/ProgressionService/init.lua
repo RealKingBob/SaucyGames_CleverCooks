@@ -218,12 +218,17 @@ function ProgressionService:ResetProgressionData(player, theme, category)
 end
 
 function ProgressionService:GetProgressionData(player, theme, category)
+    print(player, theme, category)
     local DataService = Knit.GetService("DataService");
     local PlayerCurrency, PlayerProgressionData = nil, nil;
     local PlayerProfile = DataService:GetProfile(player)
+    print("PlayerProfile", PlayerProfile)
     if PlayerProfile then
         PlayerCurrency = PlayerProfile.Data.PlayerInfo.Currency[theme];
         PlayerProgressionData = PlayerProfile.Data.SkillUpgrades[theme];
+    else
+        task.wait(2)
+        return self:GetProgressionData(player, theme, category)
     end
     if theme == "French" then
         if category then

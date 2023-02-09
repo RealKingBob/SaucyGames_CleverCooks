@@ -1238,7 +1238,7 @@ function NpcService:KnitStart()
                                     end
                                 else
                                     targetPresentCount[NPC] = 0;
-                                    print("rand")
+                                    --print("rand")
                                     if attackDebounce[NPC] and npcDifficulty[NPC] ~= "Hard" then return end;
                                     --task.spawn(TravelToRandomPoint, NPC, TaskExclusion[NPC])
                                     TravelToRandomPoint(NPC, TaskExclusion[NPC]);
@@ -1279,7 +1279,7 @@ function NpcService:KnitStart()
                             --print("T:" , not travelToRandomPoint[NPC] , not npcTargets[NPC] , inCutscene[NPC] == false , animDebounce[NPC] == false)
                             if not travelToRandomPoint[NPC] and not npcTargets[NPC] and inCutscene[NPC] == false and animDebounce[NPC] == false then
                                 targetPresentCount[NPC] = 0;
-                                print("rand")
+                                --print("rand")
                                 if attackDebounce[NPC] and npcDifficulty[NPC] ~= "Hard" then return end;
                                 --task.spawn(TravelToRandomPoint, NPC, TaskExclusion[NPC])
                                 TravelToRandomPoint(NPC, TaskExclusion[NPC]);

@@ -156,7 +156,7 @@ function AttackService:ThrowObject(char, animator, position)
 			local HRP = v.Character:FindFirstChild("HumanoidRootPart");
 			if HRP then
 				if (HRP.Position - StompBlockClone.Position).Magnitude < stompRange then
-					v.Character:FindFirstChild("Humanoid").Health = -1;
+					v.Character:FindFirstChild("Humanoid"):TakeDamage(100);
 				end
 			end
 		end
@@ -277,7 +277,7 @@ function AttackService:BroomHitTop(char, animator, position)
 			local HRP = v.Character:FindFirstChild("HumanoidRootPart");
 			if HRP then
 				if (HRP.Position - StompBlockClone.Position).Magnitude < broomRange then
-					v.Character:FindFirstChild("Humanoid").Health = -1;
+					v.Character:FindFirstChild("Humanoid"):TakeDamage(100);
 				end
 			end
 		end

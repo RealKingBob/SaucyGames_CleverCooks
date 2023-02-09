@@ -533,10 +533,10 @@ function DataService:GiveCurrency(player, Amount, disableEffect, Percentage)
 		return;
 	end;
 
-    if not reset[player] then
+    --[[if not reset[player] then
         reset[player] = true
         profile.Data.PlayerInfo.Currency[ThemeData] = 0;
-    end
+    end]]
 
     if profile.Data.PlayerInfo.Currency[ThemeData] == nil then
         profile.Data.PlayerInfo.Currency[ThemeData] = 0;
