@@ -39,6 +39,7 @@ local function Length(Table)
 end
 
 local function visualizePosition(Position : Vector3)
+    if not Position then return end
     local part = Instance.new("Part")
     part.Size = Vector3.new(.3,.3,.3)
     part.Shape = Enum.PartType.Ball
@@ -53,6 +54,7 @@ local function visualizePosition(Position : Vector3)
 end
 
 function CurrencySessionService:DropCheese(oCFrame, player, amount, value)
+    if not oCFrame or not player or not amount or not value then return end;
     local localSessionStorage = {};
     local CheeseObj = game.ReplicatedStorage.Spawnables.Cheese;
 
@@ -61,6 +63,7 @@ function CurrencySessionService:DropCheese(oCFrame, player, amount, value)
 	local PartyOwner = player;
 
 	local PartyInfo = PartyService:FindPartyFromPlayer(player);
+    if not PartyInfo then return end
 	PartyOwner = Players:GetPlayerByUserId(PartyInfo.OwnerId)
 	for _, memberInParty in pairs(PartyInfo.Members) do
 		local memberIdToPlayer = memberInParty.Player;
@@ -107,6 +110,7 @@ function CurrencySessionService:DropCheese(oCFrame, player, amount, value)
 end
 
 function CurrencySessionService:CollectedCurrency(player, objectId, objectType, rootCframe)
+    if not player or not objectId or not objectType or not rootCframe then return end
     if objectType == "Cheese" then
         if not player and SessionStorage[player] then return end;
         if SessionStorage[player].Cheese[objectId] then

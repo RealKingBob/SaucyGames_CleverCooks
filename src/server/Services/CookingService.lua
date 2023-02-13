@@ -76,6 +76,12 @@ local deliverZone = ZoneAPI.new(CollectionService:GetTagged("DeliverStation"));
 local EXPMultiplier = 10;
 local MaxFoodSpawnRange = 25;
 
+local NormalWalkSpeed = 16
+local NewWalkSpeed = 30
+
+local WalkSpeedWithItem = 13
+local NewWalkSpeedWithItem = 26
+
 ----- Tables -----
 
 local FoodData = {};
@@ -336,7 +342,7 @@ function CookingService:PickUp(Player, Character, Item)
 		if not itemObject or not Character:FindFirstChild("HumanoidRootPart") then return end;
 		local Magnitude = (itemObject.Position - Character:FindFirstChild("HumanoidRootPart").Position).magnitude;
 
-		--print("MAGNITUDE:", Magnitude)
+		print("MAGNITUDE:", Magnitude)
 		
 		if not Magnitude or Magnitude > 13 then return end
 
@@ -377,9 +383,10 @@ function CookingService:PickUp(Player, Character, Item)
 			ProximityService:PickUpIngredient(Character, ClonedItem);
 			print("pickup members,",PartyMembers)
 			for i, member in pairs(PartyMembers) do
-				self.Client.PickUp:Fire(member, Item)
+				self.Client.PickUp:Fire(member, {Type = "DestroyFood", Data = Item})
 			end
-			self.Client.ProximitySignal:Fire(Player,"DropDown",true);
+			self.Client.ProximitySignal:Fire(Player,"DropDown",true); 
+			self.Client.PickUp:Fire(Player, {Type = "ChangeStamina", Data = {WalkSpeedWithItem, NewWalkSpeedWithItem}})
 			PlayersInServers[Player.UserId] = {nil, Item};
 		elseif itemType == "Food" then
 			local cookingPercentage = (Item:IsA("Model") and Item.PrimaryPart ~= nil and Item.PrimaryPart:GetAttribute("CookingPercentage")) or Item:GetAttribute("CookingPercentage")
@@ -395,9 +402,10 @@ function CookingService:PickUp(Player, Character, Item)
 			ProximityService:PickUpFood(Character, ClonedItem);
 			print("pickup members,",PartyMembers)
 			for i, member in pairs(PartyMembers) do
-				self.Client.PickUp:Fire(member, Item)
+				self.Client.PickUp:Fire(member, {Type = "DestroyFood", Data = Item})
 			end
 			self.Client.ProximitySignal:Fire(Player,"DropDown",true);
+			self.Client.PickUp:Fire(Player, {Type = "ChangeStamina", Data = {WalkSpeedWithItem, NewWalkSpeedWithItem}})
 			PlayersInServers[Player.UserId] = {nil, Item};
 		end
 	end
@@ -448,6 +456,7 @@ function CookingService:DropDown(Player,Character)
 
 		ProximityService:DropItem(Character, PlayersInServers[Player.UserId][2]);
 		self.Client.ProximitySignal:Fire(Player,"DropDown",false);
+		self.Client.PickUp:Fire(Player, {Type = "ChangeStamina", Data = {NormalWalkSpeed, NewWalkSpeed}})
 
 		PlayersInServers[Player.UserId] = nil;
 	end
@@ -789,6 +798,8 @@ function CookingService:StartCookingProcess(player, pan, recipe, previousPercent
 	local ProgressionService = Knit.GetService("ProgressionService");
 	local playerCurrency, playerStorage, progressionStorage = ProgressionService:GetProgressionData(player, ThemeData)
 
+
+	warn("PROGRESSION DATA:", playerCurrency, playerStorage, progressionStorage)
 	-- cookingTime = (Default_Time / Player_Cook_Speed) * 2
 	local cookingTime = (RecipeModule:GetCookTime(tostring(recipe)) / progressionStorage["Cook Speed"].Data[playerStorage["Cook Speed"]].Value) * 2;
 
@@ -831,6 +842,41 @@ function CookingService:StartCookingProcess(player, pan, recipe, previousPercent
 	local numOfDrops = (cookingTime / 2) / waitTime;
 
 	local CurrencySessionService = Knit.GetService("CurrencySessionService");
+	local CookPerfection = progressionStorage["Cooking Perfection"].Data[playerStorage["Cooking Perfection"]].Value
+	local MaxCookSpeed = (progressionStorage["Cook Speed"].Max == playerStorage["Cook Speed"] and true) or false
+	--print(CookPerfection, MaxCookSpeed)
+	
+	if CookPerfection == true and MaxCookSpeed == true then
+		if previousPercentage ~= 50 then
+			if previousPercentage < 50 then
+				local cheeseDrop = RecipeModule:GetRecipeRewards(RecipeModule[tostring(recipe)].Difficulty);
+				local rCheeseDropReward = math.random(
+					(cheeseDrop[1] - (cheeseDrop[1] * .15)),
+					(cheeseDrop[2] - (cheeseDrop[2] * .15)))
+	
+				local cheeseValuePerDrop = rCheeseDropReward;
+				local cheeseObjectPerDrop = 6;
+	
+				CurrencySessionService:DropCheese(
+					pan.CFrame, 
+					PartyOwner, 
+					cheeseObjectPerDrop, 
+					math.floor((cheeseValuePerDrop / cheeseObjectPerDrop))
+				)
+			end
+			
+			for _, member in pairs(PartyMembers) do
+				Knit.GetService("NotificationService"):Message(false, member, "Perfect Cooking!", {Effect = false, Color = Color3.fromRGB(255, 200, 21)})
+			end
+			if additionalPansInfo[PartyOwner.UserId][pan] then
+				additionalPansInfo[PartyOwner.UserId][pan] = {
+					Recipe = recipe,
+					Percentage = 50,
+				}
+			end
+			return self:CanCookOnPan(PartyOwner, pan)
+		end
+	end
 
 	task.spawn(function()
 		repeat
@@ -842,9 +888,9 @@ function CookingService:StartCookingProcess(player, pan, recipe, previousPercent
 			end
 
 			print("count", count)
-			if count == math.ceil((cookingTime / 2)) then
-				local CookPerfection = progressionStorage["Cooking Perfection"].Data[playerStorage["Cooking Perfection"]].Value
-				if CookPerfection == true then
+			--if count == math.ceil((cookingTime / 2)) then
+				--local CookPerfection = progressionStorage["Cooking Perfection"].Data[playerStorage["Cooking Perfection"]].Value
+				--[[f CookPerfection == true then
 					for _, member in pairs(PartyMembers) do
 						Knit.GetService("NotificationService"):Message(false, member, "Perfect Cooking!", {Effect = false, Color = Color3.fromRGB(255, 200, 21)})
 					end
@@ -855,8 +901,8 @@ function CookingService:StartCookingProcess(player, pan, recipe, previousPercent
 						}
 					end
 					self:CanCookOnPan(PartyOwner, pan)
-				end
-			end
+				end]]
+			--end
 
 			if (count % waitTime == 0) and (count <= (cookingTime / 2)) then
 
@@ -920,6 +966,7 @@ function CookingService:Cook(player, Character, recipe, pan)
 	if not PartyOwner or not pan then return false; end
 	if cookingTimers[PartyOwner] then
 		warn('CANT COOK BECAUSE COOLDOWN:', cookingTimers[PartyOwner].Value)
+		Knit.GetService("NotificationService"):Message(false, player, "Cooking cooldown, try again.", {Effect = false, Color = Color3.fromRGB(255, 255, 255)})
 		return 
 	end;
 	local CanCook = self:CanCookOnPan(PartyOwner, pan)
@@ -1181,13 +1228,14 @@ function CookingService:KnitInit()
 	end
 
 	local function checkDeliverStations(deliverHitbox) -- checks if any food needs to be delivered
-		local radiusOfDeliverZone = getRadius(deliverHitbox)
+		--local radiusOfDeliverZone = getRadius(deliverHitbox)
 
 		local overlapParams = OverlapParams.new()
+		overlapParams.CollisionGroup = "Food"
 		overlapParams.FilterDescendantsInstances = CollectionService:GetTagged("IgnoreParts");
 		overlapParams.FilterType = Enum.RaycastFilterType.Blacklist;
 
-		local objectsInDeliverZone = workspace:GetPartBoundsInRadius(deliverHitbox.Position, radiusOfDeliverZone, overlapParams)
+		local objectsInDeliverZone = workspace:GetPartBoundsInBox(deliverHitbox.CFrame, deliverHitbox.Size, overlapParams)
 		for _, object in pairs(objectsInDeliverZone) do
 			local touchedType, touchedOwner, touchedObject;
 
@@ -1225,6 +1273,7 @@ function CookingService:KnitInit()
 		local radiusOfPanZone = getRadius(panHitbox)
 
 		local overlapParams = OverlapParams.new()
+		overlapParams.CollisionGroup = "Food"
 		overlapParams.FilterDescendantsInstances = CollectionService:GetTagged("IgnoreParts");
 		overlapParams.FilterType = Enum.RaycastFilterType.Blacklist;
 

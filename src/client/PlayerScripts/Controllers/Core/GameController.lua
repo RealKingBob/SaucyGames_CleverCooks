@@ -64,20 +64,30 @@ function GameController:ForIngredient(Ingredient)
 					--print("Pickup Mag:",Mag)
 					if Mag and Mag <= 6 then
 						--print(tostring(Ingredient).." is Ingredient");
+						--print(Ingredient, Ingredient.Parent)
+						local objToDelete = (Ingredient:GetAttribute("Type") ~= nil and Ingredient.Parent:IsA("Model") and Ingredient.Parent.PrimaryPart and Ingredient.Parent) or Ingredient
 
 						local CookingService = Knit.GetService("CookingService");
 						CookingService.PickUp:Fire(Ingredient);
 						task.wait(.1);
 
+						--print(Ingredient, objToDelete)
+
+						--[[local objToDelete = (Ingredient:GetAttribute("Type") ~= nil and Ingredient.Parent:IsA("Model") and Ingredient.Parent.PrimaryPart and Ingredient.Parent) or Ingredient
+
+						objToDelete:Destroy()]]
+
+						objToDelete:Destroy()
+
 						if Ingredient.Parent then
 							if Ingredient.Parent.Name == Ingredient.Name then
-								print(Ingredient.Parent.Name, Ingredient.Name )
+								--print(Ingredient.Parent.Name, Ingredient.Name )
 								Ingredient.Parent:Destroy();
 							end
 						end
 
 						if Ingredient then
-							print(Ingredient)
+							--print(Ingredient)
 							Ingredient:Destroy();
 						end
 						
@@ -94,7 +104,6 @@ end;
 
 function GameController:ForFood(Food)
 	if not Food then return end;
-    local CookingService = Knit.GetService("CookingService");
 	table.insert(CollectedItems,Food);
 
 	if Food:IsA("Model") then Food = Food.PrimaryPart end 
@@ -117,20 +126,23 @@ function GameController:ForFood(Food)
 					--print("Pickup Mag:",Mag)
 					if Mag and Mag <= 6 then
 						--print(tostring(Food).." is Food");
+						local objToDelete = (Food:GetAttribute("Type") ~= nil and Food.Parent:IsA("Model") and Food.Parent.PrimaryPart and Food.Parent) or Food
 
 						local CookingService = Knit.GetService("CookingService");
 						CookingService.PickUp:Fire(Food);
 						task.wait(.1);
 
+						objToDelete:Destroy();
+
 						if Food.Parent then
 							if Food.Parent.Name == Food.Name then
-								print(Food.Parent.Name, Food.Name )
+								--print(Food.Parent.Name, Food.Name )
 								Food.Parent:Destroy();
 							end
 						end
 
 						if Food then
-							print(Food)
+							--print(Food)
 							Food:Destroy();
 						end
 					end;
@@ -214,13 +226,13 @@ function GameController:KnitInit()
 				--object.Parent = IngredientAvailable
 				if object:IsA("Model") and object.PrimaryPart then
 					for _,b in pairs(object:GetChildren()) do
-						if b:IsA("BasePart") then b.Transparency = 0; end;
+						if b:IsA("BasePart") then b.Transparency = (b:GetAttribute("CustomTransparency") ~= nil and b:GetAttribute("CustomTransparency")) or 0 end;
 						for _, t in pairs(object:GetChildren()) do
 							if t:IsA("Texture") then t.Transparency = (object.PrimaryPart:GetAttribute("ExtraTexture") ~= nil and object.PrimaryPart:GetAttribute("ExtraTexture")) or 0; end;
 						end
 					end;
 				else
-					object.Transparency = 0;
+					object.Transparency = (object:GetAttribute("CustomTransparency") ~= nil and object:GetAttribute("CustomTransparency")) or 0;
 					for _, t in pairs(object:GetChildren()) do
 						if t:IsA("Texture") then t.Transparency = (object:GetAttribute("ExtraTexture") ~= nil and object:GetAttribute("ExtraTexture")) or 0; end;
 					end

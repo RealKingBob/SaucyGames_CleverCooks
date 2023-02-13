@@ -64,14 +64,14 @@ local CurrencyCounterUI = Knit.GetController("CurrencyCounterUI")
 task.spawn(function()
 	task.wait(5)
 	DataService:GetCurrency(ThemeData):andThen(function(Coins)
-		print("AAAAA", Coins)
+		--print("AAAAA", Coins)
 		CurrencyCounterUI:Update(Coins);
 	end)
 end)
 
 DataService.CurrencySignal:Connect(function(Coins, amount, percentage, disableEffect)
 	if disableEffect then
-		print('UPDATED COINS', Coins)
+		--print('UPDATED COINS', Coins)
 		CurrencyCounterUI:Update(Coins);
 	else
 		CurrencyCounterUI:CollectCheese(Coins, amount, percentage);
@@ -97,9 +97,11 @@ CookingService.Deliver:Connect(function(RecipeName, DeliveryZone, DeliverTime)
 	CookingUI:StartDelivering(RecipeName, DeliveryZone, DeliverTime)
 end)
 
-CookingService.PickUp:Connect(function(food)
+CookingService.PickUp:Connect(function(foodInfo)
 	--print("FOOOD",food)
-	if food then food:Destroy() end;
+	if foodInfo.Type == "DestroyFood" then
+		if foodInfo.Data then foodInfo.Data:Destroy() end;
+	end
 end)
 
 CookingService.ParticlesSpawn:Connect(function(food, particleName)
@@ -129,6 +131,12 @@ end)
 
 DataService.Notification:Connect(function(title, desc, buttonName)
 	NotificationUI:OpenView(title, desc, buttonName)
+end)
+
+local DeathEffectService = Knit.GetService("DeathEffectService");
+
+DeathEffectService.ClientDeath:Connect(function(Character)
+	PlayerController:DeathEffect(Character);
 end)
 
 --[[local DataService = Knit.GetService("DataService")

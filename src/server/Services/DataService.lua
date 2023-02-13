@@ -58,6 +58,7 @@ local SETTINGS = {
         RecipesCooked = {}, -- Specific crates opened by a user
         Battlepasses = {}, -- Battlepasses the user participated / completed
 		Inventory = {
+            CurrentDeathEffect = "Default",
 			CurrentBoosterEffect = "Default Boost",
 			CurrentHat = "Default Hat",
 			CurrentEmote = "Default",
@@ -81,6 +82,12 @@ local SETTINGS = {
                 }
             },
 			Effects = {
+                Default = {
+                    Quantity = 1;
+                    Rarity = 1
+                }
+            },
+            DeathEffects = {
                 Default = {
                     Quantity = 1;
                     Rarity = 1
@@ -154,7 +161,7 @@ local SETTINGS = {
 }
 
 local ProfileStore = ProfileService.GetProfileStore(
-	"PlayerData15",
+	"PlayerData17",
 	SETTINGS.StatsTemplate
 );
 
@@ -516,7 +523,7 @@ function DataService:GetCurrency(player, theme)
     end
 
     if Profile then
-		return Profile.Data.PlayerInfo.Currency[theme];
+		return Profile.Data.PlayerInfo.Currency[theme], Profile.Data.SkillUpgrades[theme];
 	end;
     return 0;
 end

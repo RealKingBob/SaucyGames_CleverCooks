@@ -20,6 +20,9 @@ local CurrentData;
 local ResetTime;
 local MyInventory;
 local ThemeData;
+local PlayerCurrency = 0;
+
+local buttonDebounce = false;
 
 --//Private Functions
 local function FormatSeconds(s)
@@ -28,7 +31,8 @@ end
 
 --//Public Methods
 function DailyView:Update(Data)
-    print("DATA:", Data)
+    warn("DATA:", Data)
+    if not Data then return end
     CurrentData = Data;
     local MainContainer = self.DailyPage:WaitForChild("Main");
 
@@ -47,6 +51,7 @@ function DailyView:Update(Data)
                 ItemInfo = BoosterEffects.getItemFromKey(DisplayData["itemKey"])
             end
 
+            warn("ItemInfo", ItemInfo)
             if not ItemInfo then
                 --print("ItemInfo", ItemInfo)
                 return
@@ -95,6 +100,13 @@ function DailyView:Update(Data)
                 v.BuyButton.UIStroke.Transparency = 0;
                 v.BuyButton.BackgroundTransparency = 0;
                 v.BuyButton.ImageLabel.Visible = true;
+                if PlayerCurrency >= ItemInfo.IndividualPrice then
+                    v.BuyButton.BackgroundColor3 = Color3.fromRGB(255, 184, 5)
+                    v.BuyButton.UIStroke.Color = Color3.fromRGB(117, 78, 0)
+                else
+                    v.BuyButton.BackgroundColor3 = Color3.fromRGB(107, 107, 107)
+                    v.BuyButton.UIStroke.Color = Color3.fromRGB(61, 61, 61)
+                end
                 v.BuyButton:WaitForChild("TextLabel").Text = CommaValue(ItemInfo.IndividualPrice);
             end
 
@@ -112,19 +124,21 @@ function DailyView:Update(Data)
 end
 
 function DailyView:KnitStart()
+    local DataService = Knit.GetService("DataService")
+    local NotificationUI = Knit.GetController("NotificationUI");
 
     local result, policyInfo = pcall(function()
         return PolicyService:GetPolicyInfoForPlayerAsync(plr)
     end)
     
-    if not result then
+    --[[if not result then
         warn("PolicyService error: " .. policyInfo)
     elseif policyInfo.ArePaidRandomItemsRestricted then
         warn("Player cannot interact with paid random item generators")
         self.DailyPage:WaitForChild("Main").Visible = false;
         self.DailyPage:WaitForChild("PolicyWarning").Visible = true;
         return;
-    end
+    end]]
 
     for _,v in pairs(self.DailyPage:WaitForChild("Main"):GetChildren()) do
         if (not v:IsA("GuiObject")) then
@@ -134,6 +148,8 @@ function DailyView:KnitStart()
         local Index = tonumber(v.Name);
         
         v:WaitForChild("BuyButton").MouseButton1Click:Connect(function()
+            if buttonDebounce then return end
+            buttonDebounce = true;
             local DisplayData = CurrentData.DailyShopItems[Index];
 
             local CanAfford, AffordPromise = false, nil;
@@ -154,17 +170,20 @@ function DailyView:KnitStart()
             end
 
             if not ItemInfo then
-                return
-            end
-
-            if (InfoContainer[ItemInfo.Name] ~= nil or DisplayData.purchased) then
+                NotificationUI:Message("Item info not found!", {Effect = false, Color = Color3.fromRGB(255, 255, 255)});
+                buttonDebounce = false;
                 return;
             end
 
-            local DataService = Knit.GetService("DataService")
+            if (InfoContainer[ItemInfo.Name] ~= nil or DisplayData.purchased) then
+                buttonDebounce = false;
+                return;
+            end
 
             AffordPromise = DataService:GetCurrency(ThemeData):andThen(function(Coins)
+                --warn("AffordPromise", Coins, newProgressionData, progressionData.Data[PlayerDataIndex + 1], PlayerDataIndex + 1)
                 if Coins then
+                    PlayerCurrency = Coins;
                     CanAfford = (Coins >= ItemInfo.IndividualPrice)
                     return;
                 else
@@ -172,26 +191,29 @@ function DailyView:KnitStart()
                     return;
                 end
             end)
-    
+
             repeat task.wait(0) until AffordPromise:getStatus() ~= "Started" or Players.LocalPlayer == nil
 
             if (CanAfford) then
-                Promise = CrateService:PurchaseItem(ItemInfo.Name, DisplayData["itemType"], Index):andThen(function(CaseInfo)
-                    PurchaseInfo = CaseInfo;
+                print(ItemInfo.Name, DisplayData["itemType"], Index)
+                Promise = CrateService:PurchaseItem(ItemInfo.Name, DisplayData["itemType"], Index):andThen(function(ResultInfo)
+                    print(ResultInfo)
+                    if ResultInfo.Currency then
+                        PlayerCurrency = ResultInfo.Currency
+                    end
+                    NotificationUI:Message(ResultInfo.StatusString, ResultInfo.StatusEffect);
+                    self:Update(ResultInfo.DailyData)
+                    buttonDebounce = false;
                     return;
                 end);
                 repeat task.wait(0) until Promise:getStatus() ~= "Started" or Players.LocalPlayer == nil
-                CrateService:GetDailyItems():andThen(function(Data)
-                    if (Data) then
-                        print("Data", Data)
-                        self:Update(Data);
-                    end
-                end)
+                warn("Done Purchase!")
             else
                 Knit.GetController("ViewsUI"):OpenView("Shop");
                 task.wait(0.3);
                 Knit.GetController("ShopView"):GoToArea("Currency");
             end
+            buttonDebounce = false;
         end)
     end
     local Character = plr.Character or plr.CharacterAdded:Wait()
@@ -211,6 +233,16 @@ function DailyView:KnitStart()
     end)
 
     CrateService = Knit.GetService("CrateService");
+
+    local StartPromise = DataService:GetCurrency(ThemeData):andThen(function(Coins)
+        --warn("AffordPromise", Coins, newProgressionData, progressionData.Data[PlayerDataIndex + 1], PlayerDataIndex + 1)
+        if Coins then
+            PlayerCurrency = Coins;
+            return;
+        end
+    end)
+
+    repeat task.wait(0) until StartPromise:getStatus() ~= "Started" or Players.LocalPlayer == nil
     
     CrateService:GetDailyItems():andThen(function(Data)
         if (Data) then

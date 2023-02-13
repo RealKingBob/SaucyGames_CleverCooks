@@ -182,11 +182,23 @@ function UpgradeView:SetupUpgradeTabs()
                         buttonDebounce = false;
                         return;
                     end
+                    local MaxCookSpeed = (ProgressionStorage["Cook Speed"].Max == PlayerProgressionData["Cook Speed"] and true) or false
+
+                    if progressionName == "Cooking Perfection" then
+                        if MaxCookSpeed == false then
+                            NotificationUI:Message("Max cook speed stats first!", {Effect = false, Color = Color3.fromRGB(255, 255, 255)});
+                            buttonDebounce = false;
+                            return;
+                        end
+                    end
 
                     local CanAfford, AffordPromise = false, nil;
                     local PurchaseInfo, Promise = nil, nil;
 
-                    AffordPromise = DataService:GetCurrency(ThemeData):andThen(function(Coins)
+                    AffordPromise = DataService:GetCurrency(ThemeData):andThen(function(Coins, newProgressionData)
+                        PlayerProgressionData = newProgressionData;
+                        PlayerDataIndex = newProgressionData[progressionName]
+                        --warn("AffordPromise", Coins, newProgressionData, progressionData.Data[PlayerDataIndex + 1], PlayerDataIndex + 1)
                         if Coins then
                             PlayerCurrency = Coins;
                             if not progressionData then

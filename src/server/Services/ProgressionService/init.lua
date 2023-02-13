@@ -1,7 +1,9 @@
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
+local Signal = require(Knit.Util.Signal)
 
 local ProgressionService = Knit.CreateService {
     Name = "ProgressionService";
+    UpdateJumpAmount = Signal.new(),
     Client = {
         Update = Knit.CreateSignal();
     };
@@ -9,10 +11,12 @@ local ProgressionService = Knit.CreateService {
 
 local PlayerUpgradeDebounce = {}
 
+local ThemeData = workspace:GetAttribute("Theme")
+
 local FrenchProgressionData = require(script.KitchenUpgrades.French);
 
 function ProgressionService.Client:GetProgressionData(player, theme, category)
-    print("GetProgressionData", player, theme, category)
+    print("GetProgressionData", player, ThemeData, category)
     return self.Server:GetProgressionData(player, theme, category)
 end
 
@@ -44,6 +48,8 @@ function ProgressionService:UpdatePlayerStats(player, categoryName, categoryValu
         if not Humanoid then return end
         Humanoid.MaxHealth = categoryValue;
         Humanoid.Health = categoryValue;
+    elseif categoryName == "Jump Amount" then
+        self.UpdateJumpAmount:Fire(player, categoryValue)
     else
 
     end
@@ -61,7 +67,7 @@ function ProgressionService:PurchaseUpgrade(player, theme, category)
             StatusString = "[ErrorCode PS-PU0] Error occurred, please try again.",
             StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
             Data = nil
-        }
+       }
     end
 
     PlayerUpgradeDebounce[player] = true;
@@ -86,10 +92,13 @@ function ProgressionService:PurchaseUpgrade(player, theme, category)
         }
     end
 
-    local CategoryData
+    local ThemeData, CategoryData
 
     if theme == "French" then
-        if category then CategoryData = FrenchProgressionData[category] end
+        ThemeData = FrenchProgressionData
+        if category then 
+            CategoryData = FrenchProgressionData[category] 
+        end
     end
 
     if not CategoryData then
@@ -133,7 +142,24 @@ function ProgressionService:PurchaseUpgrade(player, theme, category)
         }
     end
 
-    warn('1', PlayerProfile.Data.PlayerInfo.Currency[theme], PlayerProfile.Data.SkillUpgrades[theme])
+    local MaxCookSpeed = (ThemeData["Cook Speed"].Max == PlayerProgressionData["Cook Speed"] and true) or false
+
+    if category == "Cooking Perfection" then
+        if MaxCookSpeed == false then
+            PlayerUpgradeDebounce[player] = nil;
+            return {
+                Player = player, 
+                Currency = PlayerCurrency,
+                ProgressionData = PlayerProgressionData,
+                Status = "Error", 
+                StatusString = "[ErrorCode PS-PU5] Must max cook speed stats first!",
+                StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
+                Data = nil
+            }
+        end
+    end
+
+    --warn('1', PlayerProfile.Data.PlayerInfo.Currency[theme], PlayerProfile.Data.SkillUpgrades[theme])
 
     PlayerCurrency = PlayerCurrency - CategoryData.Data[PlayerDataIndex + 1].Price
     PlayerProfile.Data.PlayerInfo.Currency[theme] = PlayerCurrency;
@@ -141,7 +167,7 @@ function ProgressionService:PurchaseUpgrade(player, theme, category)
     PlayerProgressionData[category] = PlayerProgressionData[category] + 1;
     PlayerProfile.Data.SkillUpgrades[theme] = PlayerProgressionData
 
-    warn(PlayerProfile.Data.PlayerInfo.Currency[theme], PlayerProfile.Data.SkillUpgrades[theme])
+    --warn(PlayerProfile.Data.PlayerInfo.Currency[theme], PlayerProfile.Data.SkillUpgrades[theme])
     self:UpdatePlayerStats(player, category, CategoryData.Data[PlayerDataIndex + 1].Value)
     PlayerUpgradeDebounce[player] = nil;
     return {
@@ -222,7 +248,7 @@ function ProgressionService:GetProgressionData(player, theme, category)
     local DataService = Knit.GetService("DataService");
     local PlayerCurrency, PlayerProgressionData = nil, nil;
     local PlayerProfile = DataService:GetProfile(player)
-    print("PlayerProfile", PlayerProfile)
+    --print("PlayerProfile", PlayerProfile)
     if PlayerProfile then
         PlayerCurrency = PlayerProfile.Data.PlayerInfo.Currency[theme];
         PlayerProgressionData = PlayerProfile.Data.SkillUpgrades[theme];

@@ -5,6 +5,7 @@ local UserInputService = game:GetService("UserInputService")
 local StaminaUI = Knit.CreateController { Name = "StaminaUI" }
 
 local LocalPlayer = game.Players.LocalPlayer;
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait();
 
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui");
 
@@ -333,6 +334,11 @@ function StaminaUI:KnitStart()
         if StatName == "Boost Stamina" then
             MaxStamina.Value = StatValue;
             Stamina.Value = StatValue;
+            local MainUI = PlayerGui:WaitForChild("Main")
+            local BarsFrame = MainUI:WaitForChild("BottomFrame"):WaitForChild("BarsFrame");
+            local StaminaFrame = BarsFrame:WaitForChild("Stamina")
+            local StaminaBar = StaminaFrame:WaitForChild("Bar")
+            StaminaBar.Size = UDim2.new(1,0,1,0);
             print(Stamina.Value, MaxStamina.Value)
         end
     end)
@@ -341,7 +347,8 @@ end
 
 function StaminaUI:KnitInit()
     
-    LocalPlayer.CharacterAdded:Connect(function(Character)
+    LocalPlayer.CharacterAdded:Connect(function(character)
+        Character = character
         Stamina.Value = MaxStamina.Value;
         local MainUI = PlayerGui:WaitForChild("Main")
         local BarsFrame = MainUI:WaitForChild("BottomFrame"):WaitForChild("BarsFrame");
@@ -350,12 +357,32 @@ function StaminaUI:KnitInit()
         StaminaBar.BackgroundColor3 = regularStaminaColor;
         StaminaBar.Size = UDim2.new(1,0,1,0);
         SprintAnimTrack = nil;
-        self:SetupStamina(Character);
+        self:SetupStamina(character);
     end)
 
-    local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait();
+    Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait();
     
     self:SetupStamina(Character);
+
+    local CookingService = Knit.GetService("CookingService");
+
+    CookingService.PickUp:Connect(function(foodInfo)
+        --print("FOOOD",food)
+        if foodInfo.Type == "ChangeStamina" then
+            NormalWalkSpeed = foodInfo.Data[1]
+            NewWalkSpeed = foodInfo.Data[2]
+            if Character then
+                local Humanoid = Character:FindFirstChild("Humanoid");
+                if Humanoid then
+                    if sprinting == true then
+                        Humanoid.WalkSpeed = NewWalkSpeed;
+                    else
+                        Humanoid.WalkSpeed = NormalWalkSpeed;
+                    end
+                end
+            end
+        end
+    end)
 
     task.spawn(function()
         while true do

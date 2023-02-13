@@ -89,7 +89,6 @@
 
 ]]
 
-local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local DataStoreService = game:GetService("DataStoreService")
@@ -101,15 +100,16 @@ local TableUtil = require(Knit.Util.TableUtil);
 local Signal = require(Knit.Util.Signal);
 local Synced = require(Knit.ReplicatedModules.Synced);
 
+local ThemeData = workspace:GetAttribute("Theme")
+
 local crateStoreLogs = DataStoreService:GetDataStore("CrateStoreLogs")
 
 local DataService = Knit.DataService;
 local InventoryService = Knit.InventoryService;
 
-local HatSkins = require(Knit.ReplicatedHatSkins);
-local BoosterEffects = require(Knit.ReplicatedBoosterEffects);
-local DuckEmotes --= Knit.ReplicatedDuckEmotes;
-local DeathEffect --= Knit.ReplicatedDuckEffects;
+local HatSkinsData = require(Knit.ReplicatedHatSkins);
+local BoosterEffectsData = require(Knit.ReplicatedBoosterEffects);
+
 local Rarities = Knit.ReplicatedRarities;
 
 local CrateService = Knit.CreateService {
@@ -132,6 +132,7 @@ local PlayerLoginTimes = {};
 local PlayerDailyItems = {};
 local PlayerHourlyItems = {};
 local PlayerServerPurchases = {};
+local PlayerUpgradeDebounce = {}
 
 local RarityWeights = Rarities.getRarityChances();
 RarityWeights.Common = 100;
@@ -146,11 +147,11 @@ Synced.init() -- Will make the request to google.com if it hasn't already.
 local function GetItemsFromRarity(typeItem, rarityItem)
     local Items;
     if typeItem == "Hats" then
-        Items = HatSkins.getHatSkinsFromRarity(rarityItem, true)
-    elseif typeItem == "BoosterEffects" then
-        Items = BoosterEffects.getBoosterEffectsFromRarity(rarityItem, true)
+        Items = HatSkinsData.getHatSkinsFromRarity(rarityItem, true)
+    elseif typeItem == "Booster Effects" then
+        Items = BoosterEffectsData.getBoosterEffectsFromRarity(rarityItem, true)
     else
-        Items = HatSkins.getHatSkinsFromRarity(5, true)
+        Items = HatSkinsData.getHatSkinsFromRarity(5, true)
     end
     return Items
 end
@@ -164,6 +165,11 @@ function CrateService:ResetShopItems(Player)
 	end
 end
 
+function CrateService.Client:PurchaseItem(player, name, crateType, dailyShopId)
+    print("PurchaseItem", player, name, crateType, dailyShopId)
+    return self.Server:PurchaseItem(player, name, crateType, dailyShopId)
+end
+
 function CrateService:ResetHourlyItems(Player)
 	if Player then
 		local PlayerProfile = DataService:GetProfile(Player).Data;
@@ -173,118 +179,166 @@ function CrateService:ResetHourlyItems(Player)
 	end
 end
 
-function CrateService.Client:PurchaseItem(player, name, crateType, dailyShopId)
+function CrateService:PurchaseItem(player, name, crateType, dailyShopId)
     --print(player, name, crateType, dailyShopId)
-    local PlayerProfile = DataService:GetProfile(player).Data;
-    if not PlayerProfile then 
+    if not player or not name or not crateType or not dailyShopId then return end;
+    if PlayerUpgradeDebounce[player] or not PlayerDailyItems[player] then 
         return {
             Player = player, 
+            Currency = nil,
+            DailyData = nil,
             Status = "Error", 
-            StatusString = "Failed to load player data",
-            ItemInfo = nil
+            StatusString = "[ErrorCode CS-PI0] Error occurred, please try again.",
+            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
+            Data = nil
         }
     end
-    local selectedInfo
-    local selectedItem
+
+    PlayerUpgradeDebounce[player] = true;
+    local PlayerCurrency, PlayerDailyData = nil, nil;
+    local PlayerProfile = DataService:GetProfile(player)
+    if PlayerProfile then
+        PlayerCurrency = PlayerProfile.Data.PlayerInfo.Currency[ThemeData];
+        PlayerDailyData = PlayerProfile.Data.DailyShopItems;
+        PlayerDailyItems[player].DailyShopItems = PlayerDailyData
+    end
+
+    if not PlayerCurrency or not PlayerDailyData then
+        PlayerUpgradeDebounce[player] = nil;
+        return {
+            Player = player,
+            Currency = PlayerCurrency,
+            DailyData = PlayerDailyItems[player],
+            Status = "Error", 
+            StatusString = "[ErrorCode CS-PI1] Error occurred, please try again.",
+            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
+            Data = nil;
+        }
+    end
+    local selectedInfo, selectedItem = nil, nil
 
     if crateType == "Hats" then
-        selectedInfo = HatSkins
-    elseif crateType == "Effects" then
-        selectedInfo = DeathEffect
-    elseif crateType == "Emotes" then
-        selectedInfo = DuckEmotes
-    else
+        selectedInfo = HatSkinsData
+    elseif crateType == "Booster Effects" then
+        selectedInfo = BoosterEffectsData
+    end
+
+    if not selectedInfo then
+        PlayerUpgradeDebounce[player] = nil;
         return {
-            Player = player, 
+            Player = player,
+            Currency = PlayerCurrency,
+            DailyData = PlayerDailyItems[player],
             Status = "Error", 
-            StatusString = "Failed to find crate type",
-            ItemInfo = nil
+            StatusString = "[ErrorCode CS-PI2] Failed to find crate type.",
+            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
+            Data = nil;
         }
     end
 
-    if selectedInfo.getItemFromName(name) then
-        if PlayerProfile.PlayerInfo.Coins < selectedInfo.getItemFromName(name).IndividualPrice then
-            return {
-                Player = player, 
-                Status = "Error", 
-                StatusString = "Not enough coins to purchase item",
-                ItemInfo = nil
-            }
-        end
-    else
+    selectedItem = selectedInfo.getItemFromName(name)
+
+    if not selectedItem then
+        PlayerUpgradeDebounce[player] = nil;
+        return {
+            Player = player,
+            Currency = PlayerCurrency,
+            DailyData = PlayerDailyItems[player],
+            Status = "Error", 
+            StatusString = "[ErrorCode CS-PI3] Failed to find item.",
+            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
+            Data = nil;
+        }
+    end
+
+    if PlayerCurrency < selectedInfo.getItemFromName(name).IndividualPrice then
+        PlayerUpgradeDebounce[player] = nil;
         return {
             Player = player, 
+            Currency = PlayerCurrency,
+            DailyData = PlayerDailyItems[player],
             Status = "Error", 
-            StatusString = "Failed to find item",
-            ItemInfo = nil
+            StatusString = "[ErrorCode CS-PI4] Insufficient funds!",
+            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
+            Data = nil
         }
+    end
+
+    local ItemName = selectedItem.Key
+    local PlayerInfo = PlayerProfile.Data.PlayerInfo
+    local PlayerDailyShopItems = PlayerProfile.Data.DailyShopItems
+
+    if not PlayerInfo or not PlayerDailyShopItems then
+        PlayerUpgradeDebounce[player] = nil;
+        return {
+            Player = player,
+            Currency = PlayerCurrency,
+            DailyData = PlayerDailyItems[player],
+            Status = "Error", 
+            StatusString = "[ErrorCode CS-PI5] Error occurred, please try again.",
+            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
+            Data = nil;
+        }
+    end
+
+    if PlayerDailyShopItems[dailyShopId].purchased == true 
+    or InventoryService:HasItem(player, ItemName, crateType) == true then
+        PlayerUpgradeDebounce[player] = nil;
+        PlayerProfile.Data.DailyShopItems[dailyShopId].purchased = true
+        PlayerProfile.Data.DailyShopItems[dailyShopId].hasItem = true
+        return {
+            Player = player,
+            Currency = PlayerCurrency,
+            DailyData = PlayerDailyItems[player],
+            Status = "Error", 
+            StatusString = "[ErrorCode CS-PI6] Item is already purchased.",
+            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
+            Data = nil;
+        }
+    end
+
+    if PlayerProfile.Data.PlayerInfo.DailyItemsBought == nil then
+        PlayerProfile.Data.PlayerInfo.DailyItemsBought = 1;
+    else
+        PlayerProfile.Data.PlayerInfo.DailyItemsBought += 1;
+    end
+
+    if PlayerServerPurchases[player.UserId] == nil then
+        PlayerServerPurchases[player.UserId] = {}
     end
     
-    selectedItem = selectedInfo.getItemFromName(name)
-    local ItemName = selectedItem.Key
-    if selectedItem then
-        if PlayerProfile.DailyShopItems then
-            if typeof(PlayerProfile.DailyShopItems) == "string" then
-                local decodedDailyItems = HttpService:JSONDecode(PlayerProfile.DailyShopItems)
-                if decodedDailyItems[dailyShopId].purchased == true
-                or InventoryService:HasItem(player, ItemName,crateType) == true  then
-                    return {
-                        Player = player, 
-                        Status = "Error", 
-                        StatusString = "Item is already purchased",
-                        ItemInfo = nil
-                    }
-                end
-            else
-                if PlayerProfile.DailyShopItems[dailyShopId].purchased == true 
-                or InventoryService:HasItem(player, ItemName,crateType) == true then
-                    return {
-                        Player = player, 
-                        Status = "Error", 
-                        StatusString = "Item is already purchased",
-                        ItemInfo = nil
-                    }
-                end
-            end
-            PlayerProfile.DailyShopItems[dailyShopId].purchased = true
-        end
-
-        if PlayerProfile.PlayerInfo.DailyItemsBought == nil then
-            PlayerProfile.PlayerInfo.DailyItemsBought = 1;
-        else
-            PlayerProfile.PlayerInfo.DailyItemsBought += 1;
-        end
-
-        if PlayerServerPurchases[player.UserId] == nil then
-            PlayerServerPurchases[player.UserId] = {}
-        end
-        
-        table.insert(PlayerServerPurchases[player.UserId],
-            {
-                ItemKey = selectedItem.Key, 
-                ItemType = "Item",
-                Timestamp = os.time(),
-                ItemInfo = {
-                    Key = selectedItem.Key, 
-                    Name = selectedItem.Name, 
-                    Rarity = selectedItem.Rarity,
-                    CrateId = selectedItem.CrateId,
-                    DecalId = selectedItem.DecalId,
-                    IndividualPrice = selectedItem.IndividualPrice
-                }
+    table.insert(PlayerServerPurchases[player.UserId],
+        {
+            ItemKey = selectedItem.Key, 
+            ItemType = "Item",
+            Timestamp = os.time(),
+            ItemInfo = {
+                Key = selectedItem.Key, 
+                Name = selectedItem.Name, 
+                Rarity = selectedItem.Rarity,
+                CrateId = selectedItem.CrateId,
+                DecalId = selectedItem.DecalId,
+                IndividualPrice = selectedItem.IndividualPrice
             }
-        )
-
-        PlayerProfile.PlayerInfo.Coins = PlayerProfile.PlayerInfo.Coins - selectedItem.IndividualPrice
-        DataService.Client.CoinSignal:Fire(player, PlayerProfile.PlayerInfo.Coins, nil, true)
-        InventoryService.AddItem(player, ItemName,crateType)
-        return {
-            Player = player, 
-            Status = "Success", 
-            StatusString = "Purchase Successful",
-            ItemInfo = selectedItem
         }
-    end
+    )
+
+    PlayerCurrency = PlayerCurrency - selectedItem.IndividualPrice
+    PlayerProfile.Data.PlayerInfo.Currency[ThemeData] = PlayerCurrency;
+    DataService.Client.CurrencySignal:Fire(player, PlayerProfile.Data.PlayerInfo.Currency[ThemeData], nil, nil, true)
+
+    InventoryService.AddItem(player, ItemName, crateType)
+    PlayerDailyItems[player].DailyShopItems = PlayerProfile.Data.DailyShopItems;
+    PlayerUpgradeDebounce[player] = nil;
+    return {
+        Player = player, 
+        Currency = PlayerCurrency,
+        DailyData = PlayerDailyItems[player],
+        Status = "Success", 
+        StatusString = "Purchase Successful",
+        StatusEffect = {Effect = false, Color = Color3.fromRGB(40, 255, 21)};
+        Data = selectedItem
+    }
 end
 
 function CrateService.Client:PurchaseCrate(player, crateId, crateType, isHourlyCrate)
@@ -302,11 +356,9 @@ function CrateService.Client:PurchaseCrate(player, crateId, crateType, isHourlyC
     local selectedItem
 
     if crateType == "Hats" then
-        selectedInfo = HatSkins
-    elseif crateType == "Effects" then
-        selectedInfo = DeathEffect
-    elseif crateType == "Emotes" then
-        selectedInfo = DuckEmotes
+        selectedInfo = HatSkinsData
+    elseif crateType == "Booster Effects" then
+        selectedInfo = BoosterEffectsData
     else
         return {
             Player = player, 
@@ -495,11 +547,6 @@ function CrateService:UpdateHourlyShopData(player, profile, lastLogin) -- Update
             return self:CheckHourlyShopData(player, profile)
         end
 
-        if typeof(profile.HourlyShopItems) == "string" then
-            local decodedDailyItems = HttpService:JSONDecode(profile.HourlyShopItems)
-            profile.HourlyShopItems = decodedDailyItems
-        end
-
         task.spawn(function()
             if not PlayerHourlyItems[player] then
                 task.wait(HourlySeconds)
@@ -599,11 +646,6 @@ function CrateService:StartHourlyItems(player, profile, CurrentHour, NumOfItems)
             end
             return copy
         end
-        
-        if typeof(profile.HourlyShopItems) == "string" then
-            local decodedHourlyItems = HttpService:JSONDecode(profile.HourlyShopItems)
-            profile.HourlyShopItems = decodedHourlyItems
-        end
 
         if profile.HourlyShopItems == nil then
             profile.HourlyShopItems = {};
@@ -642,31 +684,31 @@ function CrateService:StartHourlyItems(player, profile, CurrentHour, NumOfItems)
                 --print("HOURLY weightnumber", rarityName, weightNumber)
                 if weightNumber < RarityWeights.Legendary then 
                     --print("Legendary") 
-                    local Items = HatSkins.getHatSkinsFromRarity(5, false)
+                    local Items = HatSkinsData.getHatSkinsFromRarity(5, false)
                     --Items = TableUtil.Shuffle(Items);
                     weightitem = Items[seed:NextInteger(1,#Items)];
                     rarity = Items
                 elseif weightNumber < RarityWeights.Epic then 
                     --print("Epic")
-                    local Items = HatSkins.getHatSkinsFromRarity(4, false)
+                    local Items = HatSkinsData.getHatSkinsFromRarity(4, false)
                     --Items = TableUtil.Shuffle(Items);
                     weightitem = Items[seed:NextInteger(1,#Items)];
                     rarity = Items
                 elseif weightNumber < RarityWeights.Rare then 
                     --print("Rare")
-                    local Items = HatSkins.getHatSkinsFromRarity(3, false)
+                    local Items = HatSkinsData.getHatSkinsFromRarity(3, false)
                     --Items = TableUtil.Shuffle(Items);
                     weightitem = Items[seed:NextInteger(1,#Items)];
                     rarity = Items
                 elseif weightNumber < RarityWeights.Uncommon then 
                     --print("Uncommon")
-                    local Items = HatSkins.getHatSkinsFromRarity(2, false)
+                    local Items = HatSkinsData.getHatSkinsFromRarity(2, false)
                     --Items = TableUtil.Shuffle(Items);
                     weightitem = Items[seed:NextInteger(1,#Items)];
                     rarity = Items
                 else
                     --print("Common")
-                    local Items = HatSkins.getHatSkinsFromRarity(1, false)
+                    local Items = HatSkinsData.getHatSkinsFromRarity(1, false)
                     --Items = TableUtil.Shuffle(Items);
                     weightitem = Items[seed:NextInteger(1,#Items)];
                     rarity = Items
@@ -770,11 +812,6 @@ function CrateService:UpdateDailyShopData(player, profile, lastLogin, dailyshopT
             return self:CheckDailyShopData(player, profile, dailyshopTime)
         end
 
-        if typeof(profile.DailyShopItems) == "string" then
-            local decodedDailyItems = HttpService:JSONDecode(profile.DailyShopItems)
-            profile.DailyShopItems = decodedDailyItems
-        end
-
         task.spawn(function()
             if not PlayerDailyItems[player] then
                 task.wait(DailySeconds)
@@ -866,11 +903,6 @@ function CrateService:StartDailyItems(player, profile, CurrentDay, NumOfItems)
             end
             return copy
         end
-        
-        if typeof(profile.DailyShopItems) == "string" then
-            local decodedDailyItems = HttpService:JSONDecode(profile.DailyShopItems)
-            profile.DailyShopItems = decodedDailyItems
-        end
 
         for Index,DailyItem in pairs(profile.DailyShopItems) do
             if DailyItem and DailyItem.id == 0 then
@@ -888,41 +920,25 @@ function CrateService:StartDailyItems(player, profile, CurrentDay, NumOfItems)
 
                 weightNumber = seed:NextNumber(0, 100);
     
-                local weightitem -- initialize a variable for the weighted item
+                local weightitem, Items -- initialize a variable for the weighted item
 
                 --print("DAILY weightnumber", weightNumber)
 
                 if weightNumber < RarityWeights.Legendary then 
-                    --print("Legendary") 
-                    local Items = GetItemsFromRarity(itemType, 5);
+                    Items = GetItemsFromRarity(itemType, 5); -- Legendary
                     --Items = TableUtil.Shuffle(Items); // THIS RANDOMIZES THE ITEM RATHER THAN HAVING SAME ONE
-                    weightitem = Items[seed:NextInteger(1,#Items)];
-                    rarity = Items
                 elseif weightNumber < RarityWeights.Epic then 
-                    --print("Epic")
-                    local Items = GetItemsFromRarity(itemType, 4);
-                    --Items = TableUtil.Shuffle(Items);
-                    weightitem = Items[seed:NextInteger(1,#Items)];
-                    rarity = Items
+                    Items = GetItemsFromRarity(itemType, 4); -- Epic
                 elseif weightNumber < RarityWeights.Rare then 
-                    --print("Rare")
-                    local Items = GetItemsFromRarity(itemType, 3);
-                    --Items = TableUtil.Shuffle(Items);
-                    weightitem = Items[seed:NextInteger(1,#Items)];
-                    rarity = Items
+                    Items = GetItemsFromRarity(itemType, 3); -- Rare
                 elseif weightNumber < RarityWeights.Uncommon then 
-                    --print("Uncommon")
-                    local Items = GetItemsFromRarity(itemType, 2);
-                    --Items = TableUtil.Shuffle(Items);
-                    weightitem = Items[seed:NextInteger(1,#Items)];
-                    rarity = Items
+                    Items = GetItemsFromRarity(itemType, 2); -- Uncommon
                 else
-                    --print("Common")
-                    local Items = GetItemsFromRarity(itemType, 1);
-                    --Items = TableUtil.Shuffle(Items);
-                    weightitem = Items[seed:NextInteger(1,#Items)];
-                    rarity = Items
+                    Items = GetItemsFromRarity(itemType, 1); -- Common
                 end
+
+                weightitem = Items[seed:NextInteger(1,#Items)];
+                rarity = Items
     
                 return weightitem, rarity -- Return both these values so we can use it later. We will need the "rarity" table for duplicate prevention
             end
@@ -933,15 +949,15 @@ function CrateService:StartDailyItems(player, profile, CurrentDay, NumOfItems)
     
             --print("shopItems:", shopItems)
             --Duplicate check below
-            for i, item in pairs(shopItems) do 
+            for _, item in pairs(shopItems) do 
                 local duplicate = table.find(shopItems, returnedItem) --Finds a duplicate
     
                 if duplicate then -- If there is a duplicate and it's not nil...
                     --print("Respinning..")
     
                     for number, v in pairs(itemtablecopy) do 
-                        for i = 1, #shopItems do
-                            if v == shopItems[i] then
+                        for itemNum = 1, #shopItems do
+                            if v == shopItems[itemNum] then
                                 table.remove(itemtablecopy, number) -- if an item in the copied table is the same as a value inside of our shop items already, then it removes it
                             end
                         end
@@ -962,9 +978,9 @@ function CrateService:StartDailyItems(player, profile, CurrentDay, NumOfItems)
         until #shopItems >= NumOfItems -- Until we get our desired # of items.]]
 
         GenerateItem("Hats")
-        GenerateItem("BoosterEffects")
+        GenerateItem("Booster Effects")
         GenerateItem("Hats")
-        GenerateItem("BoosterEffects")
+        GenerateItem("Booster Effects")
        
         --[[bool = not bool
         local itemInfo;
@@ -982,11 +998,10 @@ function CrateService:StartDailyItems(player, profile, CurrentDay, NumOfItems)
                 itemType = itemInfo.ItemType,
                 itemKey = itemInfo.Key,
                 timestamp = os.time();
-            };
-
-            --print("Daily Item:", itemInfo.Name, itemInfo.Rarity)
+            };     
             
             table.insert(profile.DailyShopItems, AmountOfMissions + 1, DailyItem);
+            print("Daily Item:", profile.DailyShopItems)
         end
     end;
 end;

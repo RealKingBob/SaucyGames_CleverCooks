@@ -85,8 +85,10 @@ function BlenderController:KnitStart()
             self:FluidChange(blenderObject, data.FluidPercentage, data.FluidColor);
         elseif command == "bladeSpin" then
             self:SpinBlade(blenderObject, data[1]);
+        elseif command == "itemPoof" then
+            local PlayerController = Knit.GetController("PlayerController");
+            PlayerController:Poof(data.Position, data.Color);
         end
-        
     end)
 end
 

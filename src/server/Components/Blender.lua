@@ -71,13 +71,28 @@ function Blender.new(instance)
         self.Object.Button.ProximityPrompt.RequiresLineOfSight = false;
     end
 
-    local function InsertObjToBlender(Obj)
+    local function InsertObjToBlender(player, Obj)
         local FoodSpawnPoints = CollectionService:GetTagged("FoodSpawnPoints");
         if Obj:IsA("Model") and Obj.PrimaryPart then
             Obj.PrimaryPart.ProximityPrompt.Enabled = false;
         else
             Obj.ProximityPrompt.Enabled = false;
         end
+
+        local objItem = (Obj:IsA("Model") and Obj.PrimaryPart ~= nil and Obj.PrimaryPart or Obj)
+
+        print(objItem)
+
+        local CookingService = Knit.GetService("CookingService");
+        CookingService.Client.ChangeClientBlender:Fire(player,
+            self.Object, -- blender object
+            "itemPoof", -- command
+            { -- data
+                Position = objItem.Position + Vector3.new(0,-7,0),
+                Color = objItem.Color, 
+            }
+        );
+
         local RandomFoodLocation = FoodSpawnPoints[math.random(1, #FoodSpawnPoints)];
         if RandomFoodLocation then
             if Obj:IsA("Model") and Obj.PrimaryPart then
@@ -194,7 +209,7 @@ function Blender.new(instance)
                 if table.find(self.ObjectsInBlender[player.UserId], objToInsert) == nil then
                     table.insert(self.ObjectsInBlender[player.UserId], objToInsert)
                     self.playersDebounces[player.UserId] = true;
-                    InsertObjToBlender(hit)
+                    InsertObjToBlender(player, hit)
                     self.NumOfObjects[player.UserId] += 1;
 
                     local obj = (isAModel == true and hit.Parent) or hit;
