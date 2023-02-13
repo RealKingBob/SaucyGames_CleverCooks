@@ -50,6 +50,8 @@ local IngredientModule = require(ReplicatedAssets.Ingredients)
 local myReplicatedIngredients = {};
 local highlightedItems = {};
 local currentPansInUse = {};
+local unlockedRecipes = {};
+
 local ShortDistanceObject
 local CookDebounce = false;
 local CookButton = mainGui.Cook
@@ -149,8 +151,6 @@ function highlightItems(itemsData)
 			foundIngredient = IngredientModule[foundBlendedIngredient]
 		end
 
-		--print(foundIngredient, tostring(itemName):find("[Blended]"), foundBlendedIngredient, IngredientModule[originalVal] , IngredientModule[foundBlendedIngredient])
-
 		if not foundIngredient then
 			foundIngredient = {
 				Name = "~Not An Item~";
@@ -183,7 +183,11 @@ function highlightItems(itemsData)
 		for _, item in pairs(workspace:WaitForChild("IngredientAvailable"):GetChildren()) do
 			local owner = item:IsA("Model") and item.PrimaryPart and item.PrimaryPart:GetAttribute("Owner") or item:GetAttribute("Owner")
 
-			if item.Name == foundIngredient.Name and (owner == LocalPlayer.Name or owner == "Default") then
+			if item.Name == foundIngredient.Name 
+			and (owner == LocalPlayer.Name or owner == "Default") then
+				if LocalPlayer.Character then
+					if LocalPlayer.Character:FindFirstChild(item.Name) then continue end
+				end
 				table.insert(itemsList, item)
 			end
 		end
@@ -229,26 +233,49 @@ function recipePageCreated(PageNumber,PageData)
 	for _, itemData in ipairs(difficultyTable) do
 		recipeCount += 1
 		local key, value = itemData.Key, PageData[itemData.Key];
+		local unlocked = false
+		if unlockedRecipes[key] then unlocked = true end
 		if recipeCount < PageLimit then
 			local ClonedFoodTemplate = FoodTemplate:Clone()
+			ClonedFoodTemplate:SetAttribute("Unlocked", unlocked)
 			ClonedFoodTemplate.Name = tostring(key)
-			ClonedFoodTemplate.FoodTitle.Text = tostring(key)
+			ClonedFoodTemplate.FoodTitle.Text = (unlocked and tostring(key)) or "???"
+			ClonedFoodTemplate.FoodTitle:SetAttribute("Hidden", tostring(key))
 			if value["Image"] == "" or value["Image"] == nil then
 				ClonedFoodTemplate.Icon.IconImage.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
+				ClonedFoodTemplate.Icon.IconImage:SetAttribute("Hidden", "http://www.roblox.com/asset/?id=4509163032")
 			else
-				ClonedFoodTemplate.Icon.IconImage.Image = value.Image
+				ClonedFoodTemplate.Icon.IconImage.Image = (unlocked and value.Image) or "http://www.roblox.com/asset/?id=4509163032" -- ???
+				ClonedFoodTemplate.Icon.IconImage:SetAttribute("Hidden", value.Image)
 			end
+			
+			ClonedFoodTemplate:GetAttributeChangedSignal("Unlocked"):Connect(function()
+				local FoodTitle = ClonedFoodTemplate.FoodTitle
+				local IconImage = ClonedFoodTemplate.Icon.IconImage
+				FoodTitle.Text = (ClonedFoodTemplate:GetAttribute("Unlocked") and FoodTitle:GetAttribute("Hidden")) or "???"
+				IconImage.Image = (ClonedFoodTemplate:GetAttribute("Unlocked") and IconImage:GetAttribute("Hidden")) or "http://www.roblox.com/asset/?id=4509163032" -- ???
+			end)
 			ClonedFoodTemplate.Parent = Page
 			PageData[itemData.Key] = nil
 		else
 			local ClonedFoodTemplate = FoodTemplate:Clone()
+			ClonedFoodTemplate:SetAttribute("Unlocked", unlocked)
 			ClonedFoodTemplate.Name = tostring(key)
-			ClonedFoodTemplate.FoodTitle.Text = tostring(key)
+			ClonedFoodTemplate.FoodTitle.Text = (unlocked and tostring(key)) or "???"
+			ClonedFoodTemplate.FoodTitle:SetAttribute("Hidden", tostring(key))
 			if value["Image"] == "" or value["Image"] == nil then
 				ClonedFoodTemplate.Icon.IconImage.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
+				ClonedFoodTemplate.Icon.IconImage:SetAttribute("Hidden", "http://www.roblox.com/asset/?id=4509163032")
 			else
-				ClonedFoodTemplate.Icon.IconImage.Image = value.Image
+				ClonedFoodTemplate.Icon.IconImage.Image = (unlocked and value.Image) or "http://www.roblox.com/asset/?id=4509163032" -- ???
+				ClonedFoodTemplate.Icon.IconImage:SetAttribute("Hidden", value.Image)
 			end
+			ClonedFoodTemplate:GetAttributeChangedSignal("Unlocked"):Connect(function()
+				local FoodTitle = ClonedFoodTemplate.FoodTitle
+				local IconImage = ClonedFoodTemplate.Icon.IconImage
+				FoodTitle.Text = (ClonedFoodTemplate:GetAttribute("Unlocked") and FoodTitle:GetAttribute("Hidden")) or "???"
+				IconImage.Image = (ClonedFoodTemplate:GetAttribute("Unlocked") and IconImage:GetAttribute("Hidden")) or "http://www.roblox.com/asset/?id=4509163032" -- ???
+			end)
 			ClonedFoodTemplate.Parent = Page
 			PageData[itemData.Key] = nil
 			--table.remove(PageData,TableFind(PageData,v))
@@ -259,45 +286,6 @@ function recipePageCreated(PageNumber,PageData)
 			return recipePageCreated(PageNumber,NewPage)
 		end
 	end
-
-	--[[if PageData then
-		for key, value in next, PageData do
-			if key and value then
-				if type(value) == "table" then
-					recipeCount += 1
-					if recipeCount < PageLimit then
-						local ClonedFoodTemplate = FoodTemplate:Clone()
-						ClonedFoodTemplate.Name = tostring(key)
-						ClonedFoodTemplate.FoodTitle.Text = tostring(key)
-						if value["Image"] == "" or value["Image"] == nil then
-							ClonedFoodTemplate.Icon.IconImage.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
-						else
-							ClonedFoodTemplate.Icon.IconImage.Image = value.Image
-						end
-						ClonedFoodTemplate.Parent = Page
-						PageData[key] = nil
-					else
-						local ClonedFoodTemplate = FoodTemplate:Clone()
-						ClonedFoodTemplate.Name = tostring(key)
-						ClonedFoodTemplate.FoodTitle.Text = tostring(key)
-						if value["Image"] == "" or value["Image"] == nil then
-							ClonedFoodTemplate.Icon.IconImage.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
-						else
-							ClonedFoodTemplate.Icon.IconImage.Image = value.Image
-						end
-						ClonedFoodTemplate.Parent = Page
-						PageData[key] = nil
-						--table.remove(PageData,TableFind(PageData,v))
-						local NewPage = PageData
-						recipeCount = 0
-						PageNumber += 1
-						--print(NewPage,PageNumber)
-						return recipePageCreated(PageNumber,NewPage)
-					end
-				end
-			end;
-		end;
-	end]]
 end
 
 function setupRecipes()
@@ -354,6 +342,19 @@ function setupRecipes()
 	setupRecipeButtons()
 end
 
+function updateRecipeList()
+	for _,page in pairs(recipeList:GetChildren()) do
+		if page:IsA("Frame") then
+			for _, recipe in pairs(page:GetChildren()) do
+				if recipe:IsA("Frame") then
+					print(unlockedRecipes[recipe.Name])
+					recipe:SetAttribute("Unlocked", (unlockedRecipes[recipe.Name] and true) or false)
+				end
+			end
+		end
+	end
+end
+
 local function displayIngredients(clearItems)
 	if clearItems then
 		foodNameDisplayed.Text = ""
@@ -371,7 +372,6 @@ local function displayIngredients(clearItems)
 	end
 	for _, frame in pairs(IngredientsTab:GetChildren()) do
 		if frame:IsA("Frame") then
-			--frame:TweenSize(UDim2.fromScale(0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Elastic)
 			frame:Destroy()
 		end
 	end;
@@ -420,23 +420,23 @@ local function displayIngredients(clearItems)
 			clonedIngredientFrame.Icon.IconImage.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
 			clonedIngredientFrame.Icon.IconImageShadow.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
 		end
+
+		local function changeIFrameColors(color1, color2)
+			clonedIngredientFrame.UIStroke.Color = color2
+			clonedIngredientFrame.BackgroundColor3 = color2
+			clonedIngredientFrame.Icon.BackgroundColor3 = color1
+		end
 		
 		if myReplicatedIngredients then
 			if #myReplicatedIngredients == 0 then
-				clonedIngredientFrame.UIStroke.Color = notCompletedColors[2]
-				clonedIngredientFrame.BackgroundColor3 = notCompletedColors[2]
-				clonedIngredientFrame.Icon.BackgroundColor3 = notCompletedColors[1]
+				changeIFrameColors(notCompletedColors[1], notCompletedColors[2])
 			else
 				for _,v in pairs(myReplicatedIngredients) do
 					if clonedIngredientFrame.Name == tostring(v) then
-						clonedIngredientFrame.UIStroke.Color = completedColors[2]
-						clonedIngredientFrame.BackgroundColor3 = completedColors[2]
-						clonedIngredientFrame.Icon.BackgroundColor3 = completedColors[1]
+						changeIFrameColors(completedColors[1], completedColors[2])
 						break;
 					else
-						clonedIngredientFrame.UIStroke.Color = notCompletedColors[2]
-						clonedIngredientFrame.BackgroundColor3 = notCompletedColors[2]
-						clonedIngredientFrame.Icon.BackgroundColor3 = notCompletedColors[1]
+						changeIFrameColors(notCompletedColors[1], notCompletedColors[2])
 					end
 				end
 			end
@@ -472,6 +472,12 @@ local function displayIngredients(clearItems)
 	end
 
 	local CookingService = Knit.GetService("CookingService")
+
+	local function changeFrameColors(frame, color1, color2)
+		frame.UIStroke.Color = color2
+		frame.BackgroundColor3 = color2
+		frame.Icon.BackgroundColor3 = color1
+	end
 	
 	prevConnection = CookingService.SendIngredients:Connect(function(args)
 		greenIngredients = {};
@@ -481,9 +487,7 @@ local function displayIngredients(clearItems)
 			if #myReplicatedIngredients == 0 then
 				for _, frame in pairs(IngredientsTab:GetChildren()) do
 					if frame:IsA("Frame") then
-						frame.UIStroke.Color = notCompletedColors[2]
-						frame.BackgroundColor3 = notCompletedColors[2]
-						frame.Icon.BackgroundColor3 = notCompletedColors[1]
+						changeFrameColors(frame, notCompletedColors[1], notCompletedColors[2])
 						table.insert(greenIngredients, frame)
 					end
 				end
@@ -492,14 +496,10 @@ local function displayIngredients(clearItems)
 					for _,v in pairs(myReplicatedIngredients) do
 						if frame:IsA("Frame") then
 							if frame.Name == tostring(v) then
-								frame.UIStroke.Color = completedColors[2]
-								frame.BackgroundColor3 = completedColors[2]
-								frame.Icon.BackgroundColor3 = completedColors[1]
+								changeFrameColors(frame, completedColors[1], completedColors[2])
 								break;
 							else
-								frame.UIStroke.Color = notCompletedColors[2]
-								frame.BackgroundColor3 = notCompletedColors[2]
-								frame.Icon.BackgroundColor3 = notCompletedColors[1]
+								changeFrameColors(frame, notCompletedColors[1], notCompletedColors[2])
 							end
 							table.insert(greenIngredients, frame)
 						end
@@ -536,6 +536,12 @@ end
 
 
 function setupRecipeButtons()
+
+	local function changeButtonColors(color1, color2)
+		selectButton.BackgroundColor3 = color1
+		selectButton.StrokeText.Color = color2
+		selectButton.StrokeBorder.Color = color2
+	end
 
 	local function setupIngredients(foodName)
 		if foodName == prevFoodName then
@@ -591,14 +597,10 @@ function setupRecipeButtons()
 			end
 			
 			if recipeSelected == foodName then
-				selectButton.BackgroundColor3 = selectedColors[1]
-				selectButton.StrokeText.Color = selectedColors[2]
-                selectButton.StrokeBorder.Color = selectedColors[2]
+				changeButtonColors(selectedColors[1], selectedColors[2])
 				selectButton.Text = "Selected Recipe"
 			else
-				selectButton.BackgroundColor3 = notSelectedColors[1]
-				selectButton.StrokeText.Color = notSelectedColors[2]
-                selectButton.StrokeBorder.Color = notSelectedColors[2]
+				changeButtonColors(notSelectedColors[1], notSelectedColors[2])
 				selectButton.Text = "Select Recipe"
 			end;
 		end
@@ -609,6 +611,7 @@ function setupRecipeButtons()
 			for _, frame in pairs(page:GetChildren()) do
 				if frame:IsA("Frame") then
 					frame.Button.MouseButton1Click:Connect(function()
+						if frame:GetAttribute("Unlocked") == false then return end
 						if prevIngredientButton ~= nil then
 							prevIngredientButton.FoodTitle.SelectedStroke.Enabled = false;
 						end
@@ -629,15 +632,11 @@ function setupRecipeButtons()
 			debounce = true;
 			if prevFoodName then
 				if recipeSelected == nil or recipeSelected ~= prevFoodName then
-					selectButton.BackgroundColor3 = selectedColors[1]
-					selectButton.StrokeText.Color = selectedColors[2]
-                    selectButton.StrokeBorder.Color = selectedColors[2]
+					changeButtonColors(selectedColors[1], selectedColors[2])
 					selectButton.Text = "Selected Recipe"
 					recipeSelected = prevFoodName
 				else
-					selectButton.BackgroundColor3 = notSelectedColors[1]
-					selectButton.StrokeText.Color = notSelectedColors[2]
-                    selectButton.StrokeBorder.Color = notSelectedColors[2]
+					changeButtonColors(notSelectedColors[1], notSelectedColors[2])
 					selectButton.Text = "Select Recipe"
 					recipeSelected = nil
 					allIngredientsFound = false;
@@ -746,6 +745,19 @@ function RecipesView:KnitStart()
 			end
 		end
 	end)
+
+	local OrderService = Knit.GetService("OrderService");
+	OrderService.RecipesUpdate:Connect(function(RecipesUnlocked)
+		unlockedRecipes = RecipesUnlocked
+		updateRecipeList()
+	end)
+
+	OrderService:GetUnlockedRecipes():andThen(function(recipesUnlocked)
+        if (recipesUnlocked) then
+			unlockedRecipes = recipesUnlocked
+            updateRecipeList()
+        end
+    end)
 
 	local ProximityService = Knit.GetService("ProximityService")
 	local PlayerController = Knit.GetController("PlayerController")

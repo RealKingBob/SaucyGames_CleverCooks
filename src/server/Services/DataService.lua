@@ -55,7 +55,7 @@ local SETTINGS = {
         Boosts = {}, -- Specific boosts a user owns
         GamepassOwned = {}, -- Specific gamepasses a user owns
         CratesOpened = {}, -- Specific crates opened by a user
-        RecipesCooked = {}, -- Specific crates opened by a user
+        RecipesCooked = {}, -- Specific foods cooked and delivered by a user
         Battlepasses = {}, -- Battlepasses the user participated / completed
 		Inventory = {
             CurrentDeathEffect = "Default",
@@ -260,48 +260,6 @@ local function PreloadData(Player, Profile, ProfileData)
         --print("playerGifts", playerGifts)
         PlayerServerGifts[Player.UserId] = playerGifts;
     end
-
-    local VIP_Gamepass = 26228902;
-    local Karl_Gamepass = 27310378;
-
-    local hasVIPPass = false
-    local hasKarlPass = false
- 
-	-- Check if the player already owns the game pass
-	local success, message = pcall(function()
-		--hasVIPPass = MarketplaceService:UserOwnsGamePassAsync(Player.UserId, VIP_Gamepass)
-    end)
-
-    if not success then
-		warn("Error while checking if player has pass: " .. tostring(message))
-	end
-
-    local success, message = pcall(function()
-		--hasKarlPass = MarketplaceService:UserOwnsGamePassAsync(Player.UserId, Karl_Gamepass)
-    end)
- 
-	-- If there's an error, issue a warning and exit the function
-	if not success then
-		warn("Error while checking if player has pass: " .. tostring(message))
-	end
- 
-	--[[if hasVIPPass == true then
-		--print(Player.Name .. " owns the game pass with ID " .. VIP_Gamepass)
-		if ProfileData.Inventory.DuckSkins["VIP Duck"] == nil then
-            AddItemPlayer(Player, "VIP Duck", "Skins")
-            ProfileData.PlayerInfo.Currency[ThemeData] += 1000
-            updateClientCurrency(Profile, 1000)
-        end
-	end
-
-    if hasKarlPass == true then
-		--print(Player.Name .. " owns the game pass with ID " .. Karl_Gamepass)
-		if ProfileData.Inventory.DuckSkins["Karl"] == nil then
-            AddItemPlayer(Player, "Karl", "Skins")
-            ProfileData.PlayerInfo.Currency[ThemeData] += 1200
-            updateClientCurrency(Profile, 1200)
-        end
-	end]]
 end
 
 local function OnPlayerAdded(Player)

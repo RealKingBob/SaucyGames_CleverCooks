@@ -18,6 +18,8 @@ local OrderService = Knit.CreateService {
         CompleteOrder = Knit.CreateSignal();
 
         ResetTimePurchase = Knit.CreateSignal();
+
+        RecipesUpdate = Knit.CreateSignal();
     };
 }
 
@@ -136,6 +138,21 @@ function OrderService:orderCount(player)
         end
     end
     return count;
+end
+
+
+function OrderService.Client:GetUnlockedRecipes(player) -- Updates daily shop time and shop data
+	--print("[DailyService]: Watching time for ",player,profile, lastLogin,dailyshopTime)
+    local DataService = Knit.GetService("DataService")
+    local profile = DataService:GetProfile(player);
+
+    if profile then
+        if profile.Data.RecipesCooked then
+            warn(profile.Data.RecipesCooked)
+            return profile.Data.RecipesCooked;
+        end
+    end
+    return {};
 end
 
 
@@ -355,6 +372,7 @@ end
 -- Function to mark a recipe as completed for a player
 function OrderService:completeRecipe(player, recipe, reward, percentage)
     local PartyService = Knit.GetService("PartyService");
+    local DataService = Knit.GetService("DataService")
 	local PartyMembers = {};
 	local PartyOwner = player;
 
@@ -379,25 +397,42 @@ function OrderService:completeRecipe(player, recipe, reward, percentage)
             --print("uh", percentage, (percentage >= cookedRange.min and percentage <= cookedRange.max))
 
             if percentage then
+
                 if percentage >= cookedRange.min and percentage <= cookedRange.max then
-                    local DataService = Knit.GetService("DataService")
-	                local profile = DataService:GetProfile(player);
-                    if profile then
-                        -- check if this is the first time unlocking the recipe 
-                    end
+                    Knit.GetService("DataService"):GiveCurrency(player, bonusReward, false, "+BONUS %")
+                end
 
-                    for _, member in pairs(PartyMembers) do
-                        Knit.GetService("DataService"):GiveCurrency(member, bonusReward, false, "+BONUS %")
-                    end
+                for _, member in pairs(PartyMembers) do
+                    local profile = DataService:GetProfile(member);
 
+                    if percentage >= cookedRange.min and percentage <= cookedRange.max then
+                        
+                        if profile then
+                            -- check if this is the first time unlocking the recipe 
+                            if not profile.Data.RecipesCooked[recipe] then
+                                profile.Data.RecipesCooked[recipe] = 0;
+                                Knit.GetService("NotificationService"):Message(false, member, "NEW RECIPE UNLOCKED!", {Effect = false, Color = Color3.fromRGB(255, 200, 21)})
+                            end
+                        end
+
+                    end
+    
+                    if profile.Data.RecipesCooked[recipe] then
+                        profile.Data.RecipesCooked[recipe] += 1;
+                        self.Client.RecipesUpdate:Fire(member, profile.Data.RecipesCooked)
+                    end
                 end
             end
 
             for _, member in pairs(PartyMembers) do
+                local profile = DataService:GetProfile(member);
+                if not profile.Data.RecipesCooked[recipe] then
+                    Knit.GetService("NotificationService"):Message(false, member, "MUST BE COOKED PERFECTLY TO UNLOCK RECIPE!", {Effect = false, Color = Color3.fromRGB(229, 129, 6)})
+                end
                 self.Client.CompleteOrder:Fire(member, r.id)
             end
             
-            self:removeRecipe(player, recipe.id)
+            self:removeRecipe(player, r.id)
             break
         end
     end
