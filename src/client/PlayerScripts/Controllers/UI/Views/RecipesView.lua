@@ -18,7 +18,6 @@ local ReplicatedModules = Shared:WaitForChild("Modules")
 
 local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 
-local mainGui = PlayerGui:WaitForChild("GUI")
 local viewsUI = PlayerGui:WaitForChild("Main"):WaitForChild("Views")
 
 local RecipesGui = viewsUI:WaitForChild("Recipes")
@@ -54,7 +53,6 @@ local unlockedRecipes = {};
 
 local ShortDistanceObject
 local CookDebounce = false;
-local CookButton = mainGui.Cook
 
 local prevFoodName = nil
 local prevIngredientTab = nil;
@@ -239,13 +237,15 @@ function recipePageCreated(PageNumber,PageData)
 			local ClonedFoodTemplate = FoodTemplate:Clone()
 			ClonedFoodTemplate:SetAttribute("Unlocked", unlocked)
 			ClonedFoodTemplate.Name = tostring(key)
-			ClonedFoodTemplate.FoodTitle.Text = (unlocked and tostring(key)) or "???"
+			ClonedFoodTemplate.FoodTitle.Text = (unlocked == true and tostring(key)) or "???"
+			ClonedFoodTemplate.FoodTitle.TextColor3 = (unlocked == true and Color3.fromRGB(129, 0, 2)) or Color3.fromRGB(57, 57, 57)
 			ClonedFoodTemplate.FoodTitle:SetAttribute("Hidden", tostring(key))
 			if value["Image"] == "" or value["Image"] == nil then
 				ClonedFoodTemplate.Icon.IconImage.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
 				ClonedFoodTemplate.Icon.IconImage:SetAttribute("Hidden", "http://www.roblox.com/asset/?id=4509163032")
 			else
-				ClonedFoodTemplate.Icon.IconImage.Image = (unlocked and value.Image) or "http://www.roblox.com/asset/?id=4509163032" -- ???
+				ClonedFoodTemplate.Icon.IconImage.ImageColor3 = (unlocked == true and Color3.fromRGB(255,255,255)) or Color3.fromRGB(0, 0, 0)
+				ClonedFoodTemplate.Icon.IconImage.Image = value.Image -- ???
 				ClonedFoodTemplate.Icon.IconImage:SetAttribute("Hidden", value.Image)
 			end
 			
@@ -253,7 +253,8 @@ function recipePageCreated(PageNumber,PageData)
 				local FoodTitle = ClonedFoodTemplate.FoodTitle
 				local IconImage = ClonedFoodTemplate.Icon.IconImage
 				FoodTitle.Text = (ClonedFoodTemplate:GetAttribute("Unlocked") and FoodTitle:GetAttribute("Hidden")) or "???"
-				IconImage.Image = (ClonedFoodTemplate:GetAttribute("Unlocked") and IconImage:GetAttribute("Hidden")) or "http://www.roblox.com/asset/?id=4509163032" -- ???
+				FoodTitle.TextColor3 = (ClonedFoodTemplate:GetAttribute("Unlocked") and Color3.fromRGB(129, 0, 2)) or Color3.fromRGB(57, 57, 57)
+				IconImage.ImageColor3 = (ClonedFoodTemplate:GetAttribute("Unlocked") and Color3.fromRGB(255,255,255)) or Color3.fromRGB(0, 0, 0)
 			end)
 			ClonedFoodTemplate.Parent = Page
 			PageData[itemData.Key] = nil
@@ -261,20 +262,23 @@ function recipePageCreated(PageNumber,PageData)
 			local ClonedFoodTemplate = FoodTemplate:Clone()
 			ClonedFoodTemplate:SetAttribute("Unlocked", unlocked)
 			ClonedFoodTemplate.Name = tostring(key)
-			ClonedFoodTemplate.FoodTitle.Text = (unlocked and tostring(key)) or "???"
+			ClonedFoodTemplate.FoodTitle.Text = (unlocked == true and tostring(key)) or "???"
+			ClonedFoodTemplate.FoodTitle.TextColor3 = (unlocked == true and Color3.fromRGB(129, 0, 2)) or Color3.fromRGB(57, 57, 57)
 			ClonedFoodTemplate.FoodTitle:SetAttribute("Hidden", tostring(key))
 			if value["Image"] == "" or value["Image"] == nil then
 				ClonedFoodTemplate.Icon.IconImage.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
 				ClonedFoodTemplate.Icon.IconImage:SetAttribute("Hidden", "http://www.roblox.com/asset/?id=4509163032")
 			else
-				ClonedFoodTemplate.Icon.IconImage.Image = (unlocked and value.Image) or "http://www.roblox.com/asset/?id=4509163032" -- ???
+				ClonedFoodTemplate.Icon.IconImage.ImageColor3 = (unlocked == true and Color3.fromRGB(255,255,255)) or Color3.fromRGB(0, 0, 0)
+				ClonedFoodTemplate.Icon.IconImage.Image = value.Image
 				ClonedFoodTemplate.Icon.IconImage:SetAttribute("Hidden", value.Image)
 			end
 			ClonedFoodTemplate:GetAttributeChangedSignal("Unlocked"):Connect(function()
 				local FoodTitle = ClonedFoodTemplate.FoodTitle
 				local IconImage = ClonedFoodTemplate.Icon.IconImage
 				FoodTitle.Text = (ClonedFoodTemplate:GetAttribute("Unlocked") and FoodTitle:GetAttribute("Hidden")) or "???"
-				IconImage.Image = (ClonedFoodTemplate:GetAttribute("Unlocked") and IconImage:GetAttribute("Hidden")) or "http://www.roblox.com/asset/?id=4509163032" -- ???
+				FoodTitle.TextColor3 = (ClonedFoodTemplate:GetAttribute("Unlocked") and Color3.fromRGB(129, 0, 2)) or Color3.fromRGB(57, 57, 57)
+				IconImage.ImageColor3 = (ClonedFoodTemplate:GetAttribute("Unlocked") and Color3.fromRGB(255,255,255)) or Color3.fromRGB(0, 0, 0)
 			end)
 			ClonedFoodTemplate.Parent = Page
 			PageData[itemData.Key] = nil
@@ -387,7 +391,6 @@ local function displayIngredients(clearItems)
 
 	local greenIngredients = {};
 	allIngredientsFound = false;
-	CookButton.Visible = false;
 
 	highlightItems(RecipeModule[recipeSelected]["Ingredients"])
 
@@ -679,7 +682,6 @@ function RecipesView:Cook(pan)
 		local CookingService = Knit.GetService("CookingService")
 		CookingService.Cook:Fire(recipeSelected, pan)
 		task.wait(.5)
-		CookButton.Visible = false;
 		CookDebounce = false
 	end
 end

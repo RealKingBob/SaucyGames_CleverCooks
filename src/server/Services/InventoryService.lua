@@ -108,7 +108,7 @@ function InventoryService:RequestInventory(player)
         local PlayerProfile = PlayerInventoryProfiles[player] or DataService:GetProfile(player).Data;
         if PlayerProfile then
             if PlayerProfile then
-                return self.GetInventoryData(player,PlayerInventoryProfiles[player])
+                return self:GetInventoryData(player,PlayerInventoryProfiles[player])
             end
         end
     end
@@ -185,16 +185,19 @@ function InventoryService:InventoryChanged(player)
     if PlayerProfile then
         PlayerInventoryProfiles[player] = PlayerProfile.Data
         if PlayerProfile then
-            --print(PlayerInventoryProfiles[player].Inventory, InventoryService.GetInventoryData(player,PlayerInventoryProfiles[player]))
-            InventoryService.Client.ItemChanged:Fire(player, InventoryService.GetInventoryData(player,PlayerInventoryProfiles[player]))
+            --print(PlayerInventoryProfiles[player].Inventory, InventoryService:GetInventoryData(player,PlayerInventoryProfiles[player]))
+            InventoryService.Client.ItemChanged:Fire(player, InventoryService:GetInventoryData(player,PlayerInventoryProfiles[player]))
         end
     end
 end
 
-function InventoryService.GetInventoryData(player, profile)
-	if typeof(profile.Inventory) == "string" then
-        local decodedInventory = HttpService:JSONDecode(profile.Inventory)
-        profile.Inventory = decodedInventory
+function InventoryService:GetInventoryData(player, profile)
+    if not profile then
+        local PlayerProfile = DataService:GetProfile(player);
+        if PlayerProfile then
+            PlayerInventoryProfiles[player] = TableUtil.Copy(PlayerProfile.Data, true)
+            return PlayerInventoryProfiles[player].Inventory
+        end
     end
     return profile.Inventory
 end
@@ -415,7 +418,7 @@ function InventoryService:InitializeInventory(player)
             PlayerInventoryProfiles[player] = TableUtil.Copy(PlayerProfile.Data, true)
             if PlayerInventoryProfiles[player] then
                 --print("PlayerInventoryProfiles[player] ",PlayerInventoryProfiles[player] )
-                return self.GetInventoryData(player,PlayerInventoryProfiles[player])
+                return self:GetInventoryData(player,PlayerInventoryProfiles[player])
             end
         end
 	end

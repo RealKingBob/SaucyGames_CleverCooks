@@ -265,25 +265,29 @@ local function visualizeFood(foodObject, percentage)
 end
 
 local function checkItemIsOwner(Player, Item)
-	local PartyService = Knit.GetService("PartyService");
-	local PartyMembers = {};
-	local PartyOwner = Player;
+	if Player and Item then
+		local PartyService = Knit.GetService("PartyService");
+		local PartyMembers = {};
+		local PartyOwner = Player;
 
-	local PartyInfo = PartyService:FindPartyFromPlayer(Player);
-	PartyOwner = Players:GetPlayerByUserId(PartyInfo.OwnerId)
-	for _, memberInParty in pairs(PartyInfo.Members) do
-		local memberIdToPlayer = memberInParty.Player;
-		table.insert(PartyMembers, memberIdToPlayer)
+		local PartyInfo = PartyService:FindPartyFromPlayer(Player);
+		if PartyInfo then
+			PartyOwner = Players:GetPlayerByUserId(PartyInfo.OwnerId)
+			for _, memberInParty in pairs(PartyInfo.Members) do
+				local memberIdToPlayer = memberInParty.Player;
+				table.insert(PartyMembers, memberIdToPlayer)
+			end
+
+			if Item:GetAttribute("Owner") == "Default" then
+				return true, PartyMembers;
+			end
+
+			if Item:GetAttribute("Owner") == PartyOwner.Name then
+				return true, PartyMembers;
+			end
+		end
 	end
-
-	if Item:GetAttribute("Owner") == "Default" then
-		return true, PartyMembers;
-	end
-
-	if Item:GetAttribute("Owner") == PartyOwner.Name then
-		return true, PartyMembers;
-	end
-
+	
 	return false, nil;
 end
 

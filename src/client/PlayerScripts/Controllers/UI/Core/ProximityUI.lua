@@ -14,9 +14,6 @@ local GameLibrary = ReplicatedStorage:FindFirstChild("GameLibrary")
 
 local localPlayer = Players.LocalPlayer
 
-local PlayerGui = localPlayer.PlayerGui
-local MainUI = PlayerGui:WaitForChild("GUI")
-
 local DropDownDebounce = false -- Prevents spam on the function
 
 local dropConnection = nil;
@@ -31,7 +28,6 @@ function DropDown() -- Telling the server that you are dropping the item
         local CookingService = Knit.GetService("CookingService");
 		CookingService.DropDown:Fire()
 		task.wait(.5)
-		MainUI.DropButton.Visible = false
 		DropDownDebounce = false
 	end
 end
@@ -77,13 +73,11 @@ ProxFunctions["DropDown"] = function(bool)
 end
 
 ProxFunctions["CookVisible"] = function(tab)
-	MainUI.RecipeTitle.Visible = tab
-	MainUI.Cook.Visible = tab
+
 end
 
 function EatVisible()
-	MainUI.Cook.Visible = false
-	MainUI.Eat.Visible = true
+	
 end
 
 function ProximityUI:KnitStart()

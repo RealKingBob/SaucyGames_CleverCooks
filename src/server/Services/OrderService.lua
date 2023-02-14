@@ -181,11 +181,13 @@ end
 
 -- Function to add a recipe to a player's list of recipes
 function OrderService:addRecipe(player, recipe, value)
+    if not player or not recipe or not value then return end
     local PartyService = Knit.GetService("PartyService");
 	local PartyMembers = {};
 	local PartyOwner = player;
 
 	local PartyInfo = PartyService:FindPartyFromPlayer(player);
+    if not PartyInfo then return end
 	PartyOwner = Players:GetPlayerByUserId(PartyInfo.OwnerId)
 
     if not PartyOwner or not recipe or not value then return end;
@@ -235,6 +237,7 @@ end
 
 -- Function to add a random recipe to a player's list
 function OrderService:addRandomRecipe(player, recipes)
+    if not player or not recipes then return end
     -- Choose a random recipe from the list
     --local recipe = recipes[math.random(1, #recipes)]
     local recipe = nil;
@@ -275,6 +278,7 @@ end
 
 -- Function to remove a recipe from a player's list
 function OrderService:removeAllRecipes(player)
+    if not player then return end
     local PartyService = Knit.GetService("PartyService");
 	local PartyMembers = {};
 	local PartyOwner = player;
@@ -298,6 +302,7 @@ end
 
 -- Function to remove a recipe from a player's list
 function OrderService:removeRecipe(player, recipeId)
+    if not player or not recipeId then return end
     local PartyService = Knit.GetService("PartyService");
 	local PartyMembers = {};
 	local PartyOwner = player;
@@ -371,6 +376,7 @@ end
 
 -- Function to mark a recipe as completed for a player
 function OrderService:completeRecipe(player, recipe, reward, percentage)
+    if not player or not recipe or not reward or not percentage then return end
     local PartyService = Knit.GetService("PartyService");
     local DataService = Knit.GetService("DataService")
 	local PartyMembers = {};

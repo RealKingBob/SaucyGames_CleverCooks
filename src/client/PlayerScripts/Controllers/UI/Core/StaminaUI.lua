@@ -175,7 +175,7 @@ function StaminaUI:SetupStamina(Character)
             end)
 
             task.spawn(function()
-                if Character.HumanoidRootPart then
+                if Character:FindFirstChild("HumanoidRootPart") then
                     
                     local Circle = Character.HumanoidRootPart.Attachment:FindFirstChild("Circle");
                     Circle.Enabled = true;

@@ -26,8 +26,8 @@ local LoadingScreen = ReplicatedStorage.UiAssets.LoadingScreen
 local PlayerGui = plr:WaitForChild("PlayerGui");
 
 local StartGui = PlayerGui:WaitForChild("Start");
-
-local QueueView = PlayerGui:WaitForChild("Views"):WaitForChild("Queue");
+--[[
+local QueueView = PlayerGui:WaitForChild("Main"):WaitForChild("Queue");
 local QueueInfo = PlayerGui:WaitForChild("GameplayFrame"):WaitForChild("QueueInfo");
 local CancelButton = QueueInfo:WaitForChild("Close")
 local QueueButton = QueueView:WaitForChild("Main"):WaitForChild("Button");
@@ -166,10 +166,10 @@ function PartyQueueUI:UnqueueMatch()
     local PartyService = Knit.GetService("PartyService");
     
     PartyService.PartyStatus:Fire("QueueCancel");
-end
+end]]
 
 function PartyQueueUI:KnitStart()
-
+--[[
     self.ViewsUI = Knit.GetController("ViewsUI");
 
     ViewOriginalSizes[QueueInfo.Name] = QueueInfo.Size;
@@ -187,21 +187,7 @@ function PartyQueueUI:KnitStart()
         self.ViewsUI:CloseView()
         self:QueueMatch(partyQueueType)
     end)
-
-    --[[local TournamentService  = Knit.GetService("TournamentService");
-
-    TournamentService.QueueStatus:Connect(function(Status : string, Type : string)
-        print("QUEUE STATUS:", Status, Type);
-
-        if Status == "FoundMatch" then
-            self:FoundMatch()
-        elseif Status == "QueueRemove" or Type == nil then
-            -- queue no bueno yep
-            self:CloseView()
-        else
-            self:OpenView(Status, Type)
-        end
-    end)]]
+]]
 end
 
 

@@ -290,7 +290,9 @@ function ProximityService:PickUpIngredient(Character, Ingredient)
         self.Client.TrackItem:Fire(Player, true, Ingredient) -- self:GetNearestPan(Character.PrimaryPart.Position)
         
         Player:FindFirstChild("Data").GameValues.Ingredient.Value = Ingredient;
-        Character:FindFirstChild("Ingredient").Value = Ingredient;
+        if Character:FindFirstChild("Ingredient") then
+            Character:FindFirstChild("Ingredient").Value = Ingredient;
+        end
     end;
 end;
 
@@ -314,7 +316,9 @@ function ProximityService:PickUpFood(Character, Food)
         self.Client.TrackItem:Fire(Player, true, Food) -- self:GetNearestDelivery(Character.PrimaryPart.Position)
         
         Player:FindFirstChild("Data").GameValues.Ingredient.Value = Food;
-        Character:FindFirstChild("Ingredient").Value = Food;
+        if Character:FindFirstChild("Ingredient") then
+            Character:FindFirstChild("Ingredient").Value = Food;
+        end
     end;
 end;
 
@@ -342,7 +346,9 @@ function ProximityService:DropItem( Character, Item)
 
         task.wait(.3);
         Player:FindFirstChild("Data").GameValues.Ingredient.Value = nil;
-		Character:FindFirstChild("Ingredient").Value = nil;
+        if Character:FindFirstChild("Ingredient") then
+            Character:FindFirstChild("Ingredient").Value = nil;
+        end
     end;
 end;
 

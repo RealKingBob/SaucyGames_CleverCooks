@@ -40,6 +40,7 @@ function ButtonStyle:StyleButton(Container)
         if Button:FindFirstChildWhichIsA("UIScale") then
             local ButtonTween = TweenModule.new(ClickInfo, function(Alpha)
                 if not Button then return end;
+                if not Button:FindFirstChildWhichIsA("UIScale") then return end
                 Button:FindFirstChildWhichIsA("UIScale").Scale = NumberUtil.LerpClamp(1, 0.9, Alpha); 
             end)
             ButtonTween:Play()
@@ -70,6 +71,7 @@ function ButtonStyle:StyleButton(Container)
         if Button:FindFirstChildWhichIsA("UIScale") then
             local ButtonTween = TweenModule.new(ClickInfo, function(Alpha)
                 if not Button then return end;
+                if not Button:FindFirstChildWhichIsA("UIScale") then return end
                 Button:FindFirstChildWhichIsA("UIScale").Scale = NumberUtil.LerpClamp(1, 1.15, Alpha); 
             end)
             ButtonTween:Play()
@@ -83,6 +85,7 @@ function ButtonStyle:StyleButton(Container)
         if Button:FindFirstChildWhichIsA("UIScale") then
             local ButtonTween = TweenModule.new(ClickInfo, function(Alpha)
                 if not Button then return end;
+                if not Button:FindFirstChildWhichIsA("UIScale") then return end
                 Button:FindFirstChildWhichIsA("UIScale").Scale = NumberUtil.LerpClamp(1.15, 1, Alpha); 
             end)
             ButtonTween:Play()

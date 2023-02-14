@@ -46,5 +46,5 @@ return {
     GIVE_ALL_INVENTORY = true; --// Gives all items on inventory
     DAILY_SHOP_OFFSET = 19; -- 7 PM EST, 24 hour time
 
-    LOWEST_FALL_HEIGHT = 10; -- 10 studs minimum impact
+    LOWEST_FALL_HEIGHT = 20; -- 10 studs minimum impact
 }
