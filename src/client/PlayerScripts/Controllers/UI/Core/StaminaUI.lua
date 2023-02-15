@@ -206,7 +206,8 @@ function StaminaUI:SetupStamina(Character)
                 end
             end
 
-            if not Humanoid or not Humanoid:FindFirstChildOfClass("Animator") or not SprintAnimTrack then return end
+            if not Humanoid then return end
+            if not Humanoid:FindFirstChildOfClass("Animator") or not SprintAnimTrack then return end
 
             if SprintAnimTrack then
                 SprintAnimTrack:Play()
