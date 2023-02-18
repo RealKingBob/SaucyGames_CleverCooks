@@ -11,7 +11,6 @@ local CollectionService = game:GetService("CollectionService")
 local PulseInfo = TweenInfo.new(0.35, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
 
 local PulsingObjects = {}
-local PulsingDebounce = {}
 
 -- Runs every 1.5 seconds
 local LastPulse = 0

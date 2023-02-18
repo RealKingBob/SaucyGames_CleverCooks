@@ -17,6 +17,7 @@ local Status = {
 	PickUp = "Pickup";
 	Drop = "Drop";
 	Cook = "Cook";
+	Talk = "Talk";
 	Deliver = "Deliver";
 	Click = "Click";
 	IngredientsTable = "IngredientsTable";
@@ -77,8 +78,7 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 	else
 		promptUI = customPrompt:Clone()
     	headUI = customHeadUI:Clone()
-	end
-	
+	end	
 
     -- UI that needs to be updated from prompt
     local promptFrame = promptUI:WaitForChild("Frame")
@@ -362,12 +362,14 @@ function CustomProximityController:KnitStart()
         end
 
 		if prompt.Parent ~= nil then
-			if prompt.Parent.Transparency == 1 
-			and CollectionService:HasTag(prompt.Parent, "Pan") 
-			and CollectionService:HasTag(prompt.Parent, "Delivering") 
-			and CollectionService:HasTag(prompt.Parent, "IngredientsTable") 
-			then
-				return;
+			if not prompt.Parent:IsA("Model") then
+				if prompt.Parent.Transparency == 1 
+				and not CollectionService:HasTag(prompt.Parent, "Pan") 
+				and not CollectionService:HasTag(prompt.Parent, "Delivering") 
+				and not CollectionService:HasTag(prompt.Parent, "IngredientsTable") 
+				then
+					return;
+				end
 			end
 		end
 		
@@ -405,6 +407,13 @@ function CustomProximityController:KnitStart()
 			prompt.PromptHidden:Wait();
 		
         	cleanupFunction();
+		elseif CollectionService:HasTag(prompt.Parent, "DialogNpc") then
+			currentStatus = Status.Talk;
+			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "Talk");
+
+			prompt.PromptHidden:Wait();
+		
+			cleanupFunction();
 		elseif CollectionService:HasTag(prompt.Parent, "Delivering") then
 			currentStatus = Status.Deliver;
 			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "Deliver");

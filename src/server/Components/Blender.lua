@@ -45,15 +45,6 @@ function Blender.new(instance)
         self.ObjectsInBlender[player.UserId] = {};
         self.BlenderColors[player.UserId] = Color3.fromRGB(255,255,255);
         self.NumOfObjects[player.UserId] = 0
-
-        local CookingService = Knit.GetService("CookingService");
-        CookingService.Client.ChangeClientBlender:Fire(player,
-            self.Object, -- blender object
-            "bladeSpin", -- command
-            { -- data
-                true -- boolean
-            }
-        );
     end;
     
     local function PlayerRemoving(player)
@@ -62,14 +53,6 @@ function Blender.new(instance)
         self.BlenderColors[player.UserId] = nil;
         self.NumOfObjects[player.UserId] = nil;
     end;
-
-    local function TemporaryDisableButton(seconds)
-        self.Object.Button.ProximityPrompt.RequiresLineOfSight = true;
-        self.Object.Button.ProximityPrompt.Enabled = false;
-        task.wait(seconds)
-        self.Object.Button.ProximityPrompt.Enabled = true;
-        self.Object.Button.ProximityPrompt.RequiresLineOfSight = false;
-    end
 
     local function InsertObjToBlender(player, Obj)
         local FoodSpawnPoints = CollectionService:GetTagged("FoodSpawnPoints");

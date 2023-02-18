@@ -16,7 +16,6 @@ function CollisionController:KnitInit()
         if descendant:IsA("BasePart") then
             --PhysicsService:SetPartCollisionGroup(descendant, "NoCollision")
             descendant.CollisionGroup = "NoCollision";
-            --print("descendant.CollisionGroup:", descendant:GetFullName(), descendant.CollisionGroup)
         end
     end
 
