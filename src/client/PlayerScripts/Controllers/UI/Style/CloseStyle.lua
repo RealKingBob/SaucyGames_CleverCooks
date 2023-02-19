@@ -2,8 +2,10 @@ local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local CloseStyle = Knit.CreateController { Name = "CloseStyle" }
 
+--//Services
 local CollectionService = game:GetService("CollectionService")
 
+--//Public Methods
 function CloseStyle:StyleButton(Container)
     Container.MouseButton1Click:Connect(function()
         if Container.Parent.Parent:IsA("ScreenGui") or Container.Parent.Parent:IsA("Frame") then

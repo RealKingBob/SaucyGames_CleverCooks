@@ -10,6 +10,7 @@ local CollectionService = game:GetService("CollectionService")
 --//Const
 local BounceInfo = TweenInfo.new(0.2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, 0, true)
 
+--//State
 local BouncingObjects = {}
 
 -- Runs every 1.5 seconds
@@ -34,6 +35,7 @@ local function Bounce(Container)
     Tween:Play()
 end
 
+--//Public Methods
 function BounceStyle:StyleFrame(Container)
     table.insert(BouncingObjects, Container)
 end
