@@ -3,7 +3,7 @@ local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local HealthUI = Knit.CreateController { Name = "HealthUI" }
 
-local LocalPlayer = game.Players.LocalPlayer;
+local LocalPlayer = Players.LocalPlayer;
 
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui");
 

@@ -13,6 +13,7 @@ local ThemeData = workspace:GetAttribute("Theme")
 
 local SETTINGS = {
     StatsTemplate = {	
+        Tutorial = false;
 		PlayerInfo = {
 			Currency = {
                 French = 0;
@@ -51,7 +52,13 @@ local SETTINGS = {
 			DailyShopInfo = false, -- {lastOnline, streak}
 		}, -- All player info stored here
 		DailyShopItems = {}, -- Specific daily shop items a user has ingame
-		Missions = {}, -- Specific missions a user has ingame
+		Missions = {
+            Daily = {};
+            Weekly = {};
+            Event = {
+                French = {};
+            };
+        }, -- Specific missions a user has ingame
         Boosts = {}, -- Specific boosts a user owns
         GamepassOwned = {}, -- Specific gamepasses a user owns
         CratesOpened = {}, -- Specific crates opened by a user

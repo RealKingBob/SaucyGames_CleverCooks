@@ -112,13 +112,41 @@ function SpawnItems:PrintLogs(UserId) -- Prints out a table of logs for that was
     end;
 end;
 
+function SpawnItems:SpawnTutorialIngredient(ingredientName)
+    local IngredientOjects = Knit.GameLibrary:WaitForChild("IngredientObjects")
+    local FoodSpawnPoints = CollectionService:GetTagged("FoodSpawnPoints");
+    local TutorialSpawnPoints = {};
+
+    for _, spawn in pairs(FoodSpawnPoints) do
+        if spawn:GetAttribute("Tutorial") == true then
+            table.insert(TutorialSpawnPoints, spawn)
+        end
+    end
+
+    local Ingredient = IngredientOjects:FindFirstChild(ingredientName);
+
+    local RandomFoodLocation = TutorialSpawnPoints[math.random(1, #TutorialSpawnPoints)]
+
+    if Ingredient then
+        local ItemClone = Ingredient:Clone();
+        if RandomFoodLocation then
+            if ItemClone:IsA("Model") and ItemClone.PrimaryPart then
+                ItemClone:SetPrimaryPartCFrame(CFrame.new(RandomFoodLocation.Position + Vector3.new(math.random(-5,5) ,5, math.random(-5,5))))
+            else
+                ItemClone.Position = RandomFoodLocation.Position + Vector3.new(math.random(-5,5) ,5, math.random(-5,5));
+            end
+        end
+        ItemClone.Parent = workspace:WaitForChild("IngredientAvailable");
+    end
+end
+
 function SpawnItems:SpawnDistributedIngredients(Theme)
     local IngredientOjects = Knit.GameLibrary:WaitForChild("IngredientObjects")
     local FoodSpawnPoints = CollectionService:GetTagged("FoodSpawnPoints");
     local RareFoodSpawnPoints = {};
 
     for _, spawn in pairs(FoodSpawnPoints) do
-        if spawn:GetAttribute("RareSpawn") == true then
+        if spawn:GetAttribute("RareSpawn") == true and spawn:GetAttribute("Tutorial") ~= true then
             table.insert(RareFoodSpawnPoints, spawn)
             CollectionService:RemoveTag(spawn, "FoodSpawnPoints")
         end
@@ -186,6 +214,10 @@ function SpawnItems:SpawnDistributedIngredients(Theme)
             end
         end;
     end;
+
+    for _, spawn in pairs(RareFoodSpawnPoints) do
+        CollectionService:AddTag(spawn, "FoodSpawnPoints")
+    end
 end
 
 function SpawnItems:SpawnAllIngredients(NumOfIngredients)

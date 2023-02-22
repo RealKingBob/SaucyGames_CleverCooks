@@ -41,6 +41,7 @@ Knit.ReplicatedBoosterEffects = Knit.Shared.Assets.BoosterEffects;
 ----- Loaded Services -----
 Knit.DataService = require(Knit.Services.DataService);
 Knit.ProgressionService = require(Knit.Services.ProgressionService);
+Knit.TutorialService = require(Knit.Services.TutorialService);
 Knit.PartyService = require(Knit.Services.PartyService);
 Knit.AvatarService = require(Knit.Services.AvatarService);
 Knit.DeathEffectService = require(Knit.Services.DeathEffectService);
