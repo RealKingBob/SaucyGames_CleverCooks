@@ -1,9 +1,7 @@
+local CollectionService = game:GetService("CollectionService")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local ScalingStyleUI = Knit.CreateController { Name = "ScalingStyleUI" }
-
---//Services
-local CollectionService = game:GetService("CollectionService")
 
 --//Imports
 local Maid = require(Knit.Util.Maid); 
@@ -56,6 +54,7 @@ end
 function ScalingStyleUI:KnitStart()
     CollectionService:GetInstanceAddedSignal("ScrollingLayout"):Connect(function(Tag)
 		GridLayouts = CollectionService:GetTagged("ScrollingLayout");
+		
 		self:ListenGrids();
 	end)
 	

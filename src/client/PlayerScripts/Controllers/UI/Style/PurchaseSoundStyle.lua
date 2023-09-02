@@ -1,17 +1,13 @@
+local MarketplaceService = game:GetService("MarketplaceService")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local PurchaseSoundStyle = Knit.CreateController { Name = "PurchaseSoundStyle" }
 
---//Services
-local MarketplaceService = game:GetService("MarketplaceService")
-
---//State
 local Sounds = {
     [true] = game:WaitForChild("SoundService"):WaitForChild("Sfx"):WaitForChild("PurchaseSuccess"),
     [false] = game.SoundService.Sfx:WaitForChild("PurchaseFailed"),
 }
 
---//Public Methods
 function PurchaseSoundStyle:PlayPurchaseSound(Success)
     Sounds[Success]:Play();
 end

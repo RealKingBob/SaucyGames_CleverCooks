@@ -17,7 +17,6 @@ local ClickInfo = TweenInfo.new(.25, Enum.EasingStyle.Back, Enum.EasingDirection
 
 local MouseUpSound = game.SoundService:WaitForChild("Sfx"):WaitForChild("MouseUp");
 local MouseDownSound = game.SoundService:WaitForChild("Sfx"):WaitForChild("MouseDown");
-
 --//State
 local Styles = {};
 

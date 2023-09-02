@@ -2,7 +2,6 @@ local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local GradientFlashStyle = Knit.CreateController { Name = "GradientFlashStyle" }
 
---//Services
 local CollectionService = game:GetService("CollectionService")
 
 --//Const
@@ -12,7 +11,6 @@ local StartOffset, EndOffset = Vector2.new(-1, -1), Vector2.new(1, 1);
 --//State
 local MovingGradients = {};
 
---//Public Methods
 function GradientFlashStyle:AddGradient(Gradient)
     table.insert(MovingGradients, Gradient);
 end

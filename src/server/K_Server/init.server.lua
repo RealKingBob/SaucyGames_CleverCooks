@@ -56,8 +56,6 @@ Knit.CrateService = require(Knit.Services.CrateService);
 Knit.NpcService = require(Knit.Services.NpcService);
 Knit.GameService = require(Knit.Services.GameService);
 
---Knit.AddServices(Knit.Services)
-
 Knit.ComponentsLoaded = false;
 ----- Initialize -----
 

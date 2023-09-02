@@ -20,7 +20,7 @@ local HoverContainer = PlayerGui:WaitForChild("HoverGui");
 local HoverText = HoverContainer:WaitForChild("HoverText");
 local HoverTextBorder = HoverText:WaitForChild("Border");
 
-local Mouse = LocalPlayer:GetMouse();
+local mouse = game.Players.LocalPlayer:GetMouse();
 
 --//State
 local Styles = {};
@@ -42,7 +42,7 @@ function HoverStyle:StyleFrame(Container)
     Styles[Container] = FrameMaid;
 
     FrameMaid:GiveTask(Frame.MouseMoved:Connect(function(x, y)
-        HoverText.Position = UDim2.new(0, Mouse.X + 20, 0, Mouse.Y + 5);
+        HoverText.Position = UDim2.new(0, mouse.X + 20, 0, mouse.Y + 5);
     end))
     
     FrameMaid:GiveTask(Frame.MouseEnter:Connect(function()
