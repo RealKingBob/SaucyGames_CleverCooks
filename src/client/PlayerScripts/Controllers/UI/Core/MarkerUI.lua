@@ -3,20 +3,20 @@ local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 local MarkerUI = Knit.CreateController { Name = "MarkerUI" }
 
 local Players = game:GetService("Players")
-local CollectionService = game:GetService("CollectionService");
+local CollectionService = game:GetService("CollectionService")
 
-local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui");
+local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GameLibrary = ReplicatedStorage:WaitForChild("GameLibrary")
 
-local Markers = {};
+local Markers = {}
 
 function ClampMarkerToBorder(X,Y,Absolute)
     local MarkersGui = PlayerGui:WaitForChild("Markers")
     local Holder = MarkersGui:WaitForChild("Holder")
-    local ScreenHolder = Holder.AbsoluteSize;
+    local ScreenHolder = Holder.AbsoluteSize
 
 	X = ScreenHolder.X - X
 	Y = ScreenHolder.Y - Y
@@ -43,17 +43,17 @@ function MarkerUI:ClearMarkers()
 	for _,Stat in pairs(Markers) do
         local Marker = Stat[1]
         if Marker then
-            Marker:Destroy();
+            Marker:Destroy()
         end
     end
-    Markers ={};
+    Markers ={}
 end
 
 function MarkerUI:BoundaryCheck(Gui1, Gui2)
 	local bound = true
 	
-	local pos1, size1 = Gui1.AbsolutePosition, Gui1.AbsoluteSize;
-	local pos2, size2 = Gui2.AbsolutePosition, Gui2.AbsoluteSize;
+	local pos1, size1 = Gui1.AbsolutePosition, Gui1.AbsoluteSize
+	local pos2, size2 = Gui2.AbsolutePosition, Gui2.AbsoluteSize
 
 	local top = pos2.Y-pos1.Y
 	local bottom = pos2.Y+size2.Y-(pos1.Y+size1.Y)
@@ -70,21 +70,21 @@ function MarkerUI:BoundaryCheck(Gui1, Gui2)
 	elseif right < 0 then
 		bound = false
 	end
-	return bound;
+	return bound
 end
 
 function MarkerUI:KnitStart()
     local MarkersGui = PlayerGui:WaitForChild("Markers")
     local Holder = MarkersGui:WaitForChild("Holder")
-    local ScreenHolder = Holder.AbsoluteSize;
+    local ScreenHolder = Holder.AbsoluteSize
 
     local BillboardUI = GameLibrary:WaitForChild("BillboardUI")
     --local MarkerTemplate = BillboardUI:WaitForChild("MarkerUI")
 
     CollectionService:GetInstanceAddedSignal("Marker"):Connect(function(obj)
-        local MarkerPrefab = PlayerGui:WaitForChild("Prefabs"):WaitForChild("MarkerPrefab");
+        local MarkerPrefab = PlayerGui:WaitForChild("Prefabs"):WaitForChild("MarkerPrefab")
         local TargetMarker = MarkerPrefab:Clone() do
-            --TargetMarker:WaitForChild("RotateLabel").Visible = true;
+            --TargetMarker:WaitForChild("RotateLabel").Visible = true
             TargetMarker.Parent = Holder
             table.insert(Markers,{Marker = TargetMarker,Object = (obj:IsA("Model") and obj.PrimaryPart ~= nil and obj.PrimaryPart or obj)})
         end
@@ -93,14 +93,14 @@ function MarkerUI:KnitStart()
     CollectionService:GetInstanceRemovedSignal("Marker"):Connect(function(obj)
         for i, marker in pairs(Markers) do
             if marker.Object == (obj:IsA("Model") and obj.PrimaryPart ~= nil and obj.PrimaryPart or obj) then
-                marker.Marker:Destroy();
+                marker.Marker:Destroy()
                 table.remove(Markers, i)
             end
         end
     end)
     
     for _, obj in pairs(CollectionService:GetTagged("Marker")) do
-        local MarkerPrefab = PlayerGui:WaitForChild("Prefabs"):WaitForChild("MarkerPrefab");
+        local MarkerPrefab = PlayerGui:WaitForChild("Prefabs"):WaitForChild("MarkerPrefab")
         local TargetMarker = MarkerPrefab:Clone() do
             TargetMarker.Parent = Holder
             table.insert(Markers,{Marker = TargetMarker, Object = (obj:IsA("Model") and obj.PrimaryPart ~= nil and obj.PrimaryPart or obj)})
@@ -110,7 +110,7 @@ function MarkerUI:KnitStart()
     game:GetService("RunService").Heartbeat:Connect(function()
         for i,Stat in pairs(Markers) do
             local Marker, Object = Stat.Marker, Stat.Object
-            if not Marker or not Object then continue end;
+            if not Marker or not Object then continue end
             Marker.Visible = true
     
             local MarkerPosition, MarkerVisible = workspace.CurrentCamera:WorldToScreenPoint(Object.Position)

@@ -1,15 +1,15 @@
 local CollectionService = game:GetService("CollectionService")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
-local PlayerService = game:GetService("Players");
-local ReplicatedStorage = game:GetService("ReplicatedStorage");
+local PlayerService = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local ProximityService = Knit.CreateService {
-    Name = "ProximityService";
+    Name = "ProximityService",
     Client = {
-        TrackItem = Knit.CreateSignal();
-        CurrencyCollected = Knit.CreateSignal();
-        SetAnimations = Knit.CreateSignal();
-    };
+        TrackItem = Knit.CreateSignal(),
+        CurrencyCollected = Knit.CreateSignal(),
+        SetAnimations = Knit.CreateSignal(),
+    }
 }
 
 --[[
@@ -29,45 +29,45 @@ end]]
 
 ----- Integers -----
 
-local density = 0;
-local friction = 0;
-local elasticity = 0;
-local frictionWeight = 0;
-local elasticityWeight = 0;
+local density = 0
+local friction = 0
+local elasticity = 0
+local frictionWeight = 0
+local elasticityWeight = 0
 
-local density2 = 0.7;
-local friction2 = 0.3;
-local elasticity2 = 0.5;
-local frictionWeight2 = 1;
-local elasticityWeight2 = 1;
+local density2 = 0.7
+local friction2 = 0.3
+local elasticity2 = 0.5
+local frictionWeight2 = 1
+local elasticityWeight2 = 1
 
-local PickProperties = PhysicalProperties.new(density, friction, elasticity, frictionWeight, elasticityWeight);
-local DropProperties = PhysicalProperties.new(density2, friction2, elasticity2, frictionWeight2, elasticityWeight2);
+local PickProperties = PhysicalProperties.new(density, friction, elasticity, frictionWeight, elasticityWeight)
+local DropProperties = PhysicalProperties.new(density2, friction2, elasticity2, frictionWeight2, elasticityWeight2)
 
 ----- Private functions -----
 
 local function GetYOffset(object)
 	if object:IsA('BasePart') then
-		return object.Size.Y/2;
+		return object.Size.Y/2
 	elseif object:IsA('Model') then
-		local _, size = object:GetBoundingBox();
-		return size.Y/2;
-	end;
-end;
+		local _, size = object:GetBoundingBox()
+		return size.Y/2
+	end
+end
 
-local coldRangeVisuals = {min = 20, max = 50};
-local cookedRangeVisuals = {min = 51, max = 75};
-local burntRangeVisuals = {min = 76, max = 96};
+local coldRangeVisuals = {min = 20, max = 50}
+local cookedRangeVisuals = {min = 51, max = 75}
+local burntRangeVisuals = {min = 76, max = 96}
 
 local function percentageInRange(currentNumber, startRange, endRange)
-	if startRange > endRange then startRange, endRange = endRange, startRange; end
+	if startRange > endRange then startRange, endRange = endRange, startRange end
 
-	local normalizedNum = (currentNumber - startRange) / (endRange - startRange);
+	local normalizedNum = (currentNumber - startRange) / (endRange - startRange)
 
-	normalizedNum = math.max(0, normalizedNum);
-	normalizedNum = math.min(1, normalizedNum);
+	normalizedNum = math.max(0, normalizedNum)
+	normalizedNum = math.min(1, normalizedNum)
 
-	return (math.floor(normalizedNum * 100) / 100); -- rounds to .2 decimal places
+	return (math.floor(normalizedNum * 100) / 100) -- rounds to .2 decimal places
 end
 
 local function visualizeFood(foodObject, percentage)
@@ -147,63 +147,63 @@ function ProximityService:LinkItemToPlayer(Character,Object)
     if Character and Object then
         if Object:IsA("Model") and Object.PrimaryPart then
             --print(Object.PrimaryPart:GetAttribute("i1"))
-            local _PrimaryPart = Object.PrimaryPart;
+            local _PrimaryPart = Object.PrimaryPart
             for _,b in pairs(Object:GetChildren()) do
                 if b:IsA("BasePart") then
-                    b.CanCollide = false;
-                    b.CustomPhysicalProperties = PickProperties;
-                    b.Massless = true;
-                    b.CollisionGroup = "Food";
+                    b.CanCollide = false
+                    b.CustomPhysicalProperties = PickProperties
+                    b.Massless = true
+                    b.CollisionGroup = "Food"
                     CollectionService:AddTag(b, "CC_Food")
-                end;
-            end;
+                end
+            end
             CollectionService:AddTag(Object, "CC_Food")
             Object:SetPrimaryPartCFrame(Character:FindFirstChild("HumanoidRootPart").CFrame)
-            _PrimaryPart.HandJoint.Attachment1 = Character:FindFirstChild("Head").RightGripAttachment;
-            _PrimaryPart.FaceJoint.Attachment1 = Character:FindFirstChild("Head").FaceFrontAttachment;
+            _PrimaryPart.HandJoint.Attachment1 = Character:FindFirstChild("Head").RightGripAttachment
+            _PrimaryPart.FaceJoint.Attachment1 = Character:FindFirstChild("Head").FaceFrontAttachment
 
 
-            Character.PrimaryPart.ProximityPrompt.Enabled = true;
-            _PrimaryPart.ProximityPrompt.Enabled = false;
+            Character.PrimaryPart.ProximityPrompt.Enabled = true
+            _PrimaryPart.ProximityPrompt.Enabled = false
             --print("FALSE")
         else
-            Object.CanCollide = false;
-            Object.Massless = true;
-            Object.CollisionGroup = "Food";
-            Object.CFrame = Character:FindFirstChild("HumanoidRootPart").CFrame;
-            Object.HandJoint.Attachment1 = Character:FindFirstChild("Head").RightGripAttachment;
-            Object.FaceJoint.Attachment1 = Character:FindFirstChild("Head").FaceFrontAttachment;
-            Object.CustomPhysicalProperties = PickProperties;
-            Character.PrimaryPart.ProximityPrompt.Enabled = true;
-            Object.ProximityPrompt.Enabled = false;
+            Object.CanCollide = false
+            Object.Massless = true
+            Object.CollisionGroup = "Food"
+            Object.CFrame = Character:FindFirstChild("HumanoidRootPart").CFrame
+            Object.HandJoint.Attachment1 = Character:FindFirstChild("Head").RightGripAttachment
+            Object.FaceJoint.Attachment1 = Character:FindFirstChild("Head").FaceFrontAttachment
+            Object.CustomPhysicalProperties = PickProperties
+            Character.PrimaryPart.ProximityPrompt.Enabled = true
+            Object.ProximityPrompt.Enabled = false
             CollectionService:AddTag(Object, "CC_Food")
             --print("false!!")
-        end;
-    end;
-end;
+        end
+    end
+end
 
 function fixHighlight(obj)
     for _, obj_item in pairs(obj:GetDescendants()) do
         if obj_item:IsA("Highlight") then
-            obj_item.Parent = ReplicatedStorage:WaitForChild("HiddenObjects");
+            obj_item.Parent = ReplicatedStorage:WaitForChild("HiddenObjects")
             task.wait(0.001)
-            obj_item.Parent = obj;
+            obj_item.Parent = obj
         end
     end
 end
 
 function ProximityService:UnlinkItemToPlayer(Character,Object)
     local player = PlayerService:GetPlayerFromCharacter(Character)
-    local PartyService = Knit.GetService("PartyService");
-	local PartyMembers = {};
-	local PartyOwner = player;
+    local PartyService = Knit.GetService("PartyService")
+	local PartyMembers = {}
+	local PartyOwner = player
 
 	if PartyService:IsPlayerInParty(player) == true then
-        local PartyInfo = PartyService:FindPartyFromPlayer(player);
+        local PartyInfo = PartyService:FindPartyFromPlayer(player)
 		PartyOwner = PlayerService:GetPlayerByUserId(PartyInfo.OwnerId)
         local Party = PartyService:GetParty(player)
 		for _, memberInParty in pairs(Party.Members) do
-			local memberIdToPlayer = memberInParty.Player;
+			local memberIdToPlayer = memberInParty.Player
 			table.insert(PartyMembers, memberIdToPlayer)
 		end
     else
@@ -213,144 +213,144 @@ function ProximityService:UnlinkItemToPlayer(Character,Object)
 	if Character and Object then
 		if Object:IsA("Model") and Object.PrimaryPart then
             --print(Object.PrimaryPart:GetAttribute("i1"))
-			local _PrimaryPart = Object.PrimaryPart;
-			_PrimaryPart:SetAttribute("Owner", PartyOwner.Name);
-			_PrimaryPart.HandJoint.Attachment1 = nil;
+			local _PrimaryPart = Object.PrimaryPart
+			_PrimaryPart:SetAttribute("Owner", PartyOwner.Name)
+			_PrimaryPart.HandJoint.Attachment1 = nil
 
 			if _PrimaryPart:GetAttribute("Type") == "Ingredient" then
-				Object.Parent = workspace.IngredientAvailable;
+				Object.Parent = workspace.IngredientAvailable
 			elseif _PrimaryPart:GetAttribute("Type") == "Food" then
                 --local cookingPercentage = _PrimaryPart:GetAttribute("CookingPercentage")
-                --visualizeFood(Object, cookingPercentage);
-				Object.Parent = workspace.FoodAvailable;
+                --visualizeFood(Object, cookingPercentage)
+				Object.Parent = workspace.FoodAvailable
                 --task.spawn(fixHighlight, Object)
-			end;
+			end
 
             CollectionService:RemoveTag(Object, "CC_Food")
 
 			for _,part in pairs(Object:GetChildren()) do
 				if part:IsA("BasePart") then
-                    part.CollisionGroup = "Food";
-					part.CanCollide = true;
-					part.Massless = false;
-					part.CustomPhysicalProperties = DropProperties;
+                    part.CollisionGroup = "Food"
+					part.CanCollide = true
+					part.Massless = false
+					part.CustomPhysicalProperties = DropProperties
                     CollectionService:RemoveTag(part, "CC_Food")
                     part:SetNetworkOwner(game.Players:GetPlayerFromCharacter(Character))
-				end;
-			end;
+				end
+			end
 
-        	--_PrimaryPart.Position = Character.HumanoidRootPart.Position + Character.HumanoidRootPart.CFrame.lookVector * 4 + Vector3.new(0,GetYOffset(Object),0);
+        	--_PrimaryPart.Position = Character.HumanoidRootPart.Position + Character.HumanoidRootPart.CFrame.lookVector * 4 + Vector3.new(0,GetYOffset(Object),0)
             
-			Character.PrimaryPart.ProximityPrompt.Enabled = false;
-            _PrimaryPart.ProximityPrompt.Enabled = true;
+			Character.PrimaryPart.ProximityPrompt.Enabled = false
+            _PrimaryPart.ProximityPrompt.Enabled = true
 		elseif Object:IsA("BasePart") then
-			Object:SetAttribute("Owner", PartyOwner.Name);
-			Object.HandJoint.Attachment1 = nil;
+			Object:SetAttribute("Owner", PartyOwner.Name)
+			Object.HandJoint.Attachment1 = nil
 			if Object:GetAttribute("Type") == "Ingredient" then
-				Object.Parent = workspace.IngredientAvailable;
+				Object.Parent = workspace.IngredientAvailable
 			elseif Object:GetAttribute("Type") == "Food" then
                 --local cookingPercentage = Object:GetAttribute("CookingPercentage")
-                --visualizeFood(Object, cookingPercentage);
-				Object.Parent = workspace.FoodAvailable;
+                --visualizeFood(Object, cookingPercentage)
+				Object.Parent = workspace.FoodAvailable
                 --task.spawn(fixHighlight, Object)
-			end;
-            Object.CollisionGroup = "Food";
-			Object.CanCollide = true;
-			Object.Massless = false;
+			end
+            Object.CollisionGroup = "Food"
+			Object.CanCollide = true
+			Object.Massless = false
             CollectionService:RemoveTag(Object, "CC_Food")
-			Object.CustomPhysicalProperties = DropProperties;
+			Object.CustomPhysicalProperties = DropProperties
 
             Object:SetNetworkOwner(game.Players:GetPlayerFromCharacter(Character))
 
-			Object.Position = Character.HumanoidRootPart.Position + Character.HumanoidRootPart.CFrame.lookVector * 4 + Vector3.new(0,GetYOffset(Object),0);
-			Character.PrimaryPart.ProximityPrompt.Enabled = false;
-            Object.ProximityPrompt.Enabled = true;
-		end;
-	end;
-end;
+			Object.Position = Character.HumanoidRootPart.Position + Character.HumanoidRootPart.CFrame.lookVector * 4 + Vector3.new(0,GetYOffset(Object),0)
+			Character.PrimaryPart.ProximityPrompt.Enabled = false
+            Object.ProximityPrompt.Enabled = true
+		end
+	end
+end
 
 function ProximityService:PickUpIngredient(Character, Ingredient)
     if Character and Ingredient then
-        Ingredient.Parent = Character;
+        Ingredient.Parent = Character
 
-        local Player = PlayerService:GetPlayerFromCharacter(Character);
-        local Humanoid = Character:WaitForChild("Humanoid");
-        local Animator = Humanoid:FindFirstChildOfClass("Animator");
-        local AnimationTracks = Animator:GetPlayingAnimationTracks();
+        local Player = PlayerService:GetPlayerFromCharacter(Character)
+        local Humanoid = Character:WaitForChild("Humanoid")
+        local Animator = Humanoid:FindFirstChildOfClass("Animator")
+        local AnimationTracks = Animator:GetPlayingAnimationTracks()
 
         for _, track in pairs (AnimationTracks) do
-            track:Stop();
-        end;
+            track:Stop()
+        end
 
         --print(Ingredient, Ingredient:GetAttribute("i1"), Ingredient.PrimaryPart:GetAttribute("i1"))
 
-		self.Client.SetAnimations:Fire(Player, {"rbxassetid://8029004455","rbxassetid://8028996064","rbxassetid://8029001222"}); -- idle, walk, jump animation for standing up
-        self:LinkItemToPlayer(Character,Ingredient);
+		self.Client.SetAnimations:Fire(Player, {"rbxassetid://8029004455","rbxassetid://8028996064","rbxassetid://8029001222"}) -- idle, walk, jump animation for standing up
+        self:LinkItemToPlayer(Character,Ingredient)
 
         self.Client.TrackItem:Fire(Player, true, Ingredient) -- self:GetNearestPan(Character.PrimaryPart.Position)
         
-        Player:FindFirstChild("Data").GameValues.Ingredient.Value = Ingredient;
+        Player:FindFirstChild("Data").GameValues.Ingredient.Value = Ingredient
         if Character:FindFirstChild("Ingredient") then
-            Character:FindFirstChild("Ingredient").Value = Ingredient;
+            Character:FindFirstChild("Ingredient").Value = Ingredient
         end
-    end;
-end;
+    end
+end
 
 function ProximityService:PickUpFood(Character, Food)
     if Character and Food then
-        Food.Parent = Character;
+        Food.Parent = Character
 
-        local Player = PlayerService:GetPlayerFromCharacter(Character);
+        local Player = PlayerService:GetPlayerFromCharacter(Character)
 
-        local Humanoid = Character:WaitForChild("Humanoid");
-        local Animator = Humanoid:FindFirstChildOfClass("Animator");
-        local AnimationTracks = Animator:GetPlayingAnimationTracks();
+        local Humanoid = Character:WaitForChild("Humanoid")
+        local Animator = Humanoid:FindFirstChildOfClass("Animator")
+        local AnimationTracks = Animator:GetPlayingAnimationTracks()
 
         for _, track in pairs (AnimationTracks) do
-            track:Stop();
-        end;
+            track:Stop()
+        end
 
-		self.Client.SetAnimations:Fire(Player, {"rbxassetid://8029004455","rbxassetid://8028996064","rbxassetid://8029001222"}); -- idle, walk, jump animation for standing up
-        self:LinkItemToPlayer( Character,Food);
+		self.Client.SetAnimations:Fire(Player, {"rbxassetid://8029004455","rbxassetid://8028996064","rbxassetid://8029001222"}) -- idle, walk, jump animation for standing up
+        self:LinkItemToPlayer( Character,Food)
         
         self.Client.TrackItem:Fire(Player, true, Food) -- self:GetNearestDelivery(Character.PrimaryPart.Position)
         
-        Player:FindFirstChild("Data").GameValues.Ingredient.Value = Food;
+        Player:FindFirstChild("Data").GameValues.Ingredient.Value = Food
         if Character:FindFirstChild("Ingredient") then
-            Character:FindFirstChild("Ingredient").Value = Food;
+            Character:FindFirstChild("Ingredient").Value = Food
         end
-    end;
-end;
+    end
+end
 
 function ProximityService:DropItem( Character, Item)
-    --print( Character, Item);
+    --print( Character, Item)
     if Character and Item then
-        local Ingredient = Character:FindFirstChild("Ingredient").Value;
-		local _Ingredient = Character:FindFirstChild(Ingredient.Name);
+        local Ingredient = Character:FindFirstChild("Ingredient").Value
+		local _Ingredient = Character:FindFirstChild(Ingredient.Name)
 
-        self:UnlinkItemToPlayer( Character, _Ingredient);
+        self:UnlinkItemToPlayer( Character, _Ingredient)
 
-        local Player = PlayerService:GetPlayerFromCharacter(Character);
+        local Player = PlayerService:GetPlayerFromCharacter(Character)
 
-        local Humanoid = Character:WaitForChild("Humanoid");
-        local Animator = Humanoid:FindFirstChildOfClass("Animator");
-        local AnimationTracks = Animator:GetPlayingAnimationTracks();
+        local Humanoid = Character:WaitForChild("Humanoid")
+        local Animator = Humanoid:FindFirstChildOfClass("Animator")
+        local AnimationTracks = Animator:GetPlayingAnimationTracks()
 
         for _, track in pairs (AnimationTracks) do
-            track:Stop();
-        end;
+            track:Stop()
+        end
 
         self.Client.TrackItem:Fire(Player, false)
 
-		self.Client.SetAnimations:Fire(Player, {"rbxassetid://8028990292","rbxassetid://8028984908","rbxassetid://8028993547"}); -- idle, walk, jump animation for normal
+		self.Client.SetAnimations:Fire(Player, {"rbxassetid://8028990292","rbxassetid://8028984908","rbxassetid://8028993547"}) -- idle, walk, jump animation for normal
 
-        task.wait(.3);
-        Player:FindFirstChild("Data").GameValues.Ingredient.Value = nil;
+        task.wait(.3)
+        Player:FindFirstChild("Data").GameValues.Ingredient.Value = nil
         if Character:FindFirstChild("Ingredient") then
-            Character:FindFirstChild("Ingredient").Value = nil;
+            Character:FindFirstChild("Ingredient").Value = nil
         end
-    end;
-end;
+    end
+end
 
 function ProximityService:KnitStart()
     

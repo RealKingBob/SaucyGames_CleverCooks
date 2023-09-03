@@ -15,14 +15,14 @@ function CollisionController:KnitInit()
     local function onDescendantAdded(descendant)
         if descendant:IsA("BasePart") then
             --PhysicsService:SetPartCollisionGroup(descendant, "NoCollision")
-            descendant.CollisionGroup = "NoCollision";
+            descendant.CollisionGroup = "NoCollision"
         end
     end
 
     local function onDescendantRemoving(descendant)
         if descendant:IsA("BasePart") then
             --PhysicsService:SetPartCollisionGroup(descendant, "NoCollision")
-            descendant.CollisionGroup = "Food";
+            descendant.CollisionGroup = "Food"
             --print("descendant.CollisionGroup:", descendant:GetFullName(), descendant.CollisionGroup)
         end
     end
@@ -45,10 +45,10 @@ function CollisionController:KnitInit()
     end
 
     for _, player in ipairs(Players:GetPlayers()) do
-        coroutine.wrap(onPlayerAdded)(player);
+        coroutine.wrap(onPlayerAdded)(player)
     end    
 
-    Players.PlayerAdded:Connect(onPlayerAdded);
+    Players.PlayerAdded:Connect(onPlayerAdded)
 end
 
 

@@ -1,103 +1,102 @@
 ----- Services -----
-local ReplicatedStorage = game:GetService("ReplicatedStorage");
-local CollectionService = game:GetService("CollectionService");
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CollectionService = game:GetService("CollectionService")
+
 
 ----- Loaded Modules -----
 local Knit = require(ReplicatedStorage.Packages.Knit)
-local Signal = require(Knit.Util.Signal);
-local PlayerSettings = require(Knit.ReplicatedModules.SettingsUtil);
-local SystemInfo = require(Knit.ReplicatedAssets.SystemInfo);
+local Signal = require(Knit.Util.Signal)
 
 ----- Tournament Modes -----
-local SandboxMode = require(Knit.Modules.Modes.SandboxMode);
---local RoundMode = require(Knit.Modules.Modes.RoundMode);
+local SandboxMode = require(Knit.Modules.Modes.SandboxMode)
+local Config = require(Knit.Shared.Modules.Config)
 
 ----- Settings -----
 
 ----- GameService -----
 local GameService = Knit.CreateService {
-    Name = "GameService";
-    TimeLeft = Signal.new();
+    Name = "GameService",
+    TimeLeft = Signal.new(),
     Client = {
-        SetEnvironmentSignal = Knit.CreateSignal();
-        AdjustTimeSignal = Knit.CreateSignal();
-        NotEnoughPlayersSignal = Knit.CreateSignal();
-        DisplayLobbyUI = Knit.CreateSignal();
-        UpdatePotatoText = Knit.CreateSignal();
-        ResultSignal = Knit.CreateSignal();
-        UpdateMapQueue = Knit.CreateSignal();
+        SetEnvironmentSignal = Knit.CreateSignal(),
+        AdjustTimeSignal = Knit.CreateSignal(),
+        NotEnoughPlayersSignal = Knit.CreateSignal(),
+        DisplayLobbyUI = Knit.CreateSignal(),
+        UpdatePotatoText = Knit.CreateSignal(),
+        ResultSignal = Knit.CreateSignal(),
+        UpdateMapQueue = Knit.CreateSignal(),
 
-        UpdateGameStateSignal = Knit.CreateSignal();
-        HunterCameraSignal = Knit.CreateSignal();
-        KillCam = Knit.CreateSignal();
+        UpdateGameStateSignal = Knit.CreateSignal(),
+        HunterCameraSignal = Knit.CreateSignal(),
+        KillCam = Knit.CreateSignal(),
 
-        SetLighting = Knit.CreateSignal();
-        TrapControl = Knit.CreateSignal();
+        SetLighting = Knit.CreateSignal(),
+        TrapControl = Knit.CreateSignal(),
 
-        BoostCheck = Knit.CreateSignal();  
-        ChangeSetting = Knit.CreateSignal();  
-        SetIdle = Knit.CreateSignal();
-        DisplayNametags = Knit.CreateSignal();
+        BoostCheck = Knit.CreateSignal(),
+        ChangeSetting = Knit.CreateSignal(),
+        SetIdle = Knit.CreateSignal(),
+        DisplayNametags = Knit.CreateSignal(),
 
-        AdjustDashCooldown = Knit.CreateSignal();
-        AdjustClickCooldown = Knit.CreateSignal();
-        ToolAttack = Knit.CreateSignal();
-        MapData = Knit.CreateSignal();
+        AdjustDashCooldown = Knit.CreateSignal(),
+        AdjustClickCooldown = Knit.CreateSignal(),
+        ToolAttack = Knit.CreateSignal(),
+        MapData = Knit.CreateSignal(),
 
-        HEffect = Knit.CreateSignal();
-        GameC = Knit.CreateSignal();
+        HEffect = Knit.CreateSignal(),
+        GameC = Knit.CreateSignal(),
 
-        UpdateWinner = Knit.CreateSignal();
-    };
+        UpdateWinner = Knit.CreateSignal(),
+    }
 }
 
 ----- GameService -----
 -- Tables
-local Cooldown = {};
-local PartTouchCooldown = {};
-local PartTouchConnections = {};
+local Cooldown = {}
+local PartTouchCooldown = {}
+local PartTouchConnections = {}
 
-GameService.Intermission = nil;
-GameService.PreviousMap = nil;
-GameService.PreviousMode = nil;
-GameService.GameMode = nil;
+GameService.Intermission = nil
+GameService.PreviousMap = nil
+GameService.PreviousMode = nil
+GameService.GameMode = nil
 
-GameService.PlayersTracked = {};
-GameService.GetCurrentHunters = {};
-GameService.GameState = nil;
-GameService.SetGameplay = false;
+GameService.PlayersTracked = {}
+GameService.GetCurrentHunters = {}
+GameService.GameState = nil
+GameService.SetGameplay = false
 
-GameService.IsTournament = false;
-GameService.TournamentMode = nil;
+GameService.IsTournament = false
+GameService.TournamentMode = nil
 
 
-local currentMap = nil;
-local nextMap = nil;
-local boostedMap = false;
+local currentMap = nil
+local nextMap = nil
+local boostedMap = false
 
-local currentMode = nil;
-local nextMode = nil;
-local boostedMode = false;
+local currentMode = nil
+local nextMode = nil
+local boostedMode = false
 
-local customMap = nil;
-local customMode = nil;
+local customMap = nil
+local customMode = nil
 
-customMap = Knit.Config.CUSTOM_MAP;
-customMode = Knit.Config.CUSTOM_MODE;
+customMap = Config.CUSTOM_MAP
+customMode = Config.CUSTOM_MODE
 
 function GameService:ClearCooldowns()
-    Cooldown = {};
-    PartTouchCooldown = {};
-    PartTouchConnections = {};
+    Cooldown = {}
+    PartTouchCooldown = {}
+    PartTouchConnections = {}
     return
 end
 
 function GameService:GetGameRound()
-    return self.GameRound;
+    return self.GameRound
 end
 
 function GameService:SetGameRound(gameMode)
-    self.GameRound = gameMode;
+    self.GameRound = gameMode
 end
 
 function GameService:ForceMode(modeName)
@@ -109,50 +108,50 @@ end
 function GameService:ForceMap(mapName)
     if mapName then
         nextMap = mapName
-        boostedMap = true;
+        boostedMap = true
     end
 
     --[[self.Client.UpdateMapQueue:FireAll({
         CurrentMap = currentMap,
         NextMap = nextMap,
         Boosted = boostedMap,
-    });]]
+    })]]
 end
 
 function GameService:GetGameState()
-    return self.GameState;
+    return self.GameState
 end
 
 function GameService:GetPreviousMap()
     if self.PreviousMap then
-        return self.PreviousMap;
+        return self.PreviousMap
     end
-    return nil;
+    return nil
 end
 
 function GameService:SetPreviousMap(mapName)
-    self.PreviousMap = mapName;
+    self.PreviousMap = mapName
 end
 
 function GameService:GetPreviousMode()
-    return self.PreviousMode;
+    return self.PreviousMode
 end
 
 function GameService:SetPreviousMode(modeName)
-    self.PreviousMode = modeName;
+    self.PreviousMode = modeName
 end
 
 function GameService:SetState(state)
-    self.GameState = state;
+    self.GameState = state
     self.Client.UpdateGameStateSignal:FireAll(state)
 end
 
 function GameService.Client:GetPreviousMode()
-    return self.Server:GetPreviousMode();
+    return self.Server:GetPreviousMode()
 end
 
 function GameService.Client:GetGameState()
-    return self.Server:GetGameState();
+    return self.Server:GetGameState()
 end
 
 function GameService.Client:GetMapQueue()
@@ -180,14 +179,14 @@ function GameService:ClearTracked(player)
             return
         end
     end
-    self.PlayersTracked = {};
+    self.PlayersTracked = {}
 end
 
 function GameService:GetPlayerTracked(player)
     if player and self.PlayersTracked[player.UserId] then
-        return self.PlayersTracked[player.UserId];
+        return self.PlayersTracked[player.UserId]
     else
-        return nil;
+        return nil
     end
 end
 
@@ -200,11 +199,11 @@ function GameService:SetLighting(MapName, Player)
     end
     print(CurrentMapName)
     print("[GameService]: MAP LIGHTING:", MapName, MapSettings[CurrentMapName].Lighting)
-    local LightingInfo = MapSettings[CurrentMapName].Lighting;
+    local LightingInfo = MapSettings[CurrentMapName].Lighting
     if Player then
         self.Client.SetLighting:Fire(Player, LightingInfo)
     else
-        for _, player : Player in pairs(CollectionService:GetTagged(Knit.Config.ALIVE_TAG)) do
+        for _, player : Player in pairs(CollectionService:GetTagged(Config.ALIVE_TAG)) do
             self.Client.SetLighting:Fire(player, LightingInfo)
         end
     end
@@ -220,10 +219,11 @@ function GameService.Client:GetLighting()
     end
     --print(MapSettings[CurrentMapName], CurrentMapName)
 
-    return MapSettings[CurrentMapName].Lighting;
+    return MapSettings[CurrentMapName].Lighting
 end
 
 function GameService:ChangeSetting(player, SettingName, Option)
+    local PlayerSettings = require(Knit.Shared.Modules.SettingsUtil)
     --print("CHANGE SETTING:",player, SettingName, Option, PlayerSettings[SettingName].Options[Option][2])
     if SettingName == "Music" then
         local AudioService = Knit.GetService("AudioService")
@@ -244,26 +244,26 @@ function GameService:ChangeSetting(player, SettingName, Option)
 end
 
 function GameService.Client:GetGameResults(player)
-    return self:GetGameResults(player);
+    return self:GetGameResults(player)
 end
 
 if customMap ~= nil then
-    nextMap = customMap;
+    nextMap = customMap
 else
-    --nextMap = getRandomMap();
+    --nextMap = getRandomMap()
 end
 
 if customMode ~= nil then
-    nextMode = customMode;
+    nextMode = customMode
 else
-    --nextMode = getRandomMode();
+    --nextMode = getRandomMode()
 end
 
 function GameService:StartGame(gamemode : string)
     if gamemode == "Round" then
-        --self.GameMode = RoundMode:StartMode();
+        --self.GameMode = RoundMode:StartMode()
     else
-        self.GameMode = SandboxMode:StartMode();
+        self.GameMode = SandboxMode:StartMode()
     end
 end
 
@@ -274,31 +274,32 @@ function GameService:KnitInit()
     self.Client.BoostCheck:Connect(function(player, mapName)
         print(player, mapName)
         if player and mapName then
+            local SystemInfo = require(Knit.Shared.Assets.SystemInfo)
             local mapTitle = SystemInfo.getMapTitleFromName(mapName)
             --print(mapTitle)
             if mapTitle then
                 nextMap = mapTitle
-                boostedMap = true;
+                boostedMap = true
             end
     
             --[[self.Client.UpdateMapQueue:FireAll({
                 CurrentMap = currentMap,
                 NextMap = nextMap,
                 Boosted = boostedMap,
-            });]]
+            })]]
         end
     end)
 
     self.Client.ChangeSetting:Connect(function(player, SettingName, Option)
         --print(player, SettingName, Option)
-        self:ChangeSetting(player, SettingName, Option);
+        self:ChangeSetting(player, SettingName, Option)
     end)
 end
 
 
 function GameService:KnitStart()
     task.wait(5)
-    self:StartGame();
+    self:StartGame()
 end
 
 return GameService

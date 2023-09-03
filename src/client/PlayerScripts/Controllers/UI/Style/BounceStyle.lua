@@ -19,7 +19,7 @@ local function Bounce(Container)
     local Frame = Container--:FindFirstChildWhichIsA("Frame")
     local isHorizontal = Frame:GetAttribute("Horizontal")
 
-    local Tween;
+    local Tween
 
     if isHorizontal then
         Tween = TweenService:Create(Frame, BounceInfo, {
@@ -55,7 +55,7 @@ function BounceStyle:KnitStart()
     end)
 
     for _,v in pairs(CollectionService:GetTagged("BounceStyle")) do
-        self:StyleFrame(v);
+        self:StyleFrame(v)
     end
 
     RunService.RenderStepped:Connect(function()

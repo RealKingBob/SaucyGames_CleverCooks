@@ -1,21 +1,41 @@
---[[
+--[=[
+	@interface Middleware
+	.Inbound ClientMiddleware?
+	.Outbound ClientMiddleware?
+	@within KnitClient
+]=]
+type Middleware = {
+	Inbound: ClientMiddleware?,
+	Outbound: ClientMiddleware?,
+}
 
-	Knit.CreateController(controller): Controller
-	Knit.AddControllers(folder): Controller[]
-	Knit.AddControllersDeep(folder): Controller[]
-	Knit.GetService(serviceName): Service
-	Knit.GetController(controllerName): Controller
-	Knit.Start(): Promise<void>
-	Knit.OnStart(): Promise<void>
+--[=[
+	@type ClientMiddlewareFn (args: {any}) -> (shouldContinue: boolean, ...: any)
+	@within KnitClient
 
---]]
+	For more info, see [ClientComm](https://sleitnick.github.io/RbxUtil/api/ClientComm/) documentation.
+]=]
+type ClientMiddlewareFn = (args: {any}) -> (boolean, ...any)
 
+--[=[
+	@type ClientMiddleware {ClientMiddlewareFn}
+	@within KnitClient
+	An array of client middleware functions.
+]=]
+type ClientMiddleware = {ClientMiddlewareFn}
+
+--[=[
+	@type PerServiceMiddleware {[string]: Middleware}
+	@within KnitClient
+]=]
+type PerServiceMiddleware = {[string]: Middleware}
 
 --[=[
 	@interface ControllerDef
 	.Name string
 	.[any] any
 	@within KnitClient
+	Used to define a controller when creating it in `CreateController`.
 ]=]
 type ControllerDef = {
 	Name: string,
@@ -44,17 +64,25 @@ type Service = {
 
 --[=[
 	@interface KnitOptions
-	.ServicePromises boolean -- Defaults to `true`
+	.ServicePromises boolean?
+	.Middleware Middleware?
+	.PerServiceMiddleware PerServiceMiddleware?
 	@within KnitClient
 
-	`ServicePromises` defaults to `true` and indicates if service methods use promises.
+	- `ServicePromises` defaults to `true` and indicates if service methods use promises.
+	- Each service will go through the defined middleware, unless the service
+	has middleware defined in `PerServiceMiddleware`.
 ]=]
 type KnitOptions = {
 	ServicePromises: boolean,
+	Middleware: Middleware?,
+	PerServiceMiddleware: PerServiceMiddleware?,
 }
 
 local defaultOptions: KnitOptions = {
-	ServicePromises = true;
+	ServicePromises = true,
+	Middleware = nil,
+	PerServiceMiddleware = {},
 }
 
 local selectedOptions = nil
@@ -98,13 +126,6 @@ local startedComplete = false
 local onStartedComplete = Instance.new("BindableEvent")
 
 
-local function BuildService(serviceName: string, folder: Instance): Service
-	local service = ClientComm.new(folder, selectedOptions.ServicePromises):BuildObject()
-	services[serviceName] = service
-	return service
-end
-
-
 local function DoesControllerExist(controllerName: string): boolean
 	local controller: Controller? = controllers[controllerName]
 	return controller ~= nil
@@ -119,10 +140,43 @@ local function GetServicesFolder()
 end
 
 
+local function GetMiddlewareForService(serviceName: string)
+	local knitMiddleware = selectedOptions.Middleware or {}
+	local serviceMiddleware = selectedOptions.PerServiceMiddleware[serviceName]
+	return serviceMiddleware or knitMiddleware
+end
+
+
+local function BuildService(serviceName: string)
+	local folder = GetServicesFolder()
+	local middleware = GetMiddlewareForService(serviceName)
+	local clientComm = ClientComm.new(folder, selectedOptions.ServicePromises, serviceName)
+	local service = clientComm:BuildObject(middleware.Inbound, middleware.Outbound)
+	services[serviceName] = service
+	return service
+end
+
+
 --[=[
-	@param controllerDefinition ControllerDef
-	@return Controller
 	Creates a new controller.
+
+	:::caution
+	Controllers must be created _before_ calling `Knit.Start()`.
+	:::
+	```lua
+	-- Create a controller
+	local MyController = Knit.CreateController {
+		Name = "MyController",
+	}
+
+	function MyController:KnitStart()
+		print("MyController started")
+	end
+
+	function MyController:KnitInit()
+		print("MyController initialized")
+	end
+	```
 ]=]
 function KnitClient.CreateController(controllerDef: ControllerDef): Controller
 	assert(type(controllerDef) == "table", "Controller must be a table; got " .. type(controllerDef))
@@ -136,8 +190,6 @@ end
 
 
 --[=[
-	@param parent Instance
-	@return controllers: {Controller}
 	Requires all the modules that are children of the given parent. This is an easy
 	way to quickly load all controllers that might be in a folder.
 	```lua
@@ -155,11 +207,9 @@ end
 
 
 --[=[
-	@param parent Instance
-	@return controllers: {Controller}
 	Requires all the modules that are descendants of the given parent.
 ]=]
-function KnitClient.AddControllersDeep(parent: Instance): {any}
+function KnitClient.AddControllersDeep(parent: Instance): {Controller}
 	local addedControllers = {}
 	for _,v in ipairs(parent:GetDescendants()) do
 		if not v:IsA("ModuleScript") then continue end
@@ -170,11 +220,49 @@ end
 
 
 --[=[
-	@param serviceName string
-	@return Service?
 	Returns a Service object which is a reflection of the remote objects
-	within the Client table of the given service. Returns `nil` if the
+	within the Client table of the given service. Throws an error if the
 	service is not found.
+
+	If a service's Client table contains RemoteSignals and/or RemoteProperties,
+	these values are reflected as
+	[ClientRemoteSignals](https://sleitnick.github.io/RbxUtil/api/ClientRemoteSignal) and
+	[ClientRemoteProperties](https://sleitnick.github.io/RbxUtil/api/ClientRemoteProperty).
+
+	```lua
+	-- Server-side service creation:
+	local MyService = Knit.CreateService {
+		Name = "MyService",
+		Client = {
+			MySignal = Knit.CreateSignal(),
+			MyProperty = Knit.CreateProperty("Hello"),
+		},
+	}
+	function MyService:AddOne(player, number)
+		return number + 1
+	end
+
+	-------------------------------------------------
+
+	-- Client-side service reflection:
+	local MyService = Knit.GetService("MyService")
+
+	-- Call a method:
+	local num = MyService:AddOne(5) --> 6
+
+	-- Fire a signal to the server:
+	MyService.MySignal:Fire("Hello")
+
+	-- Listen for signals from the server:
+	MyService.MySignal:Connect(function(message)
+		print(message)
+	end)
+
+	-- Observe the initial value and changes to properties:
+	MyService.MyProperty:Observe(function(value)
+		print(value)
+	end)
+	```
 
 	:::caution
 	Services are only exposed to the client if the service has remote-based
@@ -184,29 +272,32 @@ end
 	:::
 ]=]
 function KnitClient.GetService(serviceName: string): Service
+	local service = services[serviceName]
+	if service then
+		return service
+	end
+	assert(started, "Cannot call GetService until Knit has been started")
 	assert(type(serviceName) == "string", "ServiceName must be a string; got " .. type(serviceName))
-	local folder: Instance? = GetServicesFolder():FindFirstChild(serviceName)
-	assert(folder ~= nil, "Could not find service \"" .. serviceName .. "\". Check the service name and that the service has client-facing methods/RemoteSignals/RemoteProperties.")
-	return services[serviceName] or BuildService(serviceName, folder :: Instance)
+	return BuildService(serviceName)
 end
 
 
 --[=[
-	@param controllerName string
-	@return Controller?
 	Gets the controller by name. Throws an error if the controller
 	is not found.
 ]=]
 function KnitClient.GetController(controllerName: string): Controller
-	assert(type(controllerName) == "string", "ControllerName must be a string; got " .. type(controllerName))
 	local controller = controllers[controllerName]
-	assert(controller ~= nil, " Could not find controller \"" .. controllerName .. "\". Check to verify a controller with this name exists.")
-	return controller
+	if controller then
+		return controller
+	end
+	assert(started, "Cannot call GetController until Knit has been started")
+	assert(type(controllerName) == "string", "ControllerName must be a string; got " .. type(controllerName))
+	error("Could not find controller \"" .. controllerName .. "\". Check to verify a controller with this name exists.", 2)
 end
 
 
 --[=[
-	@param options KnitOptions?
 	@return Promise
 	Starts Knit. Should only be called once per client.
 	```lua
@@ -236,15 +327,25 @@ function KnitClient.Start(options: KnitOptions?)
 	else
 		assert(typeof(options) == "table", "KnitOptions should be a table or nil; got " .. typeof(options))
 		selectedOptions = options
+		for k,v in pairs(defaultOptions) do
+			if selectedOptions[k] == nil then
+				selectedOptions[k] = v
+			end
+		end
+	end
+	if type(selectedOptions.PerServiceMiddleware) ~= "table" then
+		selectedOptions.PerServiceMiddleware = {}
 	end
 
 	return Promise.new(function(resolve)
 
 		-- Init:
 		local promisesStartControllers = {}
+
 		for _,controller in pairs(controllers) do
 			if type(controller.KnitInit) == "function" then
 				table.insert(promisesStartControllers, Promise.new(function(r)
+					debug.setmemorycategory(controller.Name)
 					controller:KnitInit()
 					r()
 				end))
@@ -258,7 +359,10 @@ function KnitClient.Start(options: KnitOptions?)
 		-- Start:
 		for _,controller in pairs(controllers) do
 			if type(controller.KnitStart) == "function" then
-				task.spawn(controller.KnitStart, controller)
+				task.spawn(function()
+					debug.setmemorycategory(controller.Name)
+					controller:KnitStart()
+				end)
 			end
 		end
 

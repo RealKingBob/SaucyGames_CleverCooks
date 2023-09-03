@@ -3,13 +3,13 @@ local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local HealthUI = Knit.CreateController { Name = "HealthUI" }
 
-local LocalPlayer = Players.LocalPlayer;
+local LocalPlayer = Players.LocalPlayer
 
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui");
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local HealthConnection, MaxHealthConnection;
+local HealthConnection, MaxHealthConnection
 
-local prevHealth = nil;
+local prevHealth = nil
 
 function HealthUI:DamageEffect(char)
 	
@@ -29,7 +29,7 @@ function HealthUI:Update(Humanoid)
 
     local MainUI = PlayerGui:WaitForChild("Main")
     local BottomFrame = MainUI:WaitForChild("BottomFrame")
-    local BarsFrame = BottomFrame:WaitForChild("BarsFrame");
+    local BarsFrame = BottomFrame:WaitForChild("BarsFrame")
     local HealthFrame = BarsFrame:WaitForChild("Health")
     local HealthBar = HealthFrame:WaitForChild("Bar")
     local WhiteHealthBar = HealthFrame:WaitForChild("WhiteBar")
@@ -45,7 +45,7 @@ function HealthUI:Update(Humanoid)
             prevHealth = Humanoid.Health
         else
             task.wait(.25)
-            WhiteHealthBar.Size = UDim2.fromScale(health, 1);
+            WhiteHealthBar.Size = UDim2.fromScale(health, 1)
             prevHealth = Humanoid.Health
         end
     end)
@@ -60,12 +60,12 @@ function HealthUI:KnitInit()
 
     LocalPlayer.CharacterAdded:Connect(function(Character)
 
-        local Humanoid = Character:WaitForChild("Humanoid");
+        local Humanoid = Character:WaitForChild("Humanoid")
         prevHealth = Humanoid.Health
 
         if HealthConnection and MaxHealthConnection then
-            HealthConnection:Disconnect();
-            MaxHealthConnection:Disconnect();
+            HealthConnection:Disconnect()
+            MaxHealthConnection:Disconnect()
         end
 
         HealthConnection = Humanoid:GetPropertyChangedSignal("Health"):Connect(function()
@@ -82,14 +82,14 @@ function HealthUI:KnitInit()
         self:Update(Humanoid)
     end)
 
-    local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait();
-    local Humanoid = Character:WaitForChild("Humanoid");
+    local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local Humanoid = Character:WaitForChild("Humanoid")
 
     prevHealth = Humanoid.Health
 
     if HealthConnection and MaxHealthConnection then
-        HealthConnection:Disconnect();
-        MaxHealthConnection:Disconnect();
+        HealthConnection:Disconnect()
+        MaxHealthConnection:Disconnect()
     end
 
     HealthConnection = Humanoid:GetPropertyChangedSignal("Health"):Connect(function()

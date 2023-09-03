@@ -1,23 +1,20 @@
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local DeathEffectService = Knit.CreateService {
-    Name = "DeathEffectService";
+    Name = "DeathEffectService",
     Client = {
-        ClientDeath = Knit.CreateSignal();
-    };
+        ClientDeath = Knit.CreateSignal(),
+    }
 }
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerStorage = game:GetService("ServerStorage")
-local DataService = require(script.Parent.DataService);
-
-local GameLibrary = ReplicatedStorage:FindFirstChild("GameLibrary");
+local DataService = require(script.Parent.DataService)
 
 function DeathEffectService:GetEffect(player)
     repeat task.wait(0) until DataService:GetProfile(player) ~= nil
-    local Profile = DataService:GetProfile(player);
+    local Profile = DataService:GetProfile(player)
     local playerDeathEffect = Profile.Data.Inventory.CurrentDeathEffect
-    return playerDeathEffect;
+    return playerDeathEffect
 end
 
 function DeathEffectService:Fire(player, character)
@@ -33,7 +30,7 @@ function DeathEffectService:Fire(player, character)
         attachment.Parent = newPart
         newPart.Parent = workspace:WaitForChild("Spawnables"):WaitForChild("Effects")
         if not character then
-            newPart:Destroy();
+            newPart:Destroy()
             return
         end
         if character.PrimaryPart then
@@ -48,10 +45,12 @@ function DeathEffectService:Fire(player, character)
             deathEffectName = "Default"
         end
         --print(deathEffectName)
+        local GameLibrary = ReplicatedStorage:FindFirstChild("GameLibrary")
+
         local newSound = GameLibrary.Sounds.DeathEffects:FindFirstChild(deathEffectName):WaitForChild("Poof"):Clone()
         newSound.Parent = newPart
         newSound:Play()
-        local currentPlayerEffect = GameLibrary.DeathEffects:FindFirstChild(deathEffectName);
+        local currentPlayerEffect = GameLibrary.DeathEffects:FindFirstChild(deathEffectName)
         self.Client.ClientDeath:Fire(player, character)
         task.spawn(function()
             for _,v in pairs(currentPlayerEffect:GetChildren()) do
@@ -83,7 +82,7 @@ function DeathEffectService:Fire(player, character)
             end
         end)
         character:Destroy()
-        player.Character = nil;
+        player.Character = nil
         task.wait(1)
         newPart:Destroy()
     end

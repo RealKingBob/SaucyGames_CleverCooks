@@ -9,16 +9,16 @@ local TweenService = game:GetService("TweenService")
 local MarketplaceService = game:GetService("MarketplaceService")
 
 --//Const
-local LocalPlayer = Players.LocalPlayer;
+local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local dingSound = "rbxassetid://9068539820";
-local swooshSound = "rbxassetid://9119737641";
-local itemClickSound = "rbxassetid://552900451";
-local itemCompleteSound = "rbxassetid://3241682089";
+local dingSound = "rbxassetid://9068539820"
+local swooshSound = "rbxassetid://9119737641"
+local itemClickSound = "rbxassetid://552900451"
+local itemCompleteSound = "rbxassetid://3241682089"
 
-local ReplicatedModules = Knit.Shared.Modules;
-local GuiParticleEmitterModule = ReplicatedModules:FindFirstChild("GuiParticleEmitter");
+local ReplicatedModules = Knit.Shared.Modules
+local GuiParticleEmitterModule = ReplicatedModules:FindFirstChild("GuiParticleEmitter")
 
 local MainGui = PlayerGui:WaitForChild("Main")
 local OrderFrame = MainGui:WaitForChild("TopFrame"):WaitForChild("Bottom")
@@ -26,8 +26,8 @@ local OrderFrame = MainGui:WaitForChild("TopFrame"):WaitForChild("Bottom")
 
 local function playLocalSound(soundId, volume)
     local sound = Instance.new("Sound")
-    sound.SoundId = soundId;
-    sound.Volume = volume;
+    sound.SoundId = soundId
+    sound.Volume = volume
     SoundService:PlayLocalSound(sound)
     sound.Ended:Wait()
     sound:Destroy()
@@ -36,19 +36,19 @@ end
 function OrderUI:AddOrder(orderData)
     local name, id, image, timer, description = orderData.name, orderData.id, orderData.image, orderData.timer, orderData.name
 
-    local StickyNotePrefab = PlayerGui:WaitForChild("Prefabs"):WaitForChild("StickyNote");
+    local StickyNotePrefab = PlayerGui:WaitForChild("Prefabs"):WaitForChild("StickyNote")
     local ItemClone = StickyNotePrefab:Clone() do
         local MainFrame = ItemClone:WaitForChild("MainFrame")
-        ItemClone.Name = "OrderItem_"..tostring(name);
+        ItemClone.Name = "OrderItem_"..tostring(name)
         local IconFrame = MainFrame:WaitForChild("Icon")
-        IconFrame.Name = "View";
-        IconFrame.InspectRecipe.Image = image;
-        ItemClone.LayoutOrder = #OrderFrame:GetChildren() - 1;
+        IconFrame.Name = "View"
+        IconFrame.InspectRecipe.Image = image
+        ItemClone.LayoutOrder = #OrderFrame:GetChildren() - 1
         ItemClone:SetAttribute("orderId", id)
         ItemClone:SetAttribute("maxTimer", timer)
         ItemClone:SetAttribute("timer", timer)
         MainFrame.Position = UDim2.new(10, 0, 0, 0)
-        ItemClone.Parent = OrderFrame;
+        ItemClone.Parent = OrderFrame
 
         self:AnimateEnterOrder(ItemClone)
 
@@ -97,20 +97,20 @@ function OrderUI:AddOrder(orderData)
             if TimerFrame and TimerFrame:FindFirstChild("ImageLabel") then
                 local tween = TweenService:Create(TimerFrame:FindFirstChild("ImageLabel"), tweenInfo, {ImageColor3 = Color3.fromRGB(236, 52, 52)})
                 tween:Play()
-                tween.Completed:Wait();
+                tween.Completed:Wait()
             end
             if TimerFrame and TimerFrame:FindFirstChild("ImageLabel") then
                 local tween2 = TweenService:Create(TimerFrame:FindFirstChild("ImageLabel"), tweenInfo, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
                 tween2:Play()
-                tween2.Completed:Wait();
+                tween2.Completed:Wait()
             end 
         end
 
         progressBar(0,360,0)
 
-        local startPercent, endPercent, startCircle, endCircle = 0, 1, 0, 360; -- 0 -> 360 degrees
+        local startPercent, endPercent, startCircle, endCircle = 0, 1, 0, 360 -- 0 -> 360 degrees
         local function percentageInCircle(percentage)
-            return (startCircle + (percentage / endPercent) * (endCircle - startCircle));
+            return (startCircle + (percentage / endPercent) * (endCircle - startCircle))
         end
 
         task.spawn(function()
@@ -120,38 +120,38 @@ function OrderUI:AddOrder(orderData)
                 task.spawn(progressBar, 1, percentageInCircle((ItemClone:GetAttribute("timer")-1)/ItemClone:GetAttribute("maxTimer")))
                 if ItemClone:GetAttribute("maxTimer")/2.7 > ItemClone:GetAttribute("timer") then
                     if MainFrame and MainFrame:FindFirstChild("Timer") then
-                        MainFrame:FindFirstChild("Timer").AddTimeLabel.Visible = true;
-                        MainFrame:FindFirstChild("Timer").AddTime.Visible = true;
+                        MainFrame:FindFirstChild("Timer").AddTimeLabel.Visible = true
+                        MainFrame:FindFirstChild("Timer").AddTime.Visible = true
                     end
 
                     task.spawn(pulseTimer, .5)
                 end
                 task.wait(1)
-            until ItemClone:GetAttribute("timer") <= 0;
+            until ItemClone:GetAttribute("timer") <= 0
         end)
 
         --task.spawn(progressBar, .4, 360, 0)
 
-        local debounceOrder = false;
+        local debounceOrder = false
 
         MainFrame:FindFirstChild("Timer").AddTime.MouseButton1Click:Connect(function()
             if debounceOrder == false then
-                debounceOrder = true;
+                debounceOrder = true
                 task.spawn(playLocalSound, itemClickSound, 0.2)
                 Knit.GetService("OrderService").ResetTimePurchase:Fire(ItemClone:GetAttribute("orderId"))
                 task.wait(.5)
-                debounceOrder = false;
+                debounceOrder = false
             end
         end)
 
         IconFrame.InspectRecipe.MouseButton1Click:Connect(function()
             --print('inspecting recipe')
             if debounceOrder == false then
-                debounceOrder = true;
+                debounceOrder = true
                 task.spawn(playLocalSound, itemClickSound, 0.2)
                 Knit.GetController("RecipesView"):GetRecipeIngredients(name)
                 task.wait(.5)
-                debounceOrder = false;
+                debounceOrder = false
             end
         end)
     end 
@@ -163,12 +163,12 @@ function OrderUI:CompleteOrder(orderId)
             if frame:GetAttribute("orderId") == orderId then
                 if frame:FindFirstChild("MainFrame") then
                     if frame:FindFirstChild("MainFrame"):FindFirstChild("Completed") then
-                        frame:FindFirstChild("MainFrame"):FindFirstChild("Completed").Visible = true;
+                        frame:FindFirstChild("MainFrame"):FindFirstChild("Completed").Visible = true
                     end
                     task.spawn(playLocalSound, itemCompleteSound, 0.2)
                 end
                 task.wait(1)
-                self:RemoveOrder(orderId);
+                self:RemoveOrder(orderId)
             end
         end
     end
@@ -181,8 +181,8 @@ function OrderUI:ChangeTime(orderId, newTime)
             if frame:GetAttribute("orderId") == orderId then
                 if frame:FindFirstChild("MainFrame") then
                     if frame:FindFirstChild("MainFrame"):FindFirstChild("Timer") then
-                        frame:WaitForChild("MainFrame"):FindFirstChild("Timer").AddTimeLabel.Visible = false;
-                        frame:WaitForChild("MainFrame"):FindFirstChild("Timer").AddTime.Visible = false;
+                        frame:WaitForChild("MainFrame"):FindFirstChild("Timer").AddTimeLabel.Visible = false
+                        frame:WaitForChild("MainFrame"):FindFirstChild("Timer").AddTime.Visible = false
                     end
 
                     frame:SetAttribute("timer", newTime)
@@ -200,7 +200,7 @@ function OrderUI:RemoveOrder(orderId)
             if frame:GetAttribute("orderId") == orderId then
                 self:AnimateExitOrder(frame)
                 task.wait(0.4)
-                frame:Destroy();
+                frame:Destroy()
             end
         end
     end
@@ -212,14 +212,14 @@ function OrderUI:RemoveAllOrders()
         if frame:IsA("ImageLabel") then
             self:AnimateExitOrder(frame)
             task.wait(0.4)
-            frame:Destroy();
+            frame:Destroy()
         end
     end
 end
 
 function OrderUI:AnimateEnterOrder(orderFrame)
 
-    local MainFrame = orderFrame:FindFirstChild("MainFrame");
+    local MainFrame = orderFrame:FindFirstChild("MainFrame")
     if MainFrame then
         MainFrame.Position = UDim2.new(10, 0, 0, 0)
 
@@ -232,7 +232,7 @@ end
 
 function OrderUI:AnimateExitOrder(orderFrame)
 
-    local MainFrame = orderFrame:FindFirstChild("MainFrame");
+    local MainFrame = orderFrame:FindFirstChild("MainFrame")
     if MainFrame then
         MainFrame.Position = UDim2.new(0, 0, 0, 0)
 
@@ -243,26 +243,26 @@ function OrderUI:AnimateExitOrder(orderFrame)
 end
 
 function OrderUI:KnitStart()
-    local OrderService = Knit.GetService("OrderService");
+    local OrderService = Knit.GetService("OrderService")
 
     OrderService.AddOrder:Connect(function(orderData)
-        self:AddOrder(orderData);
+        self:AddOrder(orderData)
     end)
 
     OrderService.RemoveOrder:Connect(function(orderId)
-        self:RemoveOrder(orderId);
+        self:RemoveOrder(orderId)
     end)
 
     OrderService.RemoveAllOrders:Connect(function()
-        self:RemoveAllOrders();
+        self:RemoveAllOrders()
     end)
 
     OrderService.CompleteOrder:Connect(function(orderId)
-        self:CompleteOrder(orderId);
+        self:CompleteOrder(orderId)
     end)
 
     OrderService.ResetTimePurchase:Connect(function(orderId, newTime)
-        self:ChangeTime(orderId, newTime);
+        self:ChangeTime(orderId, newTime)
     end)
 
 end

@@ -13,18 +13,18 @@ local TweenService = game:GetService("TweenService")
 
 local CollectionController = Knit.CreateController { Name = "CollectionController" }
 
-local localPlayer = Players.LocalPlayer;
+local localPlayer = Players.LocalPlayer
 
-local debounces = {};
+local debounces = {}
 local cancelDebris = {}
 
-local TweenModule = require(game.ReplicatedStorage.Common.Modules.TweenUtil);
-local NumberSuffix = require(game.ReplicatedStorage.Common.Modules.NumberSuffix);
-local NumberUtil = require(game.ReplicatedStorage.Common.Modules.NumberUtil);
+local TweenModule = require(game.ReplicatedStorage.Common.Modules.TweenUtil)
+local NumberSuffix = require(game.ReplicatedStorage.Common.Modules.NumberSuffix)
+local NumberUtil = require(game.ReplicatedStorage.Common.Modules.NumberUtil)
 
-local Sfx = game.SoundService.Sfx;
+local Sfx = game.SoundService.Sfx
 
-local CurrencyCollected;
+local CurrencyCollected
 
 -- Checks if an object has been destroyed or not.
 -- Returns true if the object has been destroyed, false otherwise.
@@ -67,9 +67,9 @@ local function customDebris(instance, lifetime)
         local tweenUI = instance.UI
         tweenUI.ExtentsOffsetWorldSpace = Vector3.new(0,NumberUtil.LerpClamp(1, 5, Alpha),0)
         
-        tweenUI.Amount.TextTransparency = NumberUtil.LerpClamp(0, 1, Alpha);
-        tweenUI.Amount.UIStroke.Transparency = NumberUtil.LerpClamp(0, 1, Alpha);
-        tweenUI.Icon.ImageTransparency = NumberUtil.LerpClamp(0, 1, Alpha);
+        tweenUI.Amount.TextTransparency = NumberUtil.LerpClamp(0, 1, Alpha)
+        tweenUI.Amount.UIStroke.Transparency = NumberUtil.LerpClamp(0, 1, Alpha)
+        tweenUI.Icon.ImageTransparency = NumberUtil.LerpClamp(0, 1, Alpha)
     end)
 
 	coroutine.wrap(function()
@@ -77,10 +77,10 @@ local function customDebris(instance, lifetime)
 		local isDestroyedAlready = Destroyed(instance)
 		if continueDebris and instance and not isDestroyedAlready then
             instance.Name = "_oldCurrency"
-            CurrencyCollected = nil;
+            CurrencyCollected = nil
             task.wait(.5)
-            FadeOut:Play();
-            FadeOut.Completed:Wait();
+            FadeOut:Play()
+            FadeOut.Completed:Wait()
 			instance:Destroy()
 		end
 	end)()
@@ -100,28 +100,28 @@ function CollectionController:DropItem(type, tableOfObjs)
 
         cloneObject.CFrame = objData.OriginalCFrame
         cloneObject.Parent = workspace.Spawnables:FindFirstChild(type)
-        cloneObject.AssemblyLinearVelocity = objData.InitialVelocity;
+        cloneObject.AssemblyLinearVelocity = objData.InitialVelocity
 
         task.spawn(function()
             local random = Random.new()
 
             task.wait(random:NextNumber(0, .4))
             local CheeseDrop = Sfx:WaitForChild("Small Pop"):Clone() do
-                CheeseDrop.Volume = NumberUtil.Lerp(.1, .4, math.random());
-                CheeseDrop.Parent = cloneObject;
+                CheeseDrop.Volume = NumberUtil.Lerp(.1, .4, math.random())
+                CheeseDrop.Parent = cloneObject
                 
                 CheeseDrop.Ended:Connect(function()
-                    CheeseDrop:Destroy();
+                    CheeseDrop:Destroy()
                 end)
     
-                CheeseDrop:Play();
+                CheeseDrop:Play()
             end
 
             task.wait(3)
 
             repeat
                 task.wait(random:NextNumber(1,3))
-                bounce(cloneObject);
+                bounce(cloneObject)
             until cloneObject == nil
         end)
     end
@@ -131,7 +131,7 @@ end
 function CollectionController:DropCurrencyText(oCFrame, amount, userId)
 
     local function fadeInObj(instance)
-        local PopUpTweenInfo = TweenInfo.new(.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out);
+        local PopUpTweenInfo = TweenInfo.new(.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     
         local FadeIn = TweenModule.new(PopUpTweenInfo, function(Alpha)
             local tweenUI = instance.UI
@@ -145,36 +145,36 @@ function CollectionController:DropCurrencyText(oCFrame, amount, userId)
     local prevObj = workspace.Spawnables.CurrencyText:FindFirstChild("Currency_"..userId)
     if prevObj then
         cancelDebris[userId]()
-        local prevAmount = prevObj:GetAttribute("Amount");
-        local newAmount = prevAmount + amount;
+        local prevAmount = prevObj:GetAttribute("Amount")
+        local newAmount = prevAmount + amount
         prevObj:SetAttribute("Amount", newAmount)
-        prevObj.UI.Amount.Text = NumberSuffix(newAmount);
-        prevObj.CFrame = oCFrame;
+        prevObj.UI.Amount.Text = NumberSuffix(newAmount)
+        prevObj.CFrame = oCFrame
 
         if CurrencyCollected then
-            CurrencyCollected.Volume = NumberUtil.Lerp(.1, .4, math.random());
-            CurrencyCollected:Play();
+            CurrencyCollected.Volume = NumberUtil.Lerp(.1, .4, math.random())
+            CurrencyCollected:Play()
         end
 
         fadeInObj(prevObj)
         cancelDebris[userId] = customDebris(prevObj, 1.25)
-        return;
+        return
     end
 
-    local obj = game.ReplicatedStorage.Spawnables.CurrencyDrop;
-    local cloneObject = obj:Clone();
-    cloneObject.Name = "Currency_"..userId;
+    local obj = game.ReplicatedStorage.Spawnables.CurrencyDrop
+    local cloneObject = obj:Clone()
+    cloneObject.Name = "Currency_"..userId
     cloneObject:SetAttribute("userId", userId)
     cloneObject:SetAttribute("Amount", amount)
-    cloneObject.UI.Amount.Text = NumberSuffix(amount);
-    cloneObject.CFrame = oCFrame;
-    cloneObject.Parent = workspace.Spawnables.CurrencyText;
+    cloneObject.UI.Amount.Text = NumberSuffix(amount)
+    cloneObject.CFrame = oCFrame
+    cloneObject.Parent = workspace.Spawnables.CurrencyText
 
     CurrencyCollected = Sfx:WaitForChild("CheesePop"):Clone() do
-        CurrencyCollected.Volume = NumberUtil.Lerp(.1, .4, math.random());
-        CurrencyCollected.Parent = cloneObject;
+        CurrencyCollected.Volume = NumberUtil.Lerp(.1, .4, math.random())
+        CurrencyCollected.Parent = cloneObject
         
-        CurrencyCollected:Play();
+        CurrencyCollected:Play()
     end
 
     fadeInObj(cloneObject)
@@ -183,7 +183,7 @@ function CollectionController:DropCurrencyText(oCFrame, amount, userId)
 end
 
 function CollectionController:KnitStart()
-    local CurrencySessionService = Knit.GetService("CurrencySessionService");
+    local CurrencySessionService = Knit.GetService("CurrencySessionService")
 
     CurrencySessionService.DropCurrency:Connect(function(type, objectData)
         if type == "Cheese" then
@@ -197,18 +197,18 @@ function CollectionController:KnitStart()
     end)
     
     while true do
-        local Character = localPlayer.Character or localPlayer.CharacterAdded:Wait();
+        local Character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
         if Character then
             local Root = Character:FindFirstChild("HumanoidRootPart")
             if Root then
                 for _, dropable in pairs(workspace.Spawnables.Cheese:GetChildren()) do
                     if dropable:IsA("Part") 
                     and CollectionService:HasTag(dropable, "Dropable") then
-                        local magnitude = (Root.Position - dropable.Position).Magnitude;
+                        local magnitude = (Root.Position - dropable.Position).Magnitude
 
                         if magnitude < 10 then
-                            dropable.CanCollide = false;
-                            dropable.Anchored = true;
+                            dropable.CanCollide = false
+                            dropable.Anchored = true
                             dropable.CFrame = dropable.CFrame:Lerp(Root.CFrame, 0.26)
 
                             task.spawn(function()

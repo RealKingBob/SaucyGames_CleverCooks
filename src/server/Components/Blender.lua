@@ -1,186 +1,209 @@
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
-local Maid = require(Knit.Util.Maid);
+local Maid = require(Knit.Util.Maid)
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
-local TweenModule = require(Knit.ReplicatedModules.TweenUtil);
-local NumberUtil = require(Knit.ReplicatedModules.NumberUtil);
+local TweenModule = require(Knit.Shared.Modules.TweenUtil)
+local NumberUtil = require(Knit.Shared.Modules.NumberUtil)
+
+local Component = require(game:GetService("ReplicatedStorage").Packages.Component)
 
 ----- Directories -----
 
-local IngredientsAvailable = workspace:WaitForChild("IngredientAvailable");
-local FoodAvailable = workspace:WaitForChild("FoodAvailable");
+local IngredientsAvailable = workspace:WaitForChild("IngredientAvailable")
+local FoodAvailable = workspace:WaitForChild("FoodAvailable")
 
-local GameLibrary = ReplicatedStorage:FindFirstChild("GameLibrary");
-local IngredientObjects = GameLibrary:FindFirstChild("IngredientObjects");
+local GameLibrary = ReplicatedStorage:FindFirstChild("GameLibrary")
+local IngredientObjects = GameLibrary:FindFirstChild("IngredientObjects")
 
-local ServerModules = Knit.Modules;
-local SpawnItemsAPI = require(ServerModules:FindFirstChild("SpawnItems"));
+local ServerModules = Knit.Modules
+local SpawnItemsAPI = require(ServerModules:FindFirstChild("SpawnItems"))
 
-local Blender = {};
-Blender.__index = Blender;
+local MyComponent = Component.new({
+	Tag = "Blender",
+	Ancestors = {workspace}, -- Optional array of ancestors in which components will be started
+	Extensions = {}, -- See Logger example above with the example for the Extension type
+})
 
-Blender.Tag = "Blender";
+-- Optional if UpdateRenderStepped should use BindToRenderStep:
+MyComponent.RenderPriority = Enum.RenderPriority.Camera.Value
 
-function Blender.new(instance)
-    if instance:IsA("Part") then
-        return;
-    end
-    local self = setmetatable({}, Blender);
-    self._maid = Maid.new();
+function MyComponent:Construct()
+end
 
-    self.Object = instance
-    self.BlenderEnabled = true;
-    self.playersDebounces = {};
-    self.ObjectsInBlender = {};
-    self.BlenderColors = {};
-    self.colorOfFood = {};
-    self.MaxNumOfObjects = 5;
-    self.NumOfObjects = {};
-    self.NumOfObjectsTextLabel = self.Object.Glass.Glass.NumOfObjects.TextLabel;
+function MyComponent:Start()
+end
+
+function MyComponent:Stop()
+end
+
+function MyComponent:HeartbeatUpdate(dt)
+end
+
+function MyComponent:SteppedUpdate(dt)
+end
+
+function MyComponent:RenderSteppedUpdate(dt)
+end
+
+MyComponent.Started:Connect(function(component)
+	local robloxInstance: Instance = component.Instance
+	print("Component is bound to " .. robloxInstance:GetFullName())
+
+    local Object = robloxInstance
+    local BlenderEnabled = true
+    local playersDebounces = {}
+    local ObjectsInBlender = {}
+    local BlenderColors = {}
+    local colorOfFood = {}
+    local MaxNumOfObjects = 5
+    local NumOfObjects = {}
+    local NumOfObjectsTextLabel = Object.Glass.Glass.NumOfObjects.TextLabel
+
+    component._maid = Maid.new()
 
     local function PlayerAdded(player)
-        self.playersDebounces[player.UserId] = nil;
-        self.ObjectsInBlender[player.UserId] = {};
-        self.BlenderColors[player.UserId] = Color3.fromRGB(255,255,255);
-        self.NumOfObjects[player.UserId] = 0
-    end;
+        playersDebounces[player.UserId] = nil
+        ObjectsInBlender[player.UserId] = {}
+        BlenderColors[player.UserId] = Color3.fromRGB(255,255,255)
+        NumOfObjects[player.UserId] = 0
+    end
     
     local function PlayerRemoving(player)
-        self.playersDebounces[player.UserId] = nil;
-        self.ObjectsInBlender[player.UserId] = nil;
-        self.BlenderColors[player.UserId] = nil;
-        self.NumOfObjects[player.UserId] = nil;
-    end;
+        playersDebounces[player.UserId] = nil
+        ObjectsInBlender[player.UserId] = nil
+        BlenderColors[player.UserId] = nil
+        NumOfObjects[player.UserId] = nil
+    end
 
     local function InsertObjToBlender(player, Obj)
-        local FoodSpawnPoints = CollectionService:GetTagged("FoodSpawnPoints");
+        local FoodSpawnPoints = CollectionService:GetTagged("FoodSpawnPoints")
         if Obj:IsA("Model") and Obj.PrimaryPart then
-            Obj.PrimaryPart.ProximityPrompt.Enabled = false;
+            Obj.PrimaryPart.ProximityPrompt.Enabled = false
         else
-            Obj.ProximityPrompt.Enabled = false;
+            Obj.ProximityPrompt.Enabled = false
         end
 
         local objItem = (Obj:IsA("Model") and Obj.PrimaryPart ~= nil and Obj.PrimaryPart or Obj)
 
         print(objItem)
 
-        local CookingService = Knit.GetService("CookingService");
+        local CookingService = Knit.GetService("CookingService")
         CookingService.Client.ChangeClientBlender:Fire(player,
-            self.Object, -- blender object
+            Object, -- blender object
             "itemPoof", -- command
             { -- data
                 Position = objItem.Position + Vector3.new(0,-7,0),
                 Color = objItem.Color, 
             }
-        );
+        )
 
-        local RandomFoodLocation = FoodSpawnPoints[math.random(1, #FoodSpawnPoints)];
+        local RandomFoodLocation = FoodSpawnPoints[math.random(1, #FoodSpawnPoints)]
         if RandomFoodLocation then
             if Obj:IsA("Model") and Obj.PrimaryPart then
                 Obj:SetPrimaryPartCFrame(CFrame.new(RandomFoodLocation.Position + Vector3.new(math.random(-5,5) ,5, math.random(-5,5))))
             else
-                Obj.Position = RandomFoodLocation.Position + Vector3.new(math.random(-5,5) ,5, math.random(-5,5));
+                Obj.Position = RandomFoodLocation.Position + Vector3.new(math.random(-5,5) ,5, math.random(-5,5))
             end
         end
 
         task.wait(0.1)
 
         if Obj:IsA("Model") and Obj.PrimaryPart then
-            Obj.PrimaryPart.ProximityPrompt.Enabled = true;
+            Obj.PrimaryPart.ProximityPrompt.Enabled = true
         else
-            Obj.ProximityPrompt.Enabled = true;
+            Obj.ProximityPrompt.Enabled = true
         end
     end
 
     local function SpinBlade(enabled)
         if enabled == true then
             print('huh')
-            local FadeTween = TweenInfo.new(3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut);
+            local FadeTween = TweenInfo.new(3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
 
-            local SpinTween = TweenService:Create(self.Object.Blade.PrimaryPart.HingeConstraint, FadeTween, { AngularVelocity = 100 });
+            local SpinTween = TweenService:Create(Object.Blade.PrimaryPart.HingeConstraint, FadeTween, { AngularVelocity = 100 })
 
-            SpinTween:Play();
-            SpinTween.Completed:Wait();
+            SpinTween:Play()
+            SpinTween.Completed:Wait()
 
-            self.Object.Blade.PrimaryPart.HingeConstraint.AngularVelocity = 70;
+            Object.Blade.PrimaryPart.HingeConstraint.AngularVelocity = 70
         else
 
-            local FadeTween = TweenInfo.new(3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut);
+            local FadeTween = TweenInfo.new(3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
 
-            local SpinTween = TweenService:Create(self.Object.Blade.PrimaryPart.HingeConstraint, FadeTween, { AngularVelocity = 0 });
+            local SpinTween = TweenService:Create(Object.Blade.PrimaryPart.HingeConstraint, FadeTween, { AngularVelocity = 0 })
 
-            SpinTween:Play();
-            SpinTween.Completed:Wait();
+            SpinTween:Play()
+            SpinTween.Completed:Wait()
 
-            self.Object.Blade.PrimaryPart.HingeConstraint.AngularVelocity = 0;
+            Object.Blade.PrimaryPart.HingeConstraint.AngularVelocity = 0
         end
     end
 
     local function PlayEffects(enabled)
-        for _, particle in pairs(self.Object.ParticleHolder:GetDescendants()) do
+        for _, particle in pairs(Object.ParticleHolder:GetDescendants()) do
             if particle:IsA("ParticleEmitter") then
-                particle.Enabled = enabled;
+                particle.Enabled = enabled
             end
         end
 
         task.spawn(function()
             task.wait(3)
-            for _, particle in pairs(self.Object.ParticleHolder:GetDescendants()) do
+            for _, particle in pairs(Object.ParticleHolder:GetDescendants()) do
                 if particle:IsA("ParticleEmitter") then
-                    particle:Clear();
+                    particle:Clear()
                 end
             end
         end)
     end
 
-    self._maid:GiveTask(self.Object.Blade.Blade.Touched:Connect(function(hit)
-        if self.BlenderEnabled == false then return end
-        if CollectionService:HasTag(hit, "CC_Food") then return end;
+    component._maid:GiveTask(Object.Blade.Blade.Touched:Connect(function(hit)
+        if BlenderEnabled == false then return end
+        if CollectionService:HasTag(hit, "CC_Food") then return end
         --print(hit)
         local humanoid = hit.Parent:FindFirstChildOfClass("Humanoid")
-        local player = game.Players:GetPlayerFromCharacter(hit.Parent);
-        if self.BlenderEnabled == false then
+        local player = game.Players:GetPlayerFromCharacter(hit.Parent)
+        if BlenderEnabled == false then
             if humanoid and player then
-                if self.playersDebounces[player.UserId] == nil then
-                    self.playersDebounces[player.UserId] = true;
-                    humanoid.Health -= 10;
-                    task.wait(1);
-                    self.playersDebounces[player.UserId] = nil;
+                if playersDebounces[player.UserId] == nil then
+                    playersDebounces[player.UserId] = true
+                    humanoid.Health -= 10
+                    task.wait(1)
+                    playersDebounces[player.UserId] = nil
                 end
             end
         else
             if humanoid and player then
                 humanoid.BreakJointsOnDeath = true
-                humanoid.Health = -1;
+                humanoid.Health = -1
             end
             local function tablefind(tab,el) for index, value in pairs(tab) do if value == el then	return index end end end
             if hit:GetAttribute("Owner") or hit.Parent:GetAttribute("Owner") then
-                local player = game.Players:FindFirstChild(hit:GetAttribute("Owner") or hit.Parent:GetAttribute("Owner"));
+                local player = game.Players:FindFirstChild(hit:GetAttribute("Owner") or hit.Parent:GetAttribute("Owner"))
                 if not player then return end
-                if not self.ObjectsInBlender[player.UserId] then self.ObjectsInBlender[player.UserId] = {} end
-                if not self.NumOfObjects[player.UserId] then self.NumOfObjects[player.UserId] = 0 end
-                if not self.BlenderColors[player.UserId] then self.BlenderColors[player.UserId] = Color3.fromRGB(255,255,255) end
+                if not ObjectsInBlender[player.UserId] then ObjectsInBlender[player.UserId] = {} end
+                if not NumOfObjects[player.UserId] then NumOfObjects[player.UserId] = 0 end
+                if not BlenderColors[player.UserId] then BlenderColors[player.UserId] = Color3.fromRGB(255,255,255) end
             end
 
             if hit:GetAttribute("Type") or hit.Parent:GetAttribute("Type") then
                 
                 local isAModel = (hit.Parent:IsA("Model") 
                 and hit.Parent.PrimaryPart ~= nil 
-                and hit.Parent.PrimaryPart:GetAttribute("Owner") ~= nil) and true or false;
+                and hit.Parent.PrimaryPart:GetAttribute("Owner") ~= nil) and true or false
                 
                 print(hit:GetAttribute("Owner") or hit.Parent:GetAttribute("Owner"), "isAModel:", isAModel)
-                local player = game.Players:FindFirstChild(hit:GetAttribute("Owner") or hit.Parent:GetAttribute("Owner"));
+                local player = game.Players:FindFirstChild(hit:GetAttribute("Owner") or hit.Parent:GetAttribute("Owner"))
                 if not player then return end
                 
-                if (self.NumOfObjects[player.UserId] >= 5 and self.playersDebounces[player.UserId] == nil)
+                if (NumOfObjects[player.UserId] >= 5 and playersDebounces[player.UserId] == nil)
                 or CollectionService:HasTag(hit, "IngredientsTable") == true then
-                    local obj = (isAModel == true and hit.Parent) or hit;
+                    local obj = (isAModel == true and hit.Parent) or hit
                     if isAModel == true then
-                        obj:SetPrimaryPartCFrame(CFrame.new(self.Object.ReturnObj.Position + Vector3.new(0,5,0)))
+                        obj:SetPrimaryPartCFrame(CFrame.new(Object.ReturnObj.Position + Vector3.new(0,5,0)))
                     else
-                        obj.Position = self.Object.ReturnObj.Position + Vector3.new(0,5,0);
+                        obj.Position = Object.ReturnObj.Position + Vector3.new(0,5,0)
                     end
 
                     local NotificationService = Knit.GetService("NotificationService")
@@ -188,156 +211,156 @@ function Blender.new(instance)
                     return
                 end
 
-                local objToInsert = (isAModel == true and hit.Parent) or hit;
-                if table.find(self.ObjectsInBlender[player.UserId], objToInsert) == nil then
-                    table.insert(self.ObjectsInBlender[player.UserId], objToInsert)
-                    self.playersDebounces[player.UserId] = true;
+                local objToInsert = (isAModel == true and hit.Parent) or hit
+                if table.find(ObjectsInBlender[player.UserId], objToInsert) == nil then
+                    table.insert(ObjectsInBlender[player.UserId], objToInsert)
+                    playersDebounces[player.UserId] = true
                     InsertObjToBlender(player, hit)
-                    self.NumOfObjects[player.UserId] += 1;
+                    NumOfObjects[player.UserId] += 1
 
-                    local obj = (isAModel == true and hit.Parent) or hit;
+                    local obj = (isAModel == true and hit.Parent) or hit
                     if isAModel == true then
-                        self.colorOfFood[player.UserId] = obj.PrimaryPart.Color
+                        colorOfFood[player.UserId] = obj.PrimaryPart.Color
                     else
-                        self.colorOfFood[player.UserId] = obj.Color
+                        colorOfFood[player.UserId] = obj.Color
                     end 
 
-                    if self.NumOfObjects[player.UserId] then
-                        if self.NumOfObjects[player.UserId] > 1 then
-                            local oColor = self.BlenderColors[player.UserId];
+                    if NumOfObjects[player.UserId] then
+                        if NumOfObjects[player.UserId] > 1 then
+                            local oColor = BlenderColors[player.UserId]
                             print("oColor", oColor)
-                            self.BlenderColors[player.UserId] = oColor:Lerp(self.colorOfFood[player.UserId], 0.5)
+                            BlenderColors[player.UserId] = oColor:Lerp(colorOfFood[player.UserId], 0.5)
                         else
-                            self.BlenderColors[player.UserId] = self.colorOfFood[player.UserId];
+                            BlenderColors[player.UserId] = colorOfFood[player.UserId]
                         end
                     end
 
-                    local CookingService = Knit.GetService("CookingService");
+                    local CookingService = Knit.GetService("CookingService")
                     CookingService.Client.ChangeClientBlender:Fire(player,
-                        self.Object, -- blender object
+                        Object, -- blender object
                         "fluidPercentage", -- command
                         { -- data
-                        FluidPercentage = (self.NumOfObjects[player.UserId] / self.MaxNumOfObjects), -- fluid 
-                        FluidText = tostring(self.NumOfObjects[player.UserId].."/"..self.MaxNumOfObjects), -- blender text
-                        FluidColor = self.BlenderColors[player.UserId], -- color of food
-                        });
+                        FluidPercentage = (NumOfObjects[player.UserId] / MaxNumOfObjects), -- fluid 
+                        FluidText = tostring(NumOfObjects[player.UserId].."/"..MaxNumOfObjects), -- blender text
+                        FluidColor = BlenderColors[player.UserId], -- color of food
+                        })
 
-                    print("BLADE HIT", hit, hit.Parent, self.ObjectsInBlender[player.UserId])
-                    self.playersDebounces[player.UserId] = nil;
+                    print("BLADE HIT", hit, hit.Parent, ObjectsInBlender[player.UserId])
+                    playersDebounces[player.UserId] = nil
                 end
             end
         end
     end))
 
-    self._maid:GiveTask(self.Object.Button.ProximityPrompt.TriggerEnded:Connect(function(player)
+    component._maid:GiveTask(Object.Button.ProximityPrompt.TriggerEnded:Connect(function(player)
         --task.spawn(TemporaryDisableButton, 3)
-        if self.BlenderEnabled == false then 
+        if BlenderEnabled == false then 
             local NotificationService = Knit.GetService("NotificationService")
             NotificationService:Message(false, player, "Blender is off!")
             return 
         end
 
-        print("BLENDER", self.BlenderEnabled, self.playersDebounces[player.UserId]);
+        print("BLENDER", BlenderEnabled, playersDebounces[player.UserId])
 
-        if self.playersDebounces[player.UserId] == nil then
-            self.playersDebounces[player.UserId] = true;
+        if playersDebounces[player.UserId] == nil then
+            playersDebounces[player.UserId] = true
 
-            --print("NumOfObjects", self.NumOfObjects[player.UserId])
+            --print("NumOfObjects", NumOfObjects[player.UserId])
             local NotificationService = Knit.GetService("NotificationService")
 
-            if not self.ObjectsInBlender[player.UserId] then self.ObjectsInBlender[player.UserId] = {} end
-            if not self.NumOfObjects[player.UserId] then self.NumOfObjects[player.UserId] = 0 end
+            if not ObjectsInBlender[player.UserId] then ObjectsInBlender[player.UserId] = {} end
+            if not NumOfObjects[player.UserId] then NumOfObjects[player.UserId] = 0 end
 
-            if self.NumOfObjects[player.UserId] == 0 then
+            if NumOfObjects[player.UserId] == 0 then
                 NotificationService:Message(false, player, "Blender is empty!")
             else
-                self.NumOfObjects[player.UserId] = 0;
+                NumOfObjects[player.UserId] = 0
 
                 local blendedFood = SpawnItemsAPI:SpawnBlenderFood(
                     player.UserId, 
                     player, 
-                    self.ObjectsInBlender[player.UserId], 
+                    ObjectsInBlender[player.UserId], 
                     IngredientObjects, 
                     IngredientsAvailable, 
-                    (self.Object.ReturnObj.Position + Vector3.new(0,5,0)),
-                    self.BlenderColors[player.UserId]
-                );
+                    (Object.ReturnObj.Position + Vector3.new(0,5,0)),
+                    BlenderColors[player.UserId]
+                )
 
                 NotificationService:Message(false, player, "Blended food is dropped!")
                 
-                self.ObjectsInBlender[player.UserId] = {};
+                ObjectsInBlender[player.UserId] = {}
 
-                local CookingService = Knit.GetService("CookingService");
+                local CookingService = Knit.GetService("CookingService")
                 CookingService.Client.ChangeClientBlender:Fire(player,
-                    self.Object, -- blender object
+                    Object, -- blender object
                     "fluidPercentage", -- command
                     { -- data
-                        FluidPercentage = (self.NumOfObjects[player.UserId] / self.MaxNumOfObjects), -- fluid 
-                        FluidText = tostring(self.NumOfObjects[player.UserId].."/"..self.MaxNumOfObjects), -- blender text
+                        FluidPercentage = (NumOfObjects[player.UserId] / MaxNumOfObjects), -- fluid 
+                        FluidText = tostring(NumOfObjects[player.UserId].."/"..MaxNumOfObjects), -- blender text
                         FluidColor = Color3.fromRGB(66, 123, 255), -- color of food
-                    });
+                    })
             end
 
-            task.wait(1);
-            self.playersDebounces[player.UserId] = nil;
+            task.wait(1)
+            playersDebounces[player.UserId] = nil
         end
-	end));
+	end))
 
-    self._maid:GiveTask(self.Object:GetAttributeChangedSignal("Enabled"):Connect(function(player)
-        local Enabled = self.Object:GetAttribute("Enabled")
+    component._maid:GiveTask(Object:GetAttributeChangedSignal("Enabled"):Connect(function(player)
+        local Enabled = Object:GetAttribute("Enabled")
 
         if Enabled then
-            self.BlenderEnabled = true;
+            BlenderEnabled = true
 
-            self.Object.Lid.Transparency = 1;
-            self.Object.Lid.CanCollide =  false;
+            Object.Lid.Transparency = 1
+            Object.Lid.CanCollide =  false
         
-            task.spawn(SpinBlade, true);
-            PlayEffects(true);
-            self.Object.Button.SurfaceGui.Frame.BackgroundColor3 = Color3.fromRGB(0, 166, 0)
-            self.Object.Button.ProximityPrompt.ActionText = "Get Blended Food"
+            task.spawn(SpinBlade, true)
+            PlayEffects(true)
+            Object.Button.SurfaceGui.Frame.BackgroundColor3 = Color3.fromRGB(0, 166, 0)
+            Object.Button.ProximityPrompt.ActionText = "Get Blended Food"
         else
-            self.BlenderEnabled = false;
+            BlenderEnabled = false
 
-            self.Object.Lid.Transparency = 0;
-            self.Object.Lid.CanCollide = true;
+            Object.Lid.Transparency = 0
+            Object.Lid.CanCollide = true
         
-            task.spawn(SpinBlade, false);
-            PlayEffects(false);
-            self.Object.Button.SurfaceGui.Frame.BackgroundColor3 = Color3.fromRGB(166, 0, 0)
-            self.Object.Button.ProximityPrompt.ActionText = "Disabled"
+            task.spawn(SpinBlade, false)
+            PlayEffects(false)
+            Object.Button.SurfaceGui.Frame.BackgroundColor3 = Color3.fromRGB(166, 0, 0)
+            Object.Button.ProximityPrompt.ActionText = "Disabled"
 
-            self.playersDebounces = {};
-            self.ObjectsInBlender = {};
-            self.BlenderColors = {};
-            self.colorOfFood = {};
-            self.MaxNumOfObjects = 5;
-            self.NumOfObjects = {};
-            local CookingService = Knit.GetService("CookingService");
+            playersDebounces = {}
+            ObjectsInBlender = {}
+            BlenderColors = {}
+            colorOfFood = {}
+            MaxNumOfObjects = 5
+            NumOfObjects = {}
+            local CookingService = Knit.GetService("CookingService")
             CookingService.Client.ChangeClientBlender:FireAll(
-                self.Object, -- blender object
+                Object, -- blender object
                 "fluidPercentage", -- command
                 { -- data
-                    FluidPercentage = (0 / self.MaxNumOfObjects), -- fluid 
+                    FluidPercentage = (0 / MaxNumOfObjects), -- fluid 
                     FluidText = tostring("..."), -- blender text
                     FluidColor = Color3.fromRGB(66, 123, 255), -- color of food
-                });
+                })
         end
-	end));
+	end))
 
     --// In case Players have joined the server earlier than this script ran:
     for _, player in ipairs(Players:GetPlayers()) do
-        coroutine.wrap(PlayerAdded)(player);
+        coroutine.wrap(PlayerAdded)(player)
     end
 
-    Players.PlayerAdded:Connect(PlayerAdded);
-    Players.PlayerRemoving:Connect(PlayerRemoving);
+    Players.PlayerAdded:Connect(PlayerAdded)
+    Players.PlayerRemoving:Connect(PlayerRemoving)
+end)
 
-    return self;
-end
+MyComponent.Stopped:Connect(function(component) 
+    local robloxInstance: Instance = component.Instance
+	print("Component is not bound to " .. robloxInstance:GetFullName() .. " anymore")
+    if component._maid then component._maid:Destroy() end
+end)
 
-function Blender:Destroy()
-    self._maid:Destroy();
-end
-
-return Blender;
+return {}

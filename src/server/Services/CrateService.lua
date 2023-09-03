@@ -96,56 +96,53 @@ local DataStoreService = game:GetService("DataStoreService")
 local Knit = require(ReplicatedStorage.Packages.Knit)
 local TableAPI = require(Knit.Modules.Table)
 
-local TableUtil = require(Knit.Util.TableUtil);
-local Signal = require(Knit.Util.Signal);
-local Synced = require(Knit.ReplicatedModules.Synced);
+local Signal = require(Knit.Util.Signal)
+local Synced = require(Knit.Shared.Modules.Synced)
 
 local ThemeData = workspace:GetAttribute("Theme")
 
 local crateStoreLogs = DataStoreService:GetDataStore("CrateStoreLogs")
 
-local DataService = Knit.DataService;
-local InventoryService = Knit.InventoryService;
+local HatSkinsData = require(Knit.Shared.Assets.HatSkins)
+local BoosterEffectsData = require(Knit.Shared.Assets.BoosterEffects)
+local Config = require(Knit.Shared.Modules.Config)
 
-local HatSkinsData = require(Knit.ReplicatedHatSkins);
-local BoosterEffectsData = require(Knit.ReplicatedBoosterEffects);
-
-local Rarities = Knit.ReplicatedRarities;
+local Rarities = require(Knit.Shared.Assets.Rarities)
 
 local CrateService = Knit.CreateService {
-    Name = "CrateService";
+    Name = "CrateService",
     Client = {
-        SuccessCrateSignal = Knit.CreateSignal(); -- When player successful purchases Item/crate
+        SuccessCrateSignal = Knit.CreateSignal(), -- When player successful purchases Item/crate
 
-        InitializeDailyShop = Knit.CreateSignal(); -- request for daily items for player
-        InitializeHourlyShop = Knit.CreateSignal(); -- request for hourly items for player
+        InitializeDailyShop = Knit.CreateSignal(), -- request for daily items for player
+        InitializeHourlyShop = Knit.CreateSignal(), -- request for hourly items for player
 
-        SendDailyItems = Knit.CreateSignal(); -- updates daily items for player
-        SendHourlyItems = Knit.CreateSignal(); -- updates hourly items for player
-    };
-    SavePlayerLastData = Signal.new();
+        SendDailyItems = Knit.CreateSignal(), -- updates daily items for player
+        SendHourlyItems = Knit.CreateSignal(), -- updates hourly items for player
+    },
+    SavePlayerLastData = Signal.new()
 }
 
-local PlayerDailyProfiles = {};
-local PlayerHourlyProfiles = {};
-local PlayerLoginTimes = {};
-local PlayerDailyItems = {};
-local PlayerHourlyItems = {};
-local PlayerServerPurchases = {};
+local PlayerDailyProfiles = {}
+local PlayerHourlyProfiles = {}
+local PlayerLoginTimes = {}
+local PlayerDailyItems = {}
+local PlayerHourlyItems = {}
+local PlayerServerPurchases = {}
 local PlayerUpgradeDebounce = {}
 
-local RarityWeights = Rarities.getRarityChances();
-RarityWeights.Common = 100;
+local RarityWeights = Rarities.getRarityChances()
+RarityWeights.Common = 100
 
-local ResetDailyShop = Knit.Config.RESET_DAILY_SHOP_DATA;
-local DailyShopOffset = (60 * 60 * Knit.Config.DAILY_SHOP_OFFSET); 
+local ResetDailyShop = Config.RESET_DAILY_SHOP_DATA
+local DailyShopOffset = (60 * 60 * Config.DAILY_SHOP_OFFSET) 
 
-local HourlyShopOffset = (60 * 60); 
+local HourlyShopOffset = (60 * 60) 
 
 Synced.init() -- Will make the request to google.com if it hasn't already.
 
 local function GetItemsFromRarity(typeItem, rarityItem)
-    local Items;
+    local Items
     if typeItem == "Hats" then
         Items = HatSkinsData.getHatSkinsFromRarity(rarityItem, true)
     elseif typeItem == "Booster Effects" then
@@ -158,9 +155,9 @@ end
 
 function CrateService:ResetShopItems(Player)
 	if Player then
-		local PlayerProfile = DataService:GetProfile(Player).Data;
+		local PlayerProfile = Knit.GetService("DataService"):GetProfile(Player).Data
 		if PlayerProfile then
-			PlayerProfile.DailyShopItems = {};
+			PlayerProfile.DailyShopItems = {}
 		end
 	end
 end
@@ -172,16 +169,16 @@ end
 
 function CrateService:ResetHourlyItems(Player)
 	if Player then
-		local PlayerProfile = DataService:GetProfile(Player).Data;
+		local PlayerProfile = Knit.GetService("DataService"):GetProfile(Player).Data
 		if PlayerProfile then
-			PlayerProfile.HourlyShopItems = {};
+			PlayerProfile.HourlyShopItems = {}
 		end
 	end
 end
 
 function CrateService:PurchaseItem(player, name, crateType, dailyShopId)
     --print(player, name, crateType, dailyShopId)
-    if not player or not name or not crateType or not dailyShopId then return end;
+    if not player or not name or not crateType or not dailyShopId then return end
     if PlayerUpgradeDebounce[player] or not PlayerDailyItems[player] then 
         return {
             Player = player, 
@@ -189,30 +186,30 @@ function CrateService:PurchaseItem(player, name, crateType, dailyShopId)
             DailyData = nil,
             Status = "Error", 
             StatusString = "[ErrorCode CS-PI0] Error occurred, please try again.",
-            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
+            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)},
             Data = nil
         }
     end
 
-    PlayerUpgradeDebounce[player] = true;
-    local PlayerCurrency, PlayerDailyData = nil, nil;
-    local PlayerProfile = DataService:GetProfile(player)
+    PlayerUpgradeDebounce[player] = true
+    local PlayerCurrency, PlayerDailyData = nil, nil
+    local PlayerProfile = Knit.GetService("DataService"):GetProfile(player)
     if PlayerProfile then
-        PlayerCurrency = PlayerProfile.Data.PlayerInfo.Currency[ThemeData];
-        PlayerDailyData = PlayerProfile.Data.DailyShopItems;
+        PlayerCurrency = PlayerProfile.Data.PlayerInfo.Currency[ThemeData]
+        PlayerDailyData = PlayerProfile.Data.DailyShopItems
         PlayerDailyItems[player].DailyShopItems = PlayerDailyData
     end
 
     if not PlayerCurrency or not PlayerDailyData then
-        PlayerUpgradeDebounce[player] = nil;
+        PlayerUpgradeDebounce[player] = nil
         return {
             Player = player,
             Currency = PlayerCurrency,
             DailyData = PlayerDailyItems[player],
             Status = "Error", 
             StatusString = "[ErrorCode CS-PI1] Error occurred, please try again.",
-            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
-            Data = nil;
+            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)},
+            Data = nil
         }
     end
     local selectedInfo, selectedItem = nil, nil
@@ -224,42 +221,42 @@ function CrateService:PurchaseItem(player, name, crateType, dailyShopId)
     end
 
     if not selectedInfo then
-        PlayerUpgradeDebounce[player] = nil;
+        PlayerUpgradeDebounce[player] = nil
         return {
             Player = player,
             Currency = PlayerCurrency,
             DailyData = PlayerDailyItems[player],
             Status = "Error", 
             StatusString = "[ErrorCode CS-PI2] Failed to find crate type.",
-            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
-            Data = nil;
+            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)},
+            Data = nil
         }
     end
 
     selectedItem = selectedInfo.getItemFromName(name)
 
     if not selectedItem then
-        PlayerUpgradeDebounce[player] = nil;
+        PlayerUpgradeDebounce[player] = nil
         return {
             Player = player,
             Currency = PlayerCurrency,
             DailyData = PlayerDailyItems[player],
             Status = "Error", 
             StatusString = "[ErrorCode CS-PI3] Failed to find item.",
-            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
-            Data = nil;
+            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)},
+            Data = nil
         }
     end
 
     if PlayerCurrency < selectedInfo.getItemFromName(name).IndividualPrice then
-        PlayerUpgradeDebounce[player] = nil;
+        PlayerUpgradeDebounce[player] = nil
         return {
             Player = player, 
             Currency = PlayerCurrency,
             DailyData = PlayerDailyItems[player],
             Status = "Error", 
             StatusString = "[ErrorCode CS-PI4] Insufficient funds!",
-            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
+            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)},
             Data = nil
         }
     end
@@ -269,21 +266,21 @@ function CrateService:PurchaseItem(player, name, crateType, dailyShopId)
     local PlayerDailyShopItems = PlayerProfile.Data.DailyShopItems
 
     if not PlayerInfo or not PlayerDailyShopItems then
-        PlayerUpgradeDebounce[player] = nil;
+        PlayerUpgradeDebounce[player] = nil
         return {
             Player = player,
             Currency = PlayerCurrency,
             DailyData = PlayerDailyItems[player],
             Status = "Error", 
             StatusString = "[ErrorCode CS-PI5] Error occurred, please try again.",
-            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
-            Data = nil;
+            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)},
+            Data = nil
         }
     end
 
     if PlayerDailyShopItems[dailyShopId].purchased == true 
-    or InventoryService:HasItem(player, ItemName, crateType) == true then
-        PlayerUpgradeDebounce[player] = nil;
+    or Knit.GetService("InventoryService"):HasItem(player, ItemName, crateType) == true then
+        PlayerUpgradeDebounce[player] = nil
         PlayerProfile.Data.DailyShopItems[dailyShopId].purchased = true
         PlayerProfile.Data.DailyShopItems[dailyShopId].hasItem = true
         return {
@@ -292,15 +289,15 @@ function CrateService:PurchaseItem(player, name, crateType, dailyShopId)
             DailyData = PlayerDailyItems[player],
             Status = "Error", 
             StatusString = "[ErrorCode CS-PI6] Item is already purchased.",
-            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)};
-            Data = nil;
+            StatusEffect = {Effect = false, Color = Color3.fromRGB(255, 21, 21)},
+            Data = nil
         }
     end
 
     if PlayerProfile.Data.PlayerInfo.DailyItemsBought == nil then
-        PlayerProfile.Data.PlayerInfo.DailyItemsBought = 1;
+        PlayerProfile.Data.PlayerInfo.DailyItemsBought = 1
     else
-        PlayerProfile.Data.PlayerInfo.DailyItemsBought += 1;
+        PlayerProfile.Data.PlayerInfo.DailyItemsBought += 1
     end
 
     if PlayerServerPurchases[player.UserId] == nil then
@@ -324,26 +321,26 @@ function CrateService:PurchaseItem(player, name, crateType, dailyShopId)
     )
 
     PlayerCurrency = PlayerCurrency - selectedItem.IndividualPrice
-    PlayerProfile.Data.PlayerInfo.Currency[ThemeData] = PlayerCurrency;
-    DataService.Client.CurrencySignal:Fire(player, PlayerProfile.Data.PlayerInfo.Currency[ThemeData], nil, nil, true)
+    PlayerProfile.Data.PlayerInfo.Currency[ThemeData] = PlayerCurrency
+    Knit.GetService("DataService").Client.CurrencySignal:Fire(player, PlayerProfile.Data.PlayerInfo.Currency[ThemeData], nil, nil, true)
 
-    InventoryService.AddItem(player, ItemName, crateType)
-    PlayerDailyItems[player].DailyShopItems = PlayerProfile.Data.DailyShopItems;
-    PlayerUpgradeDebounce[player] = nil;
+    Knit.GetService("InventoryService").AddItem(player, ItemName, crateType)
+    PlayerDailyItems[player].DailyShopItems = PlayerProfile.Data.DailyShopItems
+    PlayerUpgradeDebounce[player] = nil
     return {
         Player = player, 
         Currency = PlayerCurrency,
         DailyData = PlayerDailyItems[player],
         Status = "Success", 
         StatusString = "Purchase Successful",
-        StatusEffect = {Effect = false, Color = Color3.fromRGB(40, 255, 21)};
+        StatusEffect = {Effect = false, Color = Color3.fromRGB(40, 255, 21)},
         Data = selectedItem
     }
 end
 
 function CrateService.Client:PurchaseCrate(player, crateId, crateType, isHourlyCrate)
     --print(player, crateId, crateType, isHourlyCrate)
-    local PlayerProfile = DataService:GetProfile(player).Data;
+    local PlayerProfile = Knit.GetService("DataService"):GetProfile(player).Data
     if not PlayerProfile then 
         return {
             Player = player, 
@@ -404,7 +401,7 @@ function CrateService.Client:PurchaseCrate(player, crateId, crateType, isHourlyC
     end
     
     if selectedItem then
-        local ItemName;
+        local ItemName
 
         if isHourlyCrate then
             ItemName = selectedItem.itemKey
@@ -417,26 +414,26 @@ function CrateService.Client:PurchaseCrate(player, crateId, crateType, isHourlyC
         end
 
         if isHourlyCrate then
-            local Day = math.floor((Synced.time() + DailyShopOffset) / (60 * 60 * 24));
-            local Hour = math.floor((Synced.time() + HourlyShopOffset) / (60 * 60));
+            local Day = math.floor((Synced.time() + DailyShopOffset) / (60 * 60 * 24))
+            local Hour = math.floor((Synced.time() + HourlyShopOffset) / (60 * 60))
             if PlayerProfile.CratesOpened["HourlyCrate_" .. Day + Hour] then
-                PlayerProfile.CratesOpened["HourlyCrate_" .. Day + Hour] += 1;
+                PlayerProfile.CratesOpened["HourlyCrate_" .. Day + Hour] += 1
             else
-                PlayerProfile.CratesOpened["HourlyCrate_" .. Day + Hour] = 1;
+                PlayerProfile.CratesOpened["HourlyCrate_" .. Day + Hour] = 1
             end
         else
             if PlayerProfile.CratesOpened[selectedInfo.getCrateInfoFromId(crateId).CrateType .. "_" .. selectedInfo.getCrateInfoFromId(crateId).Key] then
-                PlayerProfile.CratesOpened[selectedInfo.getCrateInfoFromId(crateId).CrateType .. "_" .. selectedInfo.getCrateInfoFromId(crateId).Key] += 1;
+                PlayerProfile.CratesOpened[selectedInfo.getCrateInfoFromId(crateId).CrateType .. "_" .. selectedInfo.getCrateInfoFromId(crateId).Key] += 1
             else
-                PlayerProfile.CratesOpened[selectedInfo.getCrateInfoFromId(crateId).CrateType .. "_" .. selectedInfo.getCrateInfoFromId(crateId).Key] = 1;
+                PlayerProfile.CratesOpened[selectedInfo.getCrateInfoFromId(crateId).CrateType .. "_" .. selectedInfo.getCrateInfoFromId(crateId).Key] = 1
             end
         end
         
 
         if PlayerProfile.PlayerInfo.CratesOpened == nil then
-            PlayerProfile.PlayerInfo.CratesOpened = 1;
+            PlayerProfile.PlayerInfo.CratesOpened = 1
         else
-            PlayerProfile.PlayerInfo.CratesOpened += 1;
+            PlayerProfile.PlayerInfo.CratesOpened += 1
         end
 
         if PlayerServerPurchases[player.UserId] == nil then
@@ -478,14 +475,14 @@ function CrateService.Client:PurchaseCrate(player, crateId, crateType, isHourlyC
         end
 
         if isHourlyCrate then
-            PlayerProfile.PlayerInfo.Coins = PlayerProfile.PlayerInfo.Coins - 1000;
+            PlayerProfile.PlayerInfo.Coins = PlayerProfile.PlayerInfo.Coins - 1000
         else
-            PlayerProfile.PlayerInfo.Coins = PlayerProfile.PlayerInfo.Coins - selectedInfo.getCrateInfoFromId(crateId).Price;
+            PlayerProfile.PlayerInfo.Coins = PlayerProfile.PlayerInfo.Coins - selectedInfo.getCrateInfoFromId(crateId).Price
         end
         
-        DataService.Client.CoinSignal:Fire(player, PlayerProfile.PlayerInfo.Coins, nil, true)
-        local ItemDuplicate = InventoryService:IsDuplicate(player, ItemName, crateType);
-        InventoryService.AddItem(player, ItemName, crateType)
+        Knit.GetService("DataService").Client.CoinSignal:Fire(player, PlayerProfile.PlayerInfo.Coins, nil, true)
+        local ItemDuplicate = Knit.GetService("InventoryService"):IsDuplicate(player, ItemName, crateType)
+        Knit.GetService("InventoryService").AddItem(player, ItemName, crateType)
         return {
             Player = player, 
             Status = "Success", 
@@ -542,7 +539,7 @@ function CrateService:UpdateHourlyShopData(player, profile, lastLogin) -- Update
         --local seconds = dailyshopTime - (os.time() - lastLogin)
         if HourlySeconds <= 0 then
             if PlayerHourlyItems[player] then
-                PlayerHourlyItems[player] = nil;
+                PlayerHourlyItems[player] = nil
             end
             return self:CheckHourlyShopData(player, profile)
         end
@@ -551,7 +548,7 @@ function CrateService:UpdateHourlyShopData(player, profile, lastLogin) -- Update
             if not PlayerHourlyItems[player] then
                 task.wait(HourlySeconds)
                 if player and PlayerHourlyItems[player] then
-                    PlayerHourlyItems[player] = nil;
+                    PlayerHourlyItems[player] = nil
                     return self:CheckHourlyShopData(player, profile)
                 end
             end
@@ -586,7 +583,7 @@ function CrateService:CheckHourlyShopData(player, profile) -- Checks daily shop 
     
     if player and profile then
         if ResetDailyShop == true then
-            profile.PlayerInfo.HourlyShopInfo = false; -- UNCOMMENT RESETS TIME STATS 
+            profile.PlayerInfo.HourlyShopInfo = false -- UNCOMMENT RESETS TIME STATS 
         end
 
 		if typeof(profile.PlayerInfo.HourlyShopInfo) ~= "table" then 
@@ -594,7 +591,7 @@ function CrateService:CheckHourlyShopData(player, profile) -- Checks daily shop 
                 CurrentDay = -1,
                 CurrentHour = -1,
                 Streak = 0
-            };
+            }
 		end
 
         if profile.PlayerInfo.HourlyShopInfo.CurrentHour == nil then 
@@ -602,7 +599,7 @@ function CrateService:CheckHourlyShopData(player, profile) -- Checks daily shop 
                 CurrentDay = -1,
                 CurrentHour = -1,
                 Streak = 0
-            };
+            }
 		end
 
 		local lastOnlineDate = profile.PlayerInfo.HourlyShopInfo.CurrentHour
@@ -611,9 +608,9 @@ function CrateService:CheckHourlyShopData(player, profile) -- Checks daily shop 
 
 			local streak = profile.PlayerInfo.HourlyShopInfo.Streak or 0
 			
-            self:ResetHourlyItems(player);
+            self:ResetHourlyItems(player)
 
-            self:StartHourlyItems(player, profile, Day+Hour, 8);
+            self:StartHourlyItems(player, profile, Day+Hour, 8)
 
 			streak = streak + 1
 			if lastOnlineDate then
@@ -621,7 +618,7 @@ function CrateService:CheckHourlyShopData(player, profile) -- Checks daily shop 
                     CurrentDay = Day,
                     CurrentHour = Hour,
                     Streak = 0
-                };
+                }
 			end
 			
 			self:UpdateHourlyShopData(player, profile, profile.PlayerInfo.HourlyShopInfo.CurrentHour)
@@ -633,11 +630,11 @@ end
 
 function CrateService:StartHourlyItems(player, profile, CurrentHour, NumOfItems)
     if player and profile then
-        --print("[DailyHandler]: "..player.Name .. " is starting daily items");
-        local seed = Random.new(CurrentHour);
+        --print("[DailyHandler]: "..player.Name .. " is starting daily items")
+        local seed = Random.new(CurrentHour)
 
         --print("Hourly Seed", seed, CurrentHour)
-        local crateItems = {};
+        local crateItems = {}
 
         local function shallowCopy(original)
             local copy = {}
@@ -648,35 +645,35 @@ function CrateService:StartHourlyItems(player, profile, CurrentHour, NumOfItems)
         end
 
         if profile.HourlyShopItems == nil then
-            profile.HourlyShopItems = {};
+            profile.HourlyShopItems = {}
         end
 
         for Index,HourlyItem in pairs(profile.HourlyShopItems) do
             if HourlyItem and HourlyItem.id == 0 then
-                table.remove(profile.HourlyShopItems, Index);
-            end;
-        end;
+                table.remove(profile.HourlyShopItems, Index)
+            end
+        end
 
         local function GenerateItem(Rarity)
-            local returnedItem;
-            local returnedRarity;
+            local returnedItem
+            local returnedRarity
     
             local function GenerateWeightedItem(rarityName) -- wrap this in a function so that it's easier to use for our duplicate check
                 local rarity -- initialize our rarity variable
                 local weightNumber -- Use NextNumber instead of NextInteger so that you can use decimals in your weight values. NextNumber is much more precise. We limit it to 100, our max weight value
 
                 if rarityName == "Legendary" then
-                    weightNumber = seed:NextNumber(0,1);
+                    weightNumber = seed:NextNumber(0,1)
                 elseif rarityName == "Epic" then
-                    weightNumber = seed:NextNumber(1,2);
+                    weightNumber = seed:NextNumber(1,2)
                 elseif rarityName == "Rare" then
-                    weightNumber = seed:NextNumber(3, 5);
+                    weightNumber = seed:NextNumber(3, 5)
                 elseif rarityName == "Uncommon" then
-                    weightNumber = seed:NextNumber(6, 29);
+                    weightNumber = seed:NextNumber(6, 29)
                 elseif rarityName == "Common" then
-                    weightNumber = seed:NextNumber(60, 100);
+                    weightNumber = seed:NextNumber(60, 100)
                 else
-                    weightNumber = seed:NextNumber(0, 100);
+                    weightNumber = seed:NextNumber(0, 100)
                 end
     
                 local weightitem -- initialize a variable for the weighted item
@@ -685,32 +682,32 @@ function CrateService:StartHourlyItems(player, profile, CurrentHour, NumOfItems)
                 if weightNumber < RarityWeights.Legendary then 
                     --print("Legendary") 
                     local Items = HatSkinsData.getHatSkinsFromRarity(5, false)
-                    --Items = TableUtil.Shuffle(Items);
-                    weightitem = Items[seed:NextInteger(1,#Items)];
+                    --Items = TableUtil.Shuffle(Items)
+                    weightitem = Items[seed:NextInteger(1,#Items)]
                     rarity = Items
                 elseif weightNumber < RarityWeights.Epic then 
                     --print("Epic")
                     local Items = HatSkinsData.getHatSkinsFromRarity(4, false)
-                    --Items = TableUtil.Shuffle(Items);
-                    weightitem = Items[seed:NextInteger(1,#Items)];
+                    --Items = TableUtil.Shuffle(Items)
+                    weightitem = Items[seed:NextInteger(1,#Items)]
                     rarity = Items
                 elseif weightNumber < RarityWeights.Rare then 
                     --print("Rare")
                     local Items = HatSkinsData.getHatSkinsFromRarity(3, false)
-                    --Items = TableUtil.Shuffle(Items);
-                    weightitem = Items[seed:NextInteger(1,#Items)];
+                    --Items = TableUtil.Shuffle(Items)
+                    weightitem = Items[seed:NextInteger(1,#Items)]
                     rarity = Items
                 elseif weightNumber < RarityWeights.Uncommon then 
                     --print("Uncommon")
                     local Items = HatSkinsData.getHatSkinsFromRarity(2, false)
-                    --Items = TableUtil.Shuffle(Items);
-                    weightitem = Items[seed:NextInteger(1,#Items)];
+                    --Items = TableUtil.Shuffle(Items)
+                    weightitem = Items[seed:NextInteger(1,#Items)]
                     rarity = Items
                 else
                     --print("Common")
                     local Items = HatSkinsData.getHatSkinsFromRarity(1, false)
-                    --Items = TableUtil.Shuffle(Items);
-                    weightitem = Items[seed:NextInteger(1,#Items)];
+                    --Items = TableUtil.Shuffle(Items)
+                    weightitem = Items[seed:NextInteger(1,#Items)]
                     rarity = Items
                 end
     
@@ -718,7 +715,7 @@ function CrateService:StartHourlyItems(player, profile, CurrentHour, NumOfItems)
             end
     
             returnedItem, returnedRarity = GenerateWeightedItem(Rarity) -- Do the function
-            --returnedRarity = TableUtil.Shuffle(returnedRarity); -- Shuffles the table
+            --returnedRarity = TableUtil.Shuffle(returnedRarity) -- Shuffles the table
             local itemtablecopy = shallowCopy(returnedRarity) -- Copies the table we returned
     
             --Duplicate check below
@@ -762,7 +759,7 @@ function CrateService:StartHourlyItems(player, profile, CurrentHour, NumOfItems)
         GenerateItem("Legendary")
        
         --[[bool = not bool
-        local itemInfo;
+        local itemInfo
         if bool then
             itemInfo = DuckSkins.selectRandomItem(-2)
         else
@@ -776,20 +773,20 @@ function CrateService:StartHourlyItems(player, profile, CurrentHour, NumOfItems)
             local HourlyItem = {
                 id = AmountOfMissions + 1,
                 purchased = false,
-                hasItem = InventoryService:HasItem(player, itemInfo.Key, itemInfo.ItemType),
+                hasItem = Knit.GetService("InventoryService"):HasItem(player, itemInfo.Key, itemInfo.ItemType),
                 itemType = itemInfo.ItemType,
                 itemRarity = itemInfo.Rarity,
                 itemKey = itemInfo.Key,
                 itemDecal = itemInfo.DecalId,
-                timestamp = os.time();
-            };
+                timestamp = os.time()
+            }
 
             --print("Hourly Item:", itemInfo.Name, itemInfo.Rarity)
             
-            table.insert(profile.HourlyShopItems, AmountOfMissions + 1, HourlyItem);
+            table.insert(profile.HourlyShopItems, AmountOfMissions + 1, HourlyItem)
         end
-    end;
-end;
+    end
+end
 
 -- DAILY FUNCTIONS
 
@@ -807,7 +804,7 @@ function CrateService:UpdateDailyShopData(player, profile, lastLogin, dailyshopT
         --local seconds = dailyshopTime - (os.time() - lastLogin)
         if DailySeconds <= 0 then
             if PlayerDailyItems[player] then
-                PlayerDailyItems[player] = nil;
+                PlayerDailyItems[player] = nil
             end
             return self:CheckDailyShopData(player, profile, dailyshopTime)
         end
@@ -816,7 +813,7 @@ function CrateService:UpdateDailyShopData(player, profile, lastLogin, dailyshopT
             if not PlayerDailyItems[player] then
                 task.wait(DailySeconds)
                 if player and PlayerDailyItems[player] then
-                    PlayerDailyItems[player] = nil;
+                    PlayerDailyItems[player] = nil
                     return self:CheckDailyShopData(player, profile, dailyshopTime)
                 end
             end
@@ -846,21 +843,21 @@ function CrateService:CheckDailyShopData(player, profile, dailyshopTime) -- Chec
     
     if player and profile and dailyshopTime then
         if ResetDailyShop == true then
-            profile.PlayerInfo.DailyShopInfo = false; -- UNCOMMENT RESETS TIME STATS 
+            profile.PlayerInfo.DailyShopInfo = false -- UNCOMMENT RESETS TIME STATS 
         end
 
 		if typeof(profile.PlayerInfo.DailyShopInfo) ~= "table" then 
 			profile.PlayerInfo.DailyShopInfo = {
                 CurrentDay = -1,
                 Streak = 0
-            };
+            }
 		end
 
         if profile.PlayerInfo.DailyShopInfo.CurrentDay == nil then 
 			profile.PlayerInfo.DailyShopInfo = {
                 CurrentDay = -1,
                 Streak = 0
-            };
+            }
 		end
 
 		local lastOnlineDate = profile.PlayerInfo.DailyShopInfo.CurrentDay
@@ -869,16 +866,16 @@ function CrateService:CheckDailyShopData(player, profile, dailyshopTime) -- Chec
 
 			local streak = profile.PlayerInfo.DailyShopInfo.Streak or 0
 			
-            self:ResetShopItems(player);
+            self:ResetShopItems(player)
 
-            self:StartDailyItems(player, profile, Day, 4);
+            self:StartDailyItems(player, profile, Day, 4)
 
 			streak = streak + 1
 			if lastOnlineDate then
 				profile.PlayerInfo.DailyShopInfo = {
                     CurrentDay = Day,
                     Streak = streak
-                };
+                }
 			end
 			
 			self:UpdateDailyShopData(player, profile, profile.PlayerInfo.DailyShopInfo.CurrentDay, dailyshopTime)
@@ -890,11 +887,11 @@ end
 
 function CrateService:StartDailyItems(player, profile, CurrentDay, NumOfItems)
     if player and profile then
-        --print("[DailyHandler]: "..player.Name .. " is starting daily items");
-        local seed = Random.new(CurrentDay);
+        --print("[DailyHandler]: "..player.Name .. " is starting daily items")
+        local seed = Random.new(CurrentDay)
 
         --print("Daily Seed:", seed, CurrentDay)
-        local shopItems = {};
+        local shopItems = {}
 
         local function shallowCopy(original)
             local copy = {}
@@ -906,45 +903,45 @@ function CrateService:StartDailyItems(player, profile, CurrentDay, NumOfItems)
 
         for Index,DailyItem in pairs(profile.DailyShopItems) do
             if DailyItem and DailyItem.id == 0 then
-                table.remove(profile.DailyShopItems, Index);
-            end;
-        end;
+                table.remove(profile.DailyShopItems, Index)
+            end
+        end
 
         local function GenerateItem(itemType : string)
-            local returnedItem;
-            local returnedRarity;
+            local returnedItem
+            local returnedRarity
     
             local function GenerateWeightedItem() -- wrap this in a function so that it's easier to use for our duplicate check
                 local rarity -- initialize our rarity variable
                 local weightNumber -- Use NextNumber instead of NextInteger so that you can use decimals in your weight values. NextNumber is much more precise. We limit it to 100, our max weight value
 
-                weightNumber = seed:NextNumber(0, 100);
+                weightNumber = seed:NextNumber(0, 100)
     
                 local weightitem, Items -- initialize a variable for the weighted item
 
                 --print("DAILY weightnumber", weightNumber)
 
                 if weightNumber < RarityWeights.Legendary then 
-                    Items = GetItemsFromRarity(itemType, 5); -- Legendary
-                    --Items = TableUtil.Shuffle(Items); // THIS RANDOMIZES THE ITEM RATHER THAN HAVING SAME ONE
+                    Items = GetItemsFromRarity(itemType, 5) -- Legendary
+                    --Items = TableUtil.Shuffle(Items) // THIS RANDOMIZES THE ITEM RATHER THAN HAVING SAME ONE
                 elseif weightNumber < RarityWeights.Epic then 
-                    Items = GetItemsFromRarity(itemType, 4); -- Epic
+                    Items = GetItemsFromRarity(itemType, 4) -- Epic
                 elseif weightNumber < RarityWeights.Rare then 
-                    Items = GetItemsFromRarity(itemType, 3); -- Rare
+                    Items = GetItemsFromRarity(itemType, 3) -- Rare
                 elseif weightNumber < RarityWeights.Uncommon then 
-                    Items = GetItemsFromRarity(itemType, 2); -- Uncommon
+                    Items = GetItemsFromRarity(itemType, 2) -- Uncommon
                 else
-                    Items = GetItemsFromRarity(itemType, 1); -- Common
+                    Items = GetItemsFromRarity(itemType, 1) -- Common
                 end
 
-                weightitem = Items[seed:NextInteger(1,#Items)];
+                weightitem = Items[seed:NextInteger(1,#Items)]
                 rarity = Items
     
                 return weightitem, rarity -- Return both these values so we can use it later. We will need the "rarity" table for duplicate prevention
             end
     
             returnedItem, returnedRarity = GenerateWeightedItem() -- Do the function, and now we have both the item and the returned rarity table
-            --returnedRarity = TableUtil.Shuffle(returnedRarity); -- Shuffles the table
+            --returnedRarity = TableUtil.Shuffle(returnedRarity) -- Shuffles the table
             local itemtablecopy = shallowCopy(returnedRarity) -- Copies the table we returned
     
             --print("shopItems:", shopItems)
@@ -983,7 +980,7 @@ function CrateService:StartDailyItems(player, profile, CurrentDay, NumOfItems)
         GenerateItem("Booster Effects")
        
         --[[bool = not bool
-        local itemInfo;
+        local itemInfo
         if bool then
             itemInfo = DuckSkins.selectRandomItem(-2)
         else
@@ -994,49 +991,49 @@ function CrateService:StartDailyItems(player, profile, CurrentDay, NumOfItems)
             local DailyItem = {
                 id = AmountOfMissions + 1,
                 purchased = false,
-                hasItem = InventoryService:HasItem(player, itemInfo.Key, itemInfo.ItemType),
+                hasItem = Knit.GetService("InventoryService"):HasItem(player, itemInfo.Key, itemInfo.ItemType),
                 itemType = itemInfo.ItemType,
                 itemKey = itemInfo.Key,
-                timestamp = os.time();
-            };     
+                timestamp = os.time()
+            }     
             
-            table.insert(profile.DailyShopItems, AmountOfMissions + 1, DailyItem);
+            table.insert(profile.DailyShopItems, AmountOfMissions + 1, DailyItem)
             print("Daily Item:", profile.DailyShopItems)
         end
-    end;
-end;
+    end
+end
 
 function CrateService:RemoveDailyItem(player, profile)
     if player and profile then
-        --print("[DailyHandler]: "..player.Name .. " is removing a mission");
-        local CurrentMission = nil;
+        --print("[DailyHandler]: "..player.Name .. " is removing a mission")
+        local CurrentMission = nil
 
         for _,Mission in pairs(profile.DailyShopItems) do
             if Mission and Mission.id == self:GetId() then
-                CurrentMission = Mission;
-                break;
-            end;
-        end;
+                CurrentMission = Mission
+                break
+            end
+        end
         
         if CurrentMission then
-            table.remove(profile.DailyShopItems, TableAPI.Find(profile.DailyShopItems,CurrentMission));
-        end;
-    end;
-end;
+            table.remove(profile.DailyShopItems, TableAPI.Find(profile.DailyShopItems,CurrentMission))
+        end
+    end
+end
 
 function CrateService:PurchasedItem(player, profile)
 	--print(player,profile)
     if player and profile then
-        --print("[DailyHandler]: "..player.Name .. " is purchase a item",profile.DailyShopItems);
+        --print("[DailyHandler]: "..player.Name .. " is purchase a item",profile.DailyShopItems)
 
         for _,ShopItem in pairs(profile.DailyShopItems) do
             --print(ShopItem,ShopItem.id,ShopItem.purchased ~= true)
             if ShopItem and ShopItem.id and ShopItem.purchased ~= true then
-                ShopItem.purchased = true;
-            end;
-        end;
-    end;
-end;
+                ShopItem.purchased = true
+            end
+        end
+    end
+end
 
 function CrateService:InitializeShops(Player)
     --print("InitializeShops", Player)
@@ -1046,11 +1043,10 @@ function CrateService:InitializeShops(Player)
         end)
         if success then
             --print(playerPurchases)
-            PlayerServerPurchases[Player.UserId] = playerPurchases;
+            PlayerServerPurchases[Player.UserId] = playerPurchases
         end
-        repeat task.wait(0.001) until DataService:GetProfile(Player) ~= nil
-        if DataService:GetProfile(Player) then
-            local PlayerProfile = DataService:GetProfile(Player).Data;
+        if Knit.GetService("DataService"):GetProfile(Player) then
+            local PlayerProfile = Knit.GetService("DataService"):GetProfile(Player).Data
             if not PlayerDailyProfiles[Player] and PlayerProfile then
                 PlayerDailyProfiles[Player] = PlayerProfile --TableUtil.Copy(PlayerProfile.Data, true)
                 if PlayerDailyProfiles[Player] then
@@ -1092,15 +1088,15 @@ end
 
 function CrateService:KnitStart()
     local function onPlayerAdded(player)
-        self:InitializeShops(player);
+        self:InitializeShops(player)
     end
 
     --// In case Players have joined the server earlier than this script ran:
     for _, player in ipairs(Players:GetPlayers()) do
-        coroutine.wrap(onPlayerAdded)(player);
+        coroutine.wrap(onPlayerAdded)(player)
     end
 
-    Players.PlayerAdded:Connect(onPlayerAdded);
+    Players.PlayerAdded:Connect(onPlayerAdded)
 end
 
 function CrateService:KnitInit()
@@ -1108,4 +1104,4 @@ function CrateService:KnitInit()
 end
 
 
-return CrateService;
+return CrateService

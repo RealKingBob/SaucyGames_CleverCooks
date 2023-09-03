@@ -5,12 +5,12 @@ local TutorialHandler = Knit.CreateController { Name = "TutorialHandler" }
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 
-local LocalPlayer = Players.LocalPlayer;
+local LocalPlayer = Players.LocalPlayer
 
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui");
-local TutorialUI = PlayerGui:WaitForChild("Tutorial");
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local TutorialUI = PlayerGui:WaitForChild("Tutorial")
 
-local HoverInfo = TweenInfo.new(.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out);
+local HoverInfo = TweenInfo.new(.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 function TutorialHandler:TransitionBackground(alpha)
     local BackgroundFrame = TutorialUI:WaitForChild("Background")

@@ -8,21 +8,21 @@ local DailyView = Knit.CreateController { Name = "DailyView" }
 local plr = Players.LocalPlayer
 
 --//Imports
-local Rarities;
-local CommaValue;
-local CrateService;
+local Rarities
+local CommaValue
+local CrateService
 
-local HatSkins = require(Knit.ReplicatedHatSkins);
-local BoosterEffects = require(Knit.ReplicatedBoosterEffects);
+local HatSkins = require(Knit.Shared.Assets.HatSkins)
+local BoosterEffects = require(Knit.Shared.Assets.BoosterEffects)
 
 --//State
-local CurrentData;
-local ResetTime;
-local MyInventory;
-local ThemeData;
-local PlayerCurrency = 0;
+local CurrentData
+local ResetTime
+local MyInventory
+local ThemeData
+local PlayerCurrency = 0
 
-local buttonDebounce = false;
+local buttonDebounce = false
 
 --//Private Functions
 local function FormatSeconds(s)
@@ -33,14 +33,14 @@ end
 function DailyView:Update(Data)
     warn("DATA:", Data)
     if not Data then return end
-    CurrentData = Data;
-    local MainContainer = self.DailyPage:WaitForChild("Main");
+    CurrentData = Data
+    local MainContainer = self.DailyPage:WaitForChild("Main")
 
     for _,v in pairs(MainContainer:GetChildren()) do
         if (v:IsA("GuiObject")) then
-            local Index = tonumber(v.Name);
-            local DisplayData = Data.DailyShopItems[Index];      
-            local ItemInfo, PurchaseInfo;
+            local Index = tonumber(v.Name)
+            local DisplayData = Data.DailyShopItems[Index]      
+            local ItemInfo, PurchaseInfo
 
             --print(DisplayData)
             --print(HatSkins.getItemFromKey(DisplayData["itemKey"]))
@@ -62,20 +62,20 @@ function DailyView:Update(Data)
             --print(Rarities.getRarityDataFromItemName(ItemInfo.Key))
 
             if DisplayData["itemType"] == "Hats" then
-                RarityData = Rarities.getRarityDataFromItemName(ItemInfo.Key, "Hats");
+                RarityData = Rarities.getRarityDataFromItemName(ItemInfo.Key, "Hats")
             elseif DisplayData["itemType"] == "Booster Effects" then
-                RarityData = Rarities.getRarityDataFromItemName(ItemInfo.Key, "Booster Effects");
+                RarityData = Rarities.getRarityDataFromItemName(ItemInfo.Key, "Booster Effects")
             end
 
             --print("itemRarity", ItemInfo, RarityData)
 
-            v:WaitForChild("ImageInfo"):WaitForChild("ImageLabel").Image = ItemInfo.DecalId;
+            v:WaitForChild("ImageInfo"):WaitForChild("ImageLabel").Image = ItemInfo.DecalId
 
-            v:WaitForChild("NameInfo"):WaitForChild("ItemName").Text = ItemInfo.Name;
-            v.NameInfo:WaitForChild("Rarity").Text = RarityData.Name;
-            v.NameInfo.Rarity:WaitForChild("UIGradient").Color = RarityData.Gradient.Color;
+            v:WaitForChild("NameInfo"):WaitForChild("ItemName").Text = ItemInfo.Name
+            v.NameInfo:WaitForChild("Rarity").Text = RarityData.Name
+            v.NameInfo.Rarity:WaitForChild("UIGradient").Color = RarityData.Gradient.Color
 
-            --v:WaitForChild("PriceInfo"):WaitForChild("TextLabel").Text = CommaValue(ItemInfo.IndividualPrice);
+            --v:WaitForChild("PriceInfo"):WaitForChild("TextLabel").Text = CommaValue(ItemInfo.IndividualPrice)
             
             --print("MyInventory", MyInventory)
 
@@ -89,17 +89,17 @@ function DailyView:Update(Data)
 
             --print(PurchaseInfo[ItemInfo.Name])
             
-            --v:WaitForChild("BuyButton"):WaitForChild("ImageButton").ImageColor3 = DisplayData.purchased and Color3.fromRGB(34, 102, 50) or Color3.fromRGB(75, 225, 110);
+            --v:WaitForChild("BuyButton"):WaitForChild("ImageButton").ImageColor3 = DisplayData.purchased and Color3.fromRGB(34, 102, 50) or Color3.fromRGB(75, 225, 110)
             
             if (PurchaseInfo[ItemInfo.Name] ~= nil or DisplayData.purchased) then
-                v.BuyButton.UIStroke.Transparency = 1;
-                v.BuyButton.BackgroundTransparency = 1;
-                v.BuyButton.ImageLabel.Visible = false;
-                v.BuyButton:WaitForChild("TextLabel").Text = "Owned";
+                v.BuyButton.UIStroke.Transparency = 1
+                v.BuyButton.BackgroundTransparency = 1
+                v.BuyButton.ImageLabel.Visible = false
+                v.BuyButton:WaitForChild("TextLabel").Text = "Owned"
             else
-                v.BuyButton.UIStroke.Transparency = 0;
-                v.BuyButton.BackgroundTransparency = 0;
-                v.BuyButton.ImageLabel.Visible = true;
+                v.BuyButton.UIStroke.Transparency = 0
+                v.BuyButton.BackgroundTransparency = 0
+                v.BuyButton.ImageLabel.Visible = true
                 if PlayerCurrency >= ItemInfo.IndividualPrice then
                     v.BuyButton.BackgroundColor3 = Color3.fromRGB(255, 184, 5)
                     v.BuyButton.UIStroke.Color = Color3.fromRGB(117, 78, 0)
@@ -107,25 +107,25 @@ function DailyView:Update(Data)
                     v.BuyButton.BackgroundColor3 = Color3.fromRGB(107, 107, 107)
                     v.BuyButton.UIStroke.Color = Color3.fromRGB(61, 61, 61)
                 end
-                v.BuyButton:WaitForChild("TextLabel").Text = CommaValue(ItemInfo.IndividualPrice);
+                v.BuyButton:WaitForChild("TextLabel").Text = CommaValue(ItemInfo.IndividualPrice)
             end
 
             if (PurchaseInfo[ItemInfo.Name] ~= nil or DisplayData.purchased) then
-                --CollectionService:RemoveTag(v.BuyButton, "ButtonStyle");
+                --CollectionService:RemoveTag(v.BuyButton, "ButtonStyle")
             else
-                --CollectionService:AddTag(v.BuyButton, "ButtonStyle");
+                --CollectionService:AddTag(v.BuyButton, "ButtonStyle")
             end
 
-            v.Visible = true;
+            v.Visible = true
         end
     end
 
-    ResetTime = os.time() + Data.TimeLeft;
+    ResetTime = os.time() + Data.TimeLeft
 end
 
 function DailyView:KnitStart()
     local DataService = Knit.GetService("DataService")
-    local NotificationUI = Knit.GetController("NotificationUI");
+    local NotificationUI = Knit.GetController("NotificationUI")
 
     local result, policyInfo = pcall(function()
         return PolicyService:GetPolicyInfoForPlayerAsync(plr)
@@ -135,27 +135,27 @@ function DailyView:KnitStart()
         warn("PolicyService error: " .. policyInfo)
     elseif policyInfo.ArePaidRandomItemsRestricted then
         warn("Player cannot interact with paid random item generators")
-        self.DailyPage:WaitForChild("Main").Visible = false;
-        self.DailyPage:WaitForChild("PolicyWarning").Visible = true;
-        return;
+        self.DailyPage:WaitForChild("Main").Visible = false
+        self.DailyPage:WaitForChild("PolicyWarning").Visible = true
+        return
     end]]
 
     for _,v in pairs(self.DailyPage:WaitForChild("Main"):GetChildren()) do
         if (not v:IsA("GuiObject")) then
-            continue;
+            continue
         end
 
-        local Index = tonumber(v.Name);
+        local Index = tonumber(v.Name)
         
         v:WaitForChild("BuyButton").MouseButton1Click:Connect(function()
             if buttonDebounce then return end
-            buttonDebounce = true;
-            local DisplayData = CurrentData.DailyShopItems[Index];
+            buttonDebounce = true
+            local DisplayData = CurrentData.DailyShopItems[Index]
 
-            local CanAfford, AffordPromise = false, nil;
-            local PurchaseInfo, Promise = nil, nil;
+            local CanAfford, AffordPromise = false, nil
+            local PurchaseInfo, Promise = nil, nil
 
-            local InfoContainer, ItemInfo;
+            local InfoContainer, ItemInfo
 
             if DisplayData["itemType"] == "Hats" then
                 InfoContainer = MyInventory["Hats"]
@@ -170,50 +170,41 @@ function DailyView:KnitStart()
             end
 
             if not ItemInfo then
-                NotificationUI:Message("Item info not found!", {Effect = false, Color = Color3.fromRGB(255, 255, 255)});
-                buttonDebounce = false;
-                return;
+                NotificationUI:Message("Item info not found!", {Effect = false, Color = Color3.fromRGB(255, 255, 255)})
+                buttonDebounce = false
+                return
             end
 
             if (InfoContainer[ItemInfo.Name] ~= nil or DisplayData.purchased) then
-                buttonDebounce = false;
-                return;
+                buttonDebounce = false
+                return
             end
 
-            AffordPromise = DataService:GetCurrency(ThemeData):andThen(function(Coins)
-                --warn("AffordPromise", Coins, newProgressionData, progressionData.Data[PlayerDataIndex + 1], PlayerDataIndex + 1)
-                if Coins then
-                    PlayerCurrency = Coins;
-                    CanAfford = (Coins >= ItemInfo.IndividualPrice)
-                    return;
-                else
-                    CanAfford = false;
-                    return;
-                end
-            end)
-
-            repeat task.wait(0) until AffordPromise:getStatus() ~= "Started" or Players.LocalPlayer == nil
+            local Coins = DataService:GetCurrency(ThemeData)
+            if Coins then
+                PlayerCurrency = Coins
+                CanAfford = (Coins >= ItemInfo.IndividualPrice)
+            else
+                CanAfford = false
+            end
 
             if (CanAfford) then
                 print(ItemInfo.Name, DisplayData["itemType"], Index)
-                Promise = CrateService:PurchaseItem(ItemInfo.Name, DisplayData["itemType"], Index):andThen(function(ResultInfo)
-                    print(ResultInfo)
-                    if ResultInfo.Currency then
-                        PlayerCurrency = ResultInfo.Currency
-                    end
-                    NotificationUI:Message(ResultInfo.StatusString, ResultInfo.StatusEffect);
-                    self:Update(ResultInfo.DailyData)
-                    buttonDebounce = false;
-                    return;
-                end);
-                repeat task.wait(0) until Promise:getStatus() ~= "Started" or Players.LocalPlayer == nil
+                local ResultInfo = CrateService:PurchaseItem(ItemInfo.Name, DisplayData["itemType"], Index)
+                print(ResultInfo)
+                if ResultInfo.Currency then
+                    PlayerCurrency = ResultInfo.Currency
+                end
+                NotificationUI:Message(ResultInfo.StatusString, ResultInfo.StatusEffect)
+                self:Update(ResultInfo.DailyData)
+                buttonDebounce = false
                 warn("Done Purchase!")
             else
-                Knit.GetController("ViewsUI"):OpenView("Shop");
-                task.wait(0.3);
-                Knit.GetController("ShopView"):GoToArea("Currency");
+                Knit.GetController("ViewsUI"):OpenView("Shop")
+                task.wait(0.3)
+                Knit.GetController("ShopView"):GoToArea("Currency")
             end
-            buttonDebounce = false;
+            buttonDebounce = false
         end)
     end
     local Character = plr.Character or plr.CharacterAdded:Wait()
@@ -224,40 +215,35 @@ function DailyView:KnitStart()
     local InventoryService = Knit.GetService("InventoryService")
 
     InventoryService.ItemChanged:Connect(function(updatedInventory) -- When inventory updatses then give inventory data
-        MyInventory = updatedInventory;
+        MyInventory = updatedInventory
     end)
 
-    InventoryService:RequestInventory():andThen(function(inventory) -- When initialized complete, request inventory data
-        --print(inventory)
-        MyInventory = inventory;
-    end)
+    local inventory = InventoryService:RequestInventory()
+    MyInventory = inventory
 
-    CrateService = Knit.GetService("CrateService");
+    CrateService = Knit.GetService("CrateService")
 
-    local StartPromise = DataService:GetCurrency(ThemeData):andThen(function(Coins)
-        --warn("AffordPromise", Coins, newProgressionData, progressionData.Data[PlayerDataIndex + 1], PlayerDataIndex + 1)
-        if Coins then
-            PlayerCurrency = Coins;
-            return;
-        end
-    end)
+    local Coins = DataService:GetCurrency(ThemeData)
 
-    repeat task.wait(0) until StartPromise:getStatus() ~= "Started" or Players.LocalPlayer == nil
+    if Coins then
+        PlayerCurrency = Coins
+        return
+    end
     
-    CrateService:GetDailyItems():andThen(function(Data)
-        if (Data) then
-            self:Update(Data);
-        end
-    end)
+    local DailyData = CrateService:GetDailyItems()
+
+    if (DailyData) then
+        self:Update(DailyData)
+    end
 
     while task.wait(1) do
         if (not ResetTime) then
-            continue;
+            continue
         end
 
-        local Dt = math.max(ResetTime - os.time(), 0);
+        local Dt = math.max(ResetTime - os.time(), 0)
         
-        self.DailyPage:WaitForChild("TimeLeft").Text = ("Reset: %s"):format(FormatSeconds(Dt));
+        self.DailyPage:WaitForChild("TimeLeft").Text = ("Reset: %s"):format(FormatSeconds(Dt))
     end
 end
 
@@ -269,8 +255,8 @@ function DailyView:KnitInit()
 
     self.DailyPage = self.DailyView:WaitForChild("Book"):WaitForChild("Page"):WaitForChild("Page"):WaitForChild("ScrollingFrame"):WaitForChild("DailyPage"):WaitForChild("MainFrame")
 
-    Rarities = require(Knit.ReplicatedAssets.Rarities);
-    CommaValue = require(Knit.ReplicatedModules.CommaValue);
+    Rarities = require(Knit.Shared.Assets.Rarities)
+    CommaValue = require(Knit.Shared.Modules.CommaValue)
     ThemeData = workspace:GetAttribute("Theme")
 end
 

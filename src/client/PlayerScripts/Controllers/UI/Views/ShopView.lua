@@ -8,7 +8,7 @@ local TweenService = game:GetService("TweenService")
 local MarketplaceService = game:GetService("MarketplaceService")
 
 --//Const
-local LocalPlayer = Players.LocalPlayer;
+local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 local viewsUI = PlayerGui:WaitForChild("Main"):WaitForChild("Views")
@@ -17,9 +17,9 @@ local ShopGui = viewsUI:WaitForChild("Shop")
 local ScrollingFrame = ShopGui:WaitForChild("Book"):WaitForChild("Page"):WaitForChild("Page"):WaitForChild("ScrollingFrame")
 
 local ShopAreas = {
-    ["Bundle"] = 0;
-    ["Gamepass"] = 0.212;
-    ["Currency"] = 0.617;
+    ["Bundle"] = 0,
+    ["Gamepass"] = 0.212,
+    ["Currency"] = 0.617,
 }
 
 local CheeseData = {
@@ -60,35 +60,35 @@ function ShopView:GoToArea(AreaName)
 end
 
 function ShopView:SetupCheeseProducts()
-    local CommaValue = require(Knit.ReplicatedModules.CommaValue);
+    local CommaValue = require(Knit.Shared.Modules.CommaValue)
     local CheesePage = ScrollingFrame:WaitForChild("CheesePage")
-    local currentProductId;
+    local currentProductId
 
     for i,ItemData in pairs(CheeseData) do
-        local CheeseItemPrefab = PlayerGui:WaitForChild("Prefabs"):WaitForChild("CheeseItem");
+        local CheeseItemPrefab = PlayerGui:WaitForChild("Prefabs"):WaitForChild("CheeseItem")
         local ItemClone = CheeseItemPrefab:Clone() do
-            ItemClone.Name = "CheeseProduct"..tostring(i);
-            ItemClone:WaitForChild("Icon").Image = ItemData.Image;
-            ItemClone:WaitForChild("Cheese").Text = ItemData.Name;
-            ItemClone:WaitForChild("BuyButton"):WaitForChild("Title").Text =ItemData.Amount;
+            ItemClone.Name = "CheeseProduct"..tostring(i)
+            ItemClone:WaitForChild("Icon").Image = ItemData.Image
+            ItemClone:WaitForChild("Cheese").Text = ItemData.Name
+            ItemClone:WaitForChild("BuyButton"):WaitForChild("Title").Text =ItemData.Amount
             if ItemData.Extra ~= nil then
-                ItemClone:WaitForChild("Extra").Text = ("+"..tostring(ItemData.Extra).."% EXTRA");
+                ItemClone:WaitForChild("Extra").Text = ("+"..tostring(ItemData.Extra).."% EXTRA")
             end
-            ItemClone.Parent = CheesePage:WaitForChild("MainFrame"):WaitForChild("Frame");
+            ItemClone.Parent = CheesePage:WaitForChild("MainFrame"):WaitForChild("Frame")
 
             --[[ItemClone:WaitForChild("GiftButton"):WaitForChild("ImageButton").MouseButton1Click:Connect(function()
                 if self.ShopGiftsUI:IsViewing() == true then return end
-                currentProductId = ItemData.ProductId;
-                self.ShopGiftsUI:OpenView(currentProductId, false);
+                currentProductId = ItemData.ProductId
+                self.ShopGiftsUI:OpenView(currentProductId, false)
             end)]]
 
             ItemClone:WaitForChild("BuyButton").MouseButton1Click:Connect(function()
                 --[[if self.ShopGiftsUI:IsViewing() == true then return end
-                currentProductId = ItemData.ProductId;
+                currentProductId = ItemData.ProductId
                 local DataService = Knit.GetService("DataService")
                 DataService:PurchaseProduct(LocalPlayer):andThen(function(Data)
                     if Data.HasPlayer == true and Data.TargetPlayer == LocalPlayer then
-                        MarketplaceService:PromptProductPurchase(LocalPlayer, currentProductId);
+                        MarketplaceService:PromptProductPurchase(LocalPlayer, currentProductId)
                     end
                 end)]]
             end)
@@ -97,8 +97,8 @@ function ShopView:SetupCheeseProducts()
 end
 
 function ShopView:KnitStart()
-    --self.ShopGiftsUI = Knit.GetController("ShopGiftsUI");
-    self.ViewsUI = Knit.GetController("ViewsUI");
+    --self.ShopGiftsUI = Knit.GetController("ShopGiftsUI")
+    self.ViewsUI = Knit.GetController("ViewsUI")
 
     self:SetupCheeseProducts()
 end

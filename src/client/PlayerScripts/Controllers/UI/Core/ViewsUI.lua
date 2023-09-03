@@ -2,35 +2,35 @@ local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local ViewsUI = Knit.CreateController { Name = "ViewsUI" }
 
-local plr = game.Players.LocalPlayer;
+local plr = game.Players.LocalPlayer
 
-local PlayerGui = plr:WaitForChild("PlayerGui");
-local Views = PlayerGui:WaitForChild("Main"):WaitForChild("Views");
-local BottomFrame = Views:WaitForChild("BottomFrame");
-local LeftBar = PlayerGui:WaitForChild("LeftBar");
-local LeftContainer = LeftBar:WaitForChild("LeftContainer");
+local PlayerGui = plr:WaitForChild("PlayerGui")
+local Views = PlayerGui:WaitForChild("Main"):WaitForChild("Views")
+local BottomFrame = Views:WaitForChild("BottomFrame")
+local LeftBar = PlayerGui:WaitForChild("LeftBar")
+local LeftContainer = LeftBar:WaitForChild("LeftContainer")
 
 --//Const
-local ViewOriginalSizes = {};
-local ViewOriginalPositions = {};
+local ViewOriginalSizes = {}
+local ViewOriginalPositions = {}
 
-local ViewToggledEvent = Instance.new("BindableEvent");
+local ViewToggledEvent = Instance.new("BindableEvent")
 
 --//State
-local CurrentView;
-local currentStatus, debounce = false, false;
+local CurrentView
+local currentStatus, debounce = false, false
 
 --//Public Events
-ViewsUI.ViewToggled = ViewToggledEvent.Event;
+ViewsUI.ViewToggled = ViewToggledEvent.Event
 
 local function displayButtons(status)
     if debounce == false then
         debounce = true
 
-        currentStatus = status;
+        currentStatus = status
 
         if status == true then
-            BottomFrame.Visible = true;
+            BottomFrame.Visible = true
             Views.UIPadding.PaddingRight = UDim.new(0.06, 0)
         end
 
@@ -40,23 +40,23 @@ local function displayButtons(status)
     
             if currentStatus == false then
                 --print("not visislble ")
-                button.Size = UDim2.fromScale(0.8, 0.6);
+                button.Size = UDim2.fromScale(0.8, 0.6)
                 
-                button:TweenSize(UDim2.fromScale(0.8, 0.6), Enum.EasingDirection.Out, Enum.EasingStyle.Cubic, 0.7);
+                button:TweenSize(UDim2.fromScale(0.8, 0.6), Enum.EasingDirection.Out, Enum.EasingStyle.Cubic, 0.7)
                 task.wait(0.01)
-                button.Visible = false;
+                button.Visible = false
             else
                 --print("ivisivlble")
-                button.Size = UDim2.fromScale(0,0);
-                button.Visible = true;
+                button.Size = UDim2.fromScale(0,0)
+                button.Visible = true
     
-                button:TweenSize(UDim2.fromScale(0.8, 0.6), Enum.EasingDirection.Out, Enum.EasingStyle.Elastic, 0.7);
+                button:TweenSize(UDim2.fromScale(0.8, 0.6), Enum.EasingDirection.Out, Enum.EasingStyle.Elastic, 0.7)
                 task.wait(0.01)
             end
         end
 
         if status == false then
-            BottomFrame.Visible = false;
+            BottomFrame.Visible = false
             Views.UIPadding.PaddingRight = UDim.new(0, 0)
         end
 
@@ -69,15 +69,15 @@ end
 
 --//Public Methods
 function ViewsUI:OpenView(ViewName, ButtonEnabled, DisableTween)
-	if (CurrentView and CurrentView.Name == ViewName) then return; end
+	if (CurrentView and CurrentView.Name == ViewName) then return end
 	
-	self:CloseView(nil, nil, DisableTween);
+	self:CloseView(nil, nil, DisableTween)
 	
-	CurrentView = Views[ViewName];
+	CurrentView = Views[ViewName]
     
-    local OriginalPosition = ViewOriginalPositions[CurrentView.Name];
+    local OriginalPosition = ViewOriginalPositions[CurrentView.Name]
 
-    ViewToggledEvent:Fire(ViewName, true);
+    ViewToggledEvent:Fire(ViewName, true)
 
     if ViewName == "Menu" then
         --print("menu clicked")
@@ -89,8 +89,8 @@ function ViewsUI:OpenView(ViewName, ButtonEnabled, DisableTween)
         if ViewName == "Settings" or ViewName == "Party" then
             task.spawn(function()
                 local PartyUI = Knit.GetController("PartyUI")
-                PartyUI:RefreshInvitePlayers();
-                PartyUI:RefreshPartyMembers();
+                PartyUI:RefreshInvitePlayers()
+                PartyUI:RefreshPartyMembers()
             end)
             task.spawn(displayButtons, false)
         else
@@ -98,79 +98,79 @@ function ViewsUI:OpenView(ViewName, ButtonEnabled, DisableTween)
         end
     end
     
-	CurrentView.Visible = true;
-	CurrentView.Position = UDim2.fromScale(OriginalPosition.X.Scale, 1.6);
-	CurrentView.Size = ViewOriginalSizes[CurrentView.Name]:Lerp(UDim2.fromScale(0, 0), .5);
+	CurrentView.Visible = true
+	CurrentView.Position = UDim2.fromScale(OriginalPosition.X.Scale, 1.6)
+	CurrentView.Size = ViewOriginalSizes[CurrentView.Name]:Lerp(UDim2.fromScale(0, 0), .5)
     if DisableTween == true then
-        CurrentView.Size = ViewOriginalSizes[CurrentView.Name];
+        CurrentView.Size = ViewOriginalSizes[CurrentView.Name]
     else
-        CurrentView:TweenSizeAndPosition(ViewOriginalSizes[CurrentView.Name], OriginalPosition, Enum.EasingDirection.Out, Enum.EasingStyle.Quart, .4, true);
+        CurrentView:TweenSizeAndPosition(ViewOriginalSizes[CurrentView.Name], OriginalPosition, Enum.EasingDirection.Out, Enum.EasingStyle.Quart, .4, true)
     end
 end
 
 function ViewsUI:GetView(ItemName)
-    return Views[ItemName];
+    return Views[ItemName]
 end
 
-local deselectDeb = false;
+local deselectDeb = false
 
 function ViewsUI:CloseView(ItemName, ButtonEnabled, DisableTween)
-    if (not CurrentView) then return; end
+    if (not CurrentView) then return end
 
-    if (ItemName and CurrentView.Name ~= ItemName) then return; end
+    if (ItemName and CurrentView.Name ~= ItemName) then return end
     
     local TargetView = CurrentView
-    CurrentView = nil;
+    CurrentView = nil
 
     if (TargetView) then
-        ViewToggledEvent:Fire(TargetView.Name, false);
+        ViewToggledEvent:Fire(TargetView.Name, false)
 
         if ButtonEnabled then
             task.spawn(displayButtons, false)
         end
         
-        local OriginalPosition = ViewOriginalPositions[TargetView.Name];
+        local OriginalPosition = ViewOriginalPositions[TargetView.Name]
         
         if DisableTween == true then
             --
         else
-            TargetView:TweenSizeAndPosition(UDim2.new(), UDim2.fromScale(OriginalPosition.X.Scale, 1.6), Enum.EasingDirection.In, Enum.EasingStyle.Quart, .25, true);
+            TargetView:TweenSizeAndPosition(UDim2.new(), UDim2.fromScale(OriginalPosition.X.Scale, 1.6), Enum.EasingDirection.In, Enum.EasingStyle.Quart, .25, true)
         end
     end
     if not DisableTween then
         task.wait(.25)
     end
-    TargetView.Visible = false;
+    TargetView.Visible = false
 end
 
 function ViewsUI:GetCurrentView()
-    return CurrentView;
+    return CurrentView
 end
 
 function ViewsUI:KnitStart()
     for _,v in pairs(Views:GetChildren()) do
         if v:IsA("Frame") then
-            ViewOriginalSizes[v.Name] = v.Size;
-            ViewOriginalPositions[v.Name] = v.Position;
+            ViewOriginalSizes[v.Name] = v.Size
+            ViewOriginalPositions[v.Name] = v.Position
         end
     end
 
-    local leftContainerDeb = false;
+    local leftContainerDeb = false
 
     for _,v in pairs(LeftContainer:GetDescendants()) do
         if (v:IsA("TextButton")) then
             v.MouseButton1Click:Connect(function()
                 if (Views:FindFirstChild(v.Name)) then
                     if leftContainerDeb == false then
-                        leftContainerDeb = true;
+                        leftContainerDeb = true
                         if (CurrentView and CurrentView.Name == v.Name) then
-                            self:CloseView(nil, true);
+                            self:CloseView(nil, true)
                             task.wait(.5)
-                            leftContainerDeb = false;
+                            leftContainerDeb = false
                         else		
-                            self:OpenView(v.Name, true);
+                            self:OpenView(v.Name, true)
                             task.wait(.5)
-                            leftContainerDeb = false;
+                            leftContainerDeb = false
                         end
                     end
                 end
@@ -183,9 +183,9 @@ function ViewsUI:KnitStart()
             v.MouseButton1Click:Connect(function()
                 if (Views:FindFirstChild(v.Name)) then
                     if (CurrentView and CurrentView.Name == v.Name) then
-                        --self:CloseView();
+                        --self:CloseView()
                     else		
-                        self:OpenView(v.Name, nil, true);
+                        self:OpenView(v.Name, nil, true)
                     end
                 end
             end)

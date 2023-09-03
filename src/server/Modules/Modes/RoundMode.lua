@@ -9,15 +9,16 @@ local Knit = require(ReplicatedStorage.Packages.Knit)
 local Intermission = require(Knit.Modules.Intermission);
 local TableUtil = require(Knit.Util.TableUtil);
 local ProgressionConfigs = require(Knit.Settings.ProgressionConfigs);
+local Config = require(Knit.Shared.Modules.Config);
 
 --local RewardService = require(Knit.Services.RewardService);
 
 ----- Settings -----
-local GAMESTATE = Knit.Config.GAME_STATES;
-local GAMEPLAY_TIME = Knit.Config.DEFAULT_SANDBOX_TIME;
-local NIGHT_TIME = Knit.Config.DEFAULT_NIGHT_TIME;
-local INTERMISSION_TIME = Knit.Config.DEFAULT_INTERMISSION_TIME;
-local MAPS = Knit.Config.MAPS;
+local GAMESTATE = Config.GAME_STATES;
+local GAMEPLAY_TIME = Config.DEFAULT_SANDBOX_TIME;
+local NIGHT_TIME = Config.DEFAULT_NIGHT_TIME;
+local INTERMISSION_TIME = Config.DEFAULT_INTERMISSION_TIME;
+local MAPS = Config.MAPS;
 
 -- Tables
 local Cooldown = {};
@@ -37,8 +38,8 @@ local boostedMap = false;
 local customMap = nil;
 local customMode = nil;
 
-customMap = Knit.Config.CUSTOM_MAP;
-customMode = Knit.Config.CUSTOM_MODE;
+customMap = Config.CUSTOM_MAP;
+customMode = Config.CUSTOM_MODE;
 
 local ThemeData = workspace:GetAttribute("Theme")
 
@@ -87,8 +88,8 @@ end
 table.sort(sortedMaps, function(itemA, itemB) return itemA.chance > itemB.chance end)
 
 -- Private Functions
-local startPercent, endPercent, dayStartShift, dayEndShift = 0, 1, Knit.Config.DAY_START_SHIFT, Knit.Config.DAY_END_SHIFT; -- 9 am to 5 pm
-local nightStartShift, nightEndShift = Knit.Config.NIGHT_START_SHIFT, Knit.Config.NIGHT_END_SHIFT; -- 12 am to 6 am
+local startPercent, endPercent, dayStartShift, dayEndShift = 0, 1, Config.DAY_START_SHIFT, Config.DAY_END_SHIFT; -- 9 am to 5 pm
+local nightStartShift, nightEndShift = Config.NIGHT_START_SHIFT, Config.NIGHT_END_SHIFT; -- 12 am to 6 am
 -- f(x)=b(x−min)+a(max−x) / max−min
 -- m+t/10(M−m)
 
@@ -184,7 +185,7 @@ function RoundMode:StartMode()
         local called = 0
         
         local function createChefNPC(difficulty)
-            local npcClone = Knit.GameLibrary:WaitForChild("NPCs"):WaitForChild("Chef"):Clone()
+            local npcClone = game:GetService("ReplicatedStorage").GameLibrary:WaitForChild("NPCs"):WaitForChild("Chef"):Clone()
             npcClone.Parent = workspace:WaitForChild("NPCS");
             npcClone:SetAttribute("Difficulty", difficulty)
             CollectionService:AddTag(npcClone, "NPC")
@@ -254,8 +255,8 @@ function RoundMode:StartMode()
     end
 end
 
---[[local Synced = require(Knit.ReplicatedModules.Synced);
-        local DailyShopOffset = (60 * 60 * Knit.Config.DAILY_SHOP_OFFSET); 
+--[[local Synced = require(Knit.Shared.Modules.Synced);
+        local DailyShopOffset = (60 * 60 * Config.DAILY_SHOP_OFFSET); 
         local Day = math.floor((Synced.time() + DailyShopOffset) / (60 * 60 * 24))
         local seed = Random.new(Day);
 

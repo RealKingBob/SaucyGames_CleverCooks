@@ -113,7 +113,7 @@ function SpawnItems:PrintLogs(UserId) -- Prints out a table of logs for that was
 end;
 
 function SpawnItems:SpawnTutorialIngredient(ingredientName)
-    local IngredientOjects = Knit.GameLibrary:WaitForChild("IngredientObjects")
+    local IngredientOjects = game:GetService("ReplicatedStorage").GameLibrary:WaitForChild("IngredientObjects")
     local FoodSpawnPoints = CollectionService:GetTagged("FoodSpawnPoints");
     local TutorialSpawnPoints = {};
 
@@ -141,7 +141,7 @@ function SpawnItems:SpawnTutorialIngredient(ingredientName)
 end
 
 function SpawnItems:SpawnDistributedIngredients(Theme)
-    local IngredientOjects = Knit.GameLibrary:WaitForChild("IngredientObjects")
+    local IngredientOjects = game:GetService("ReplicatedStorage").GameLibrary:WaitForChild("IngredientObjects")
     local FoodSpawnPoints = CollectionService:GetTagged("FoodSpawnPoints");
     local RareFoodSpawnPoints = {};
 
@@ -221,7 +221,7 @@ function SpawnItems:SpawnDistributedIngredients(Theme)
 end
 
 function SpawnItems:SpawnAllIngredients(NumOfIngredients)
-    local IngredientOjects = Knit.GameLibrary:WaitForChild("IngredientObjects")
+    local IngredientOjects = game:GetService("ReplicatedStorage").GameLibrary:WaitForChild("IngredientObjects")
     local FoodSpawnPoints = CollectionService:GetTagged("FoodSpawnPoints");
 
     for i = 1, NumOfIngredients do

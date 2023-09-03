@@ -1,22 +1,21 @@
 ----- Services -----
-local Players = game:GetService("Players"); 
+local Players = game:GetService("Players") 
 local DataStoreService = game:GetService("DataStoreService")
 local MarketplaceService = game:GetService("MarketplaceService")
 
-local HttpService = game:GetService("HttpService")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
-local ProfileService = require(script.Parent.ProfileService);
+local ProfileService = require(script.Parent.ProfileService)
 
 --local purchaseHistoryStore = DataStoreService:GetDataStore("PurchaseHistory")
-local giftHistoryStore = DataStoreService:GetDataStore("GiftHistory")
+--local giftHistoryStore = DataStoreService:GetDataStore("GiftHistory")
 local ThemeData = workspace:GetAttribute("Theme")
 
 local SETTINGS = {
     StatsTemplate = {	
-        Tutorial = false;
+        Tutorial = false,
 		PlayerInfo = {
 			Currency = {
-                French = 0;
+                French = 0
             }, -- User current currency
 			Level = 0, -- User current level
 			EXP = 0, -- User experience to level up
@@ -53,11 +52,11 @@ local SETTINGS = {
 		}, -- All player info stored here
 		DailyShopItems = {}, -- Specific daily shop items a user has ingame
 		Missions = {
-            Daily = {};
-            Weekly = {};
+            Daily = {},
+            Weekly = {},
             Event = {
-                French = {};
-            };
+                French = {},
+            }
         }, -- Specific missions a user has ingame
         Boosts = {}, -- Specific boosts a user owns
         GamepassOwned = {}, -- Specific gamepasses a user owns
@@ -72,47 +71,47 @@ local SETTINGS = {
 			Boosters = {},
 			Hats = {
                 ["Default Hat"] = {
-                    Quantity = 1;
-                    Rarity = 1
+                    Quantity = 1,
+                    Rarity = 1,
                 }
             },
             BoosterEffects = {
                 ["Default Boost"] = {
-                    Quantity = 1;
-                    Rarity = 1
+                    Quantity = 1,
+                    Rarity = 1,
                 }
             },
 			Emotes = {
                 Default = {
-                    Quantity = 1;
-                    Rarity = 1
+                    Quantity = 1,
+                    Rarity = 1,
                 }
             },
 			Effects = {
                 Default = {
-                    Quantity = 1;
-                    Rarity = 1
+                    Quantity = 1,
+                    Rarity = 1,
                 }
             },
             DeathEffects = {
                 Default = {
-                    Quantity = 1;
-                    Rarity = 1
+                    Quantity = 1,
+                    Rarity = 1,
                 }
             },
 		}, -- Inventory of the user
         SkillUpgrades = {
             French = { -- French Kitchen
-                ["Jump Amount"] = 1; -- 1x jump boost
-                ["Cook Speed"] = 1; -- 1x speed
-                ["Boost Stamina"] = 1; -- 100%
-                ["Recipe Luck"] = 1; -- Stages to increasing chances on getting hard recipes
-                ["Extra Health"] = 1; -- 100 health
-                ["Multitasking"] = 1; -- Cook multiple foods
-                ["Cooking Perfection"] = 1; -- automatically cooks your food to perfection
+                ["Jump Amount"] = 1, -- 1x jump boost
+                ["Cook Speed"] = 1, -- 1x speed
+                ["Boost Stamina"] = 1, -- 100%
+                ["Recipe Luck"] = 1, -- Stages to increasing chances on getting hard recipes
+                ["Extra Health"] = 1, -- 100 health
+                ["Multitasking"] = 1, -- Cook multiple foods
+                ["Cooking Perfection"] = 1, -- automatically cooks your food to perfection
             },
 		}, -- Player Skill Upgrades
-	};
+	},
 
     Products = { -- developer_product_id = function(profile)
 		-- COIN PURCHASES --
@@ -150,7 +149,7 @@ local SETTINGS = {
 		-- VIP --
         [00000000] = function(ownerprofile, profile)
             if profile.Data.GamepassOwned == nil then profile.Data.GamepassOwned = {} end
-            profile.Data.GamepassOwned["VIP"] = true;
+            profile.Data.GamepassOwned["VIP"] = true
             updateClientGamepasses(profile)
 
             if profile.Data.Inventory.DuckSkins["VIP Duck"] == nil then
@@ -161,40 +160,39 @@ local SETTINGS = {
         end,
     },
 
-    PurchaseIdLog = 30, -- Store this amount of purchase id's in MetaTags;
+    PurchaseIdLog = 30, -- Store this amount of purchase id's in MetaTags
         -- This value must be reasonably big enough so the player would not be able
         -- to purchase products faster than individual purchases can be confirmed.
         -- Anything beyond 30 should be good enough.
 }
 
 local ProfileStore = ProfileService.GetProfileStore(
-	"PlayerData17",
+	"PlayerData_2",
 	SETTINGS.StatsTemplate
-);
+)
 
-local StatsProfiles = {};
-local RecentGifts = {};
-local PlayerServerGifts = {};
+local StatsProfiles = {}
+local RecentGifts = {}
+local PlayerServerGifts = {}
 
 local DataService = Knit.CreateService {
-	Name = "DataService";
+	Name = "DataService",
 	Client = {
-		LevelSignal = Knit.CreateSignal();
-		CurrencySignal = Knit.CreateSignal();
-        DonationSignal = Knit.CreateSignal();
-        GamepassSignal = Knit.CreateSignal();
-        RequestCurrencyignal = Knit.CreateSignal();
+		LevelSignal = Knit.CreateSignal(),
+		CurrencySignal = Knit.CreateSignal(),
+        DonationSignal = Knit.CreateSignal(),
+        GamepassSignal = Knit.CreateSignal(),
+        RequestCurrencyignal = Knit.CreateSignal(),
 
-        GiveCurrency = Knit.CreateSignal();
+        GiveCurrency = Knit.CreateSignal(),
 
-        ServerMessage = Knit.CreateSignal();
-        Notification = Knit.CreateSignal();
-        WelcomeMessage = Knit.CreateSignal();
-	};
+        ServerMessage = Knit.CreateSignal(),
+        WelcomeMessage = Knit.CreateSignal(),
+	}
 }
 
 local Signal = require(Knit.Util.Signal)
-DataService.RequestDailyShop = Signal.new();
+DataService.RequestDailyShop = Signal.new()
 
 ----- Private Functions -----
 
@@ -238,14 +236,14 @@ end
 
 local function PreloadData(Player, Profile, ProfileData)
 	--DataService.RequestDailyShop:Fire(Player)
-    local TEST_VOICE_CHAT_PLACE_ID = 8792750286;
-    local TEST_BIG_SERVER_PLACE_ID = 8793381822;
-    local TEST_SERVER_PLACE_ID = 8303278706;
+    local TEST_VOICE_CHAT_PLACE_ID = 8792750286
+    local TEST_BIG_SERVER_PLACE_ID = 8793381822
+    local TEST_SERVER_PLACE_ID = 8303278706
 
     --[[if game.PlaceId == TEST_VOICE_CHAT_PLACE_ID or 
 	game.PlaceId == TEST_BIG_SERVER_PLACE_ID or 
 	game.PlaceId == TEST_SERVER_PLACE_ID then
-		if Knit.Config.WHITELIST == true and Player:IsInGroup(13585944) then
+		if Config.WHITELIST == true and Player:IsInGroup(13585944) then
 			Profile.Data.PlayerInfo.Currency[ThemeData] = 1000000
 		end
 	end]]
@@ -260,40 +258,40 @@ local function PreloadData(Player, Profile, ProfileData)
     end
 
     local success, playerGifts = pcall(function()
-        return giftHistoryStore:GetAsync("User_"..Player.UserId)
+        return false --giftHistoryStore:GetAsync("User_"..Player.UserId)
     end)
 
     if success then
         --print("playerGifts", playerGifts)
-        PlayerServerGifts[Player.UserId] = playerGifts;
+        PlayerServerGifts[Player.UserId] = playerGifts
     end
 end
 
 local function OnPlayerAdded(Player)
 	local PlayerProfile = ProfileStore:LoadProfileAsync(
 		"Player_".. Player.UserId
-	);
+	)
 
 	if PlayerProfile then
-        PlayerProfile:AddUserId(Player.UserId); -- GDPR compliance
-        --PlayerProfile:Reconcile(); -- Fill in missing variables from ProfileTemplate (optional)
+        PlayerProfile:AddUserId(Player.UserId) -- GDPR compliance
+        --PlayerProfile:Reconcile() -- Fill in missing variables from ProfileTemplate (optional)
         PlayerProfile:ListenToRelease(function()
-            StatsProfiles[Player] = nil;
+            StatsProfiles[Player] = nil
             -- The profile could've been loaded on another Roblox server:
-            Player:Kick();
-        end);
+            Player:Kick()
+        end)
 	
 	    if Player:IsDescendantOf(Players) then
-			StatsProfiles[Player] = PlayerProfile;
+			StatsProfiles[Player] = PlayerProfile
 			PreloadData(Player, StatsProfiles[Player], StatsProfiles[Player].Data)
 		else
 			print(Player.Name .. "'s profile has been released!")
-            PlayerProfile:Release();
-		end;
+            PlayerProfile:Release()
+		end
 	else
-		Player:Kick("Kicked to prevent data corruption... | Unable to retieve data for "..Player.Name.." | Please rejoin");
-	end;
-end;
+		Player:Kick("Kicked to prevent data corruption... | Unable to retieve data for "..Player.Name.." | Please rejoin")
+	end
+end
 
 local function GetPlayerProfileAsync(player) --> [Profile] / nil
     -- Yields until a Profile linked to a player is loaded or the player leaves
@@ -326,15 +324,15 @@ local function GrantProduct(player, targetPlayer, product_id)
                     IsGamepass = false,
                 }
             )
-            DataService.Client.ServerMessage:FireAll("[SERVER]: ".. player.Name .." gifted ".. targetPlayer.Name .." an item!");
+            Knit.GetService("NotificationService").Client.ServerMessage:FireAll("[SERVER]: ".. player.Name .." gifted ".. targetPlayer.Name .." an item!")
         else
             product_function(playerprofile, playerprofile)
         end
-        DataService.Client.Notification:Fire(player, "Notice!", "Purchase successful! Thanks for buying! :]", "OK");
-        return true;
+        Knit.GetService("NotificationService").Client.Notification:Fire(player, "Notice!", "Purchase successful! Thanks for buying! :]", "OK")
+        return true
     else
         warn("ProductId " .. tostring(product_id) .. " has not been defined in Products table")
-        return nil;
+        return nil
     end
 end
 
@@ -359,15 +357,15 @@ local function GrantGamepass(player, targetPlayer, gamepass_id)
                     IsGamepass = true,
                 }
             )
-            DataService.Client.ServerMessage:FireAll("[SERVER]: ".. player.Name .." gifted ".. targetPlayer.Name .." an item!");
+            DataService.Client.ServerMessage:FireAll("[SERVER]: ".. player.Name .." gifted ".. targetPlayer.Name .." an item!")
         else
             gamepass_function(playerprofile, playerprofile)
         end
-        DataService.Client.Notification:Fire(player, "Notice!", "Purchase successful! Thanks for buying! :]", "OK");
-        return true;
+        DataService.Client.Notification:Fire(player, "Notice!", "Purchase successful! Thanks for buying! :]", "OK")
+        return true
     else
         warn("GamepassId " .. tostring(gamepass_id) .. " has not been defined in Gamepass table")
-        return nil;
+        return nil
     end
 end
 
@@ -483,14 +481,14 @@ function DataService:GetCurrency(player, theme)
     if not Profile then
         repeat
             task.wait(0.001)
-            tries += 1;
+            tries += 1
         until Profile or tries == 20000
     end
 
     if Profile then
-		return Profile.Data.PlayerInfo.Currency[theme], Profile.Data.SkillUpgrades[theme];
-	end;
-    return 0;
+		return Profile.Data.PlayerInfo.Currency[theme], Profile.Data.SkillUpgrades[theme]
+	end
+    return 0
 end
 
 local reset = {}
@@ -499,22 +497,22 @@ function DataService:GiveCurrency(player, Amount, disableEffect, Percentage)
 
     --print("give", player, Amount)
 
-    local profile = StatsProfiles[player];
+    local profile = StatsProfiles[player]
 
 	if not profile then
-		return;
-	end;
+		return
+	end
 
     --[[if not reset[player] then
         reset[player] = true
-        profile.Data.PlayerInfo.Currency[ThemeData] = 0;
+        profile.Data.PlayerInfo.Currency[ThemeData] = 0
     end]]
 
     if profile.Data.PlayerInfo.Currency[ThemeData] == nil then
-        profile.Data.PlayerInfo.Currency[ThemeData] = 0;
-    end;
+        profile.Data.PlayerInfo.Currency[ThemeData] = 0
+    end
 
-    profile.Data.PlayerInfo.Currency[ThemeData] = profile.Data.PlayerInfo.Currency[ThemeData] + Amount;
+    profile.Data.PlayerInfo.Currency[ThemeData] = profile.Data.PlayerInfo.Currency[ThemeData] + Amount
 
     if player then
         if disableEffect == nil then
@@ -524,31 +522,20 @@ function DataService:GiveCurrency(player, Amount, disableEffect, Percentage)
         end
     end
 
-end;
+end
 
 function DataService:PurchaseProduct(player, targetPlayer)
     --RecentGifts[player] = targetPlayer
     if RecentGifts[player] ~= nil then
-        return true;
+        return true
     end
-    return false;
+    return false
 end
-
-function DataService:CheckIfDataLoaded(Player)
-	local StatsProfile = StatsProfiles[Player];
-
-	if StatsProfile then
-		return true;
-	end;
-
-	return false;
-end;
-
 
 function DataService.Client:GetCurrency(Player, Theme)
 	-- We can just call our other method from here:
     return self.Server:GetCurrency(Player, Theme)
-end;
+end
 
 function DataService.Client:PurchaseProduct(Player, TargetPlayer)
     RecentGifts[Player] = TargetPlayer
@@ -556,46 +543,53 @@ function DataService.Client:PurchaseProduct(Player, TargetPlayer)
         return {
             TargetPlayer = RecentGifts[Player],
             HasPlayer = true,
-        };
+        }
     end
     return {
         TargetPlayer = nil,
         HasPlayer = false,
-    };
-end;
+    }
+end
 
 function DataService.Client:GetCurrencyBought(Player)
-	local StatsProfile = StatsProfiles[Player];
+	local StatsProfile = StatsProfiles[Player]
 
 	if StatsProfile then
 		return StatsProfile.Data.PlayerInfo.CurrencyBought
-	end;
-end;
+	end
+end
 
 function DataService.Client:GetGamepass(Player)
-	local StatsProfile = StatsProfiles[Player];
+	local StatsProfile = StatsProfiles[Player]
 
 	if StatsProfile then
 		return StatsProfile.Data.GamepassOwned
-	end;
-end;
+	end
+end
+
+
+function DataService.Client:GetProfile(Player)
+    local profile = GetPlayerProfileAsync(Player)
+    return profile.Data
+    --return self.Server:GetProfile(Player).Data
+end
 
 function DataService:GetProfile(Player)
-    if not Player then return nil end;
-	local Profile = StatsProfiles[Player];
+    if not Player then return nil end
+	local Profile = StatsProfiles[Player] or GetPlayerProfileAsync(Player)
 
 	if Profile then
-		return Profile;
-	end;
-end;
+		return Profile
+	end
+end
 
 function DataService:GetPlayer(Profile)
 	for Player, _profile in next, StatsProfiles do
 		if _profile == Profile then
-			return Player;
-		end;
-	end;
-end;
+			return Player
+		end
+	end
+end
 
 function DataService:KnitStart()
 	
@@ -604,8 +598,8 @@ end
 function DataService:KnitInit()
     print("[SERVICE]: DataService Initialized")
     for _, player in ipairs(Players:GetPlayers()) do
-        coroutine.wrap(OnPlayerAdded)(player);
-    end;
+        coroutine.wrap(OnPlayerAdded)(player)
+    end
     
     MarketplaceService.ProcessReceipt = ProcessReceipt
     MarketplaceService.PromptGamePassPurchaseFinished:Connect(onPromptGamePassPurchaseFinished)
@@ -615,28 +609,28 @@ function DataService:KnitInit()
         self:GiveCurrency(player, amount)
     end)]]
 
-	Players.PlayerAdded:Connect(OnPlayerAdded);
+	Players.PlayerAdded:Connect(OnPlayerAdded)
     Players.PlayerRemoving:Connect(function(Player)
-        local PlayerProfile = StatsProfiles[Player];
+        local PlayerProfile = StatsProfiles[Player]
 
         if PlayerProfile ~= nil then
-            PlayerProfile:Release();
+            PlayerProfile:Release()
             print(Player.Name .. "'s profile has been released!")
-        end;
-        --Knit.StatTrackService:StopTracking(Player);
+        end
+        --Knit.StatTrackService:StopTracking(Player)
         
         if PlayerServerGifts[Player.UserId] then
             print(PlayerServerGifts[Player.UserId])
             local success, errorMessage = pcall(function()
-                giftHistoryStore:SetAsync("User_"..Player.UserId, PlayerServerGifts[Player.UserId])
+                --giftHistoryStore:SetAsync("User_"..Player.UserId, PlayerServerGifts[Player.UserId])
             end)
             if not success then
                 print(errorMessage)
             end
             PlayerServerGifts[Player.UserId] = nil
         end
-    end);
+    end)
 end
 
 
-return DataService;
+return DataService

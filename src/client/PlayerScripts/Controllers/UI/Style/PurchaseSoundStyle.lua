@@ -9,16 +9,16 @@ local Sounds = {
 }
 
 function PurchaseSoundStyle:PlayPurchaseSound(Success)
-    Sounds[Success]:Play();
+    Sounds[Success]:Play()
 end
 
 function PurchaseSoundStyle:KnitStart()
     MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, gamePassId, wasPurchased)
-        self:PlayPurchaseSound(wasPurchased);
+        self:PlayPurchaseSound(wasPurchased)
     end)
 
     MarketplaceService.PromptProductPurchaseFinished:Connect(function(userId, productId, isPurchased)
-        self:PlayPurchaseSound(isPurchased);
+        self:PlayPurchaseSound(isPurchased)
     end)
 end
 

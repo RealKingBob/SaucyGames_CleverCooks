@@ -10,7 +10,7 @@ local deb = false
 
 local function createJumpParticle()
     local jumpEffect = game.ReplicatedStorage.GameLibrary.Effects.JumpEffect:Clone()
-    jumpEffect.CanCollide = false;
+    jumpEffect.CanCollide = false
 	jumpEffect.Transparency = 1
     jumpEffect.Parent = workspace
     game.Debris:AddItem(jumpEffect,0.3)

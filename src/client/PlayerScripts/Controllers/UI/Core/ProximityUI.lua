@@ -16,7 +16,7 @@ local localPlayer = Players.LocalPlayer
 
 local DropDownDebounce = false -- Prevents spam on the function
 
-local dropConnection = nil;
+local dropConnection = nil
 
 local ProxFunctions = {}
 
@@ -25,7 +25,7 @@ local ProxFunctions = {}
 function DropDown() -- Telling the server that you are dropping the item
 	if DropDownDebounce == false then
 		DropDownDebounce = true
-        local CookingService = Knit.GetService("CookingService");
+        local CookingService = Knit.GetService("CookingService")
 		CookingService.DropDown:Fire()
 		task.wait(.5)
 		DropDownDebounce = false
@@ -37,37 +37,37 @@ ProxFunctions["DropDown"] = function(bool)
 	
 	if bool == true then
 		if dropConnection then
-			dropConnection:Disconnect();
+			dropConnection:Disconnect()
 		end
 
 		local HumRoot = localPlayer.Character:FindFirstChild("HumanoidRootPart")
 
-		if not HumRoot then return end;
+		if not HumRoot then return end
 
 		local proxim = HumRoot:FindFirstChild("ProximityPrompt")
 
-		if not proxim then return end;
+		if not proxim then return end
 
 		local Ingredient = localPlayer.Character:FindFirstChild("Ingredient")
 
-		if not Ingredient then return end;
+		if not Ingredient then return end
 
 		if Ingredient.Value ~= nil then
-			proxim.Enabled = true;
+			proxim.Enabled = true
 
 			dropConnection = proxim.TriggerEnded:Connect(function(plr)
 				--print("drop down YUP")
-				DropDown();
-			end);
+				DropDown()
+			end)
 		end
 	else
 		if dropConnection then
-			dropConnection:Disconnect();
+			dropConnection:Disconnect()
 		end
 
 		local proxim = localPlayer.Character.HumanoidRootPart.ProximityPrompt
 
-		proxim.Enabled = false;
+		proxim.Enabled = false
 	end
 	
 end
@@ -82,7 +82,7 @@ end
 
 function ProximityUI:KnitStart()
 
-    local CookingService = Knit.GetService("CookingService");
+    local CookingService = Knit.GetService("CookingService")
 
     CookingService.ProximitySignal:Connect(function(action, bool)
         --print(action, bool)

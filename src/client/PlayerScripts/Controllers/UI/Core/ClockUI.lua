@@ -109,6 +109,7 @@ function ClockUI:KnitStart()
 
     GameService.AdjustTimeSignal:Connect(function(Package)
         local Day, Time, IsNight = Package["Day"], Package["Time"], Package["IsNight"];
+        print(Day, Time, IsNight, tick())
         self:AdjustTime(Day, Time, IsNight, tick());
     end)
     

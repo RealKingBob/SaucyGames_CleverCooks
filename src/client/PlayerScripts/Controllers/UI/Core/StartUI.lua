@@ -7,7 +7,7 @@ local Knit = require(ReplicatedStorage.Packages.Knit)
 
 local StartUI = Knit.CreateController { Name = "StartUI" }
 
-local LocalPlayer = Players.LocalPlayer;
+local LocalPlayer = Players.LocalPlayer
 
 function StartUI:KnitStart()
     
@@ -17,20 +17,20 @@ function StartUI:KnitStart()
     local function Cinematic()
         local CinematicsFolder = ReplicatedStorage.RatIntro
         local RatIntroRig = workspace.IntroRat
-        local prevRatIntroCFrame = nil;
+        local prevRatIntroCFrame = nil
 
         local CurrentCameraCFrame = workspace.CurrentCamera.CFrame
         local CurrentCameraFOV = workspace.CurrentCamera.FieldOfView
         local FrameTime = 0
-        local prevRatRigFrameTime = 0;
+        local prevRatRigFrameTime = 0
         local Connection
         -- Create an empty Part that will be used as the target for the tween
-        local targetPart = Instance.new("Part");
-        targetPart.CanCollide = false;
-        targetPart.Anchored = true;
-        targetPart.Size = Vector3.new(.1,.1,.1);
-        targetPart.Name = "Target";
-        targetPart.Parent = workspace;
+        local targetPart = Instance.new("Part")
+        targetPart.CanCollide = false
+        targetPart.Anchored = true
+        targetPart.Size = Vector3.new(.1,.1,.1)
+        targetPart.Name = "Target"
+        targetPart.Parent = workspace
 
         Character.Humanoid.AutoRotate = false
         Camera.CameraType = Enum.CameraType.Scriptable

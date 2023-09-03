@@ -22,35 +22,35 @@ local CookingUI = Knit.CreateController { Name = "CookingUI" }
 ]]
 
 --//Services
-local TweenService = game:GetService("TweenService");
-local SoundService = game:GetService("SoundService");
-local ReplicatedStorage = game:GetService("ReplicatedStorage");
+local TweenService = game:GetService("TweenService")
+local SoundService = game:GetService("SoundService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local plr = game.Players.LocalPlayer;
+local plr = game.Players.LocalPlayer
 
 --//Const
-local PlayerGui = plr:WaitForChild("PlayerGui");
+local PlayerGui = plr:WaitForChild("PlayerGui")
 
-local GoodMagicSound = "rbxassetid://9116394545";
-local GoodPoofSound = "rbxassetid://9125639499";
-local BadPoofSound = "rbxassetid://9116406899";
-local SizzleSound = "rbxassetid://9119165436";
+local GoodMagicSound = "rbxassetid://9116394545"
+local GoodPoofSound = "rbxassetid://9125639499"
+local BadPoofSound = "rbxassetid://9116406899"
+local SizzleSound = "rbxassetid://9119165436"
 
-local ColdIcon = "rbxassetid://12025423929";
-local ReadyIcon = "rbxassetid://11961241690";
-local HotIcon = "rbxassetid://12025424257";
-local SkullIcon = "rbxassetid://12025423642";
+local ColdIcon = "rbxassetid://12025423929"
+local ReadyIcon = "rbxassetid://11961241690"
+local HotIcon = "rbxassetid://12025424257"
+local SkullIcon = "rbxassetid://12025423642"
 
 local PanUIs = {}
 
-local CookingPreviews = Knit.GameLibrary:WaitForChild("CookingPreviews"); --local ProgressBar = TierFrame:WaitForChild("InnerFrame"):WaitForChild("ProgressBar");
+local CookingPreviews = game:GetService("ReplicatedStorage").GameLibrary:WaitForChild("CookingPreviews") --local ProgressBar = TierFrame:WaitForChild("InnerFrame"):WaitForChild("ProgressBar")
 
-local SizeInfo = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out);
+local SizeInfo = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 local function playLocalSound(soundId, volume)
     local sound = Instance.new("Sound")
-    sound.SoundId = soundId;
-    sound.Volume = volume;
+    sound.SoundId = soundId
+    sound.Volume = volume
     SoundService:PlayLocalSound(sound)
     sound.Ended:Wait()
     sound:Destroy()
@@ -71,44 +71,44 @@ local roundDecimals = function(num, places) --num is your number or value and pl
     
 end
 
-local coldRangeIcons = {min = 0, max = 34};
-local cookedRangeIcons = {min = 35, max = 66};
-local burntRangeIcons = {min = 67, max = 96};
+local coldRangeIcons = {min = 0, max = 34}
+local cookedRangeIcons = {min = 35, max = 66}
+local burntRangeIcons = {min = 67, max = 96}
 
-local coldRangeVisuals = {min = 20, max = 50};
-local cookedRangeVisuals = {min = 51, max = 75};
-local burntRangeVisuals = {min = 76, max = 96};
+local coldRangeVisuals = {min = 20, max = 50}
+local cookedRangeVisuals = {min = 51, max = 75}
+local burntRangeVisuals = {min = 76, max = 96}
 
 local function changeIcons(percentage, mainFrame)
     if percentage >= coldRangeIcons.min and percentage <= coldRangeIcons.max then
-        mainFrame:WaitForChild("ItemImage").Image = ColdIcon;
+        mainFrame:WaitForChild("ItemImage").Image = ColdIcon
     elseif percentage > coldRangeIcons.max and percentage <= cookedRangeIcons.max then
-        mainFrame:WaitForChild("ItemImage").Image = ReadyIcon;
+        mainFrame:WaitForChild("ItemImage").Image = ReadyIcon
     elseif percentage > cookedRangeIcons.max and percentage <= burntRangeIcons.max then
-        mainFrame:WaitForChild("ItemImage").Image = HotIcon;
+        mainFrame:WaitForChild("ItemImage").Image = HotIcon
     else
-        mainFrame:WaitForChild("ItemImage").Image = SkullIcon;
+        mainFrame:WaitForChild("ItemImage").Image = SkullIcon
     end
 end
 
 local function rangeInPercentage(percentage, startPercent, endPercent, startRange, endRange)
-    return (startRange + (percentage / endPercent) * (endRange - startRange));
+    return (startRange + (percentage / endPercent) * (endRange - startRange))
 end
 
 local function percentageInRange(currentNumber, startRange, endRange)
-    if startRange > endRange then startRange, endRange = endRange, startRange; end
+    if startRange > endRange then startRange, endRange = endRange, startRange end
 
-    local normalizedNum = (currentNumber - startRange) / (endRange - startRange);
+    local normalizedNum = (currentNumber - startRange) / (endRange - startRange)
 
-    normalizedNum = math.max(0, normalizedNum);
-    normalizedNum = math.min(1, normalizedNum);
+    normalizedNum = math.max(0, normalizedNum)
+    normalizedNum = math.min(1, normalizedNum)
 
-    return (math.floor(normalizedNum * 100) / 100); -- rounds to .2 decimal places
+    return (math.floor(normalizedNum * 100) / 100) -- rounds to .2 decimal places
 end
 
 local function visualizeSizzle(pan, isEnabled)
     if not pan or not isEnabled then return end
-    local obj;
+    local obj
     
     if pan:FindFirstChild("CookSmokes") then
         obj = pan:FindFirstChild("CookSmokes")
@@ -116,7 +116,7 @@ local function visualizeSizzle(pan, isEnabled)
         local attachment2 = pan.MidAttach
         obj.CFrame = (attachment2.WorldCFrame * attachment1.CFrame:Inverse())
     else
-        obj = Knit.GameLibrary.Effects.CookSmokes:Clone();
+        obj = game:GetService("ReplicatedStorage").GameLibrary.Effects.CookSmokes:Clone()
         obj.Parent = pan
         local attachment1 = obj.LinkPoint
         local attachment2 = pan.MidAttach
@@ -126,12 +126,12 @@ local function visualizeSizzle(pan, isEnabled)
     if obj then
         for _, v in pairs(obj:GetChildren()) do
             if v:IsA("ParticleEmitter") then
-                v.Enabled = isEnabled;
+                v.Enabled = isEnabled
             end
         end
     end
 
-    return (obj == nil and Instance.new("Part")) or obj;
+    return (obj == nil and Instance.new("Part")) or obj
 end
 
 local function visualizeCookFood(foodObject, pan, percentage, fireEffect)
@@ -189,8 +189,8 @@ end
 --//Public Methods
 
 function CookingUI:SpawnCookedParticles(food)
-    local MidAttachClone = Knit.Spawnables:WaitForChild("CookedParticle"):WaitForChild("MidAttach"):Clone()
-    MidAttachClone.Parent = food;
+    local MidAttachClone = game:GetService("ReplicatedStorage").Spawnables:WaitForChild("CookedParticle"):WaitForChild("MidAttach"):Clone()
+    MidAttachClone.Parent = food
 
     local cookingPercentage = (food:IsA("Model") and food.PrimaryPart ~= nil and food.PrimaryPart:GetAttribute("CookingPercentage")) or food:GetAttribute("CookingPercentage")
 
@@ -216,104 +216,104 @@ end
 
 function CookingUI:DestroyUI(Pan)
     print("DestroyUI", Pan, PanUIs[Pan])
-    if PanUIs[Pan] == nil then return; end
-    local cookBillUI = PanUIs[Pan].cookBillUI;
-    --local fireEffect = PanUIs[Pan].fireEffect;
+    if PanUIs[Pan] == nil then return end
+    local cookBillUI = PanUIs[Pan].cookBillUI
+    --local fireEffect = PanUIs[Pan].fireEffect
     local returnedFood = PanUIs[Pan].returnedFood
 
     for _, v in pairs(Pan:GetChildren()) do
         if v:IsA("ParticleEmitter") then
-            v.Enabled = false;
+            v.Enabled = false
         end
     end
 
-    local obj = visualizeSizzle(Pan, true);
+    local obj = visualizeSizzle(Pan, true)
     
-    obj:Destroy();
-    returnedFood:Destroy();
+    obj:Destroy()
+    returnedFood:Destroy()
     cookBillUI:Destroy()
 end
 
 function CookingUI:UpdatePanCook(Pan, Percentages)
-    if PanUIs[Pan] == nil then return; end
-    local cookBillUI = PanUIs[Pan].cookBillUI;
-    local fireEffect = PanUIs[Pan].fireEffect;
-    --local recipeAssets = require(Knit.ReplicatedAssets.Recipes);
+    if PanUIs[Pan] == nil then return end
+    local cookBillUI = PanUIs[Pan].cookBillUI
+    local fireEffect = PanUIs[Pan].fireEffect
+    --local recipeAssets = require(Knit.ReplicatedAssets.Recipes)
 
-    --local currentRecipeImage = recipeAssets[RecipeName].Image;
+    --local currentRecipeImage = recipeAssets[RecipeName].Image
 
     local mainFrame = cookBillUI:WaitForChild("Frame")
 
-    local numValue = Instance.new("NumberValue");
+    local numValue = Instance.new("NumberValue")
 
     cookBillUI.Parent = Pan
 
-    local PosInfo = TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out);
+    local PosInfo = TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
 
     for _, v in pairs(Pan:GetChildren()) do
         if v:IsA("ParticleEmitter") then
-            v.Enabled = true;
+            v.Enabled = true
         end
     end
 
-    visualizeSizzle(Pan, true);
+    visualizeSizzle(Pan, true)
 
     numValue.Changed:Connect(function()
-        if not mainFrame or not mainFrame:FindFirstChild("BarHolder") then return end;
+        if not mainFrame or not mainFrame:FindFirstChild("BarHolder") then return end
         mainFrame.BarHolder:WaitForChild("Bar").Position = UDim2.fromScale((numValue.Value / 100), .5)
         changeIcons(numValue.Value, mainFrame)
         visualizeCookFood(PanUIs[Pan].returnedFood, Pan, numValue.Value, fireEffect)
     end)
 
     if Percentages.overCookingLimit == true then
-        numValue.Value = Percentages.current;
+        numValue.Value = Percentages.current
     else
-        numValue.Value = Percentages.previous;
+        numValue.Value = Percentages.previous
     end
     
-    --TweenService:Create(mainFrame.BarHolder:WaitForChild("Bar"), SizeInfo, { Size = UDim2.fromScale(1, 1) }):Play();
+    --TweenService:Create(mainFrame.BarHolder:WaitForChild("Bar"), SizeInfo, { Size = UDim2.fromScale(1, 1) }):Play()
     
-    TweenService:Create(numValue, PosInfo, { Value = Percentages.current }):Play();
+    TweenService:Create(numValue, PosInfo, { Value = Percentages.current }):Play()
 end
 
 
 function CookingUI:StartDelivering(RecipeName, DeliverZone, DeliverTime)
-    local deliverBillUI = Knit.GameLibrary.BillboardUI.DeliverHeadUI:Clone();
-    local recipeAssets = require(Knit.ReplicatedAssets.Recipes);
+    local deliverBillUI = game:GetService("ReplicatedStorage").GameLibrary.BillboardUI.DeliverHeadUI:Clone()
+    local recipeAssets = require(Knit.ReplicatedAssets.Recipes)
 
-    local currentRecipeImage = recipeAssets[RecipeName].Image;
+    local currentRecipeImage = recipeAssets[RecipeName].Image
 
     local mainFrame = deliverBillUI:WaitForChild("Frame")
 
-    mainFrame:WaitForChild("ItemImage").Image = currentRecipeImage;
-    mainFrame:WaitForChild("Duration").Text = tostring(DeliverTime).."s";
+    mainFrame:WaitForChild("ItemImage").Image = currentRecipeImage
+    mainFrame:WaitForChild("Duration").Text = tostring(DeliverTime).."s"
 
     deliverBillUI.Parent = DeliverZone
 
-    local SizeInfo = TweenInfo.new(DeliverTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out);
+    local SizeInfo = TweenInfo.new(DeliverTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
 
     for _, v in pairs(DeliverZone:GetChildren()) do
         if v:IsA("ParticleEmitter") then
-            v.Enabled = true;
+            v.Enabled = true
         end
     end
 
     --task.spawn(playLocalSound, SizzleSound, 0.3)
 
-    TweenService:Create(mainFrame.BarHolder:WaitForChild("Bar"), SizeInfo, { Size = UDim2.fromScale(1, 1) }):Play();
+    TweenService:Create(mainFrame.BarHolder:WaitForChild("Bar"), SizeInfo, { Size = UDim2.fromScale(1, 1) }):Play()
 
     for i = DeliverTime, 0, -1 do
-        mainFrame:WaitForChild("Duration").Text = tostring(roundDecimals(i, 1)).."s";
+        mainFrame:WaitForChild("Duration").Text = tostring(roundDecimals(i, 1)).."s"
 
         if i == 0 then
             
         end
-        task.wait(1);
+        task.wait(1)
     end
 
     for _, v in pairs(DeliverZone:GetChildren()) do
         if v:IsA("ParticleEmitter") then
-            v.Enabled = false;
+            v.Enabled = false
         end
     end
 
@@ -325,10 +325,10 @@ function CookingUI:StartCooking(RecipeName, Pan, CookingTime)
     if PanUIs[Pan] == nil then
         PanUIs[Pan] = {}
     end
-    PanUIs[Pan].cookBillUI = Knit.GameLibrary.BillboardUI.CookHeadUI:Clone();
-    PanUIs[Pan].fireEffect = Knit.GameLibrary.Effects.Fire:Clone();
+    PanUIs[Pan].cookBillUI = game:GetService("ReplicatedStorage").GameLibrary.BillboardUI.CookHeadUI:Clone()
+    PanUIs[Pan].fireEffect = game:GetService("ReplicatedStorage").GameLibrary.Effects.Fire:Clone()
 
-    --local currentRecipeImage = recipeAssets[RecipeName].Image;
+    --local currentRecipeImage = recipeAssets[RecipeName].Image
 
     task.spawn(playLocalSound, SizzleSound, 0.3)
 
@@ -342,24 +342,24 @@ function CookingUI:StartCooking(RecipeName, Pan, CookingTime)
 
         FoodPreviewClone:SetPrimaryPartCFrame(attachment2.WorldCFrame * attachment1.CFrame:Inverse())
 
-        FoodPreviewClone.Parent = workspace:WaitForChild("WorkspaceBin");
+        FoodPreviewClone.Parent = workspace:WaitForChild("WorkspaceBin")
 
-        return FoodPreviewClone;
+        return FoodPreviewClone
     end
 
-    mainFrame:WaitForChild("ItemImage").Image = ColdIcon;
-    --mainFrame:WaitForChild("Duration").Text = tostring(CookingTime).."s";
+    mainFrame:WaitForChild("ItemImage").Image = ColdIcon
+    --mainFrame:WaitForChild("Duration").Text = tostring(CookingTime).."s"
 
     PanUIs[Pan].cookBillUI.Parent = Pan
     PanUIs[Pan].returnedFood = visualizeCreateFood(RecipeName)
 
     for _, v in pairs(Pan:GetChildren()) do
         if v:IsA("ParticleEmitter") then
-            v.Enabled = true;
+            v.Enabled = true
         end
     end
 
-    visualizeSizzle(Pan, true);
+    visualizeSizzle(Pan, true)
 end
 
 function CookingUI:KnitStart()
@@ -367,7 +367,7 @@ function CookingUI:KnitStart()
         CookingUI:Update({
             CurrentLevel = math.random(1, 200),
             Alpha = math.random(),
-        });
+        })
     end]]
 end
 

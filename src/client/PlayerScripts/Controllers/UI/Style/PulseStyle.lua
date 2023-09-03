@@ -19,11 +19,11 @@ local function Pulse(Container)
     local Frame = Container:FindFirstChild("Pulse")--:FindFirstChildWhichIsA("Frame")
     local Clone = Frame:Clone()
     Clone:ClearAllChildren()
-    Clone.ZIndex = Frame.ZIndex + 1;
-    Clone.BackgroundColor3 = Color3.fromRGB(255, 191, 0);
-    Clone.BackgroundTransparency = .3;
+    Clone.ZIndex = Frame.ZIndex + 1
+    Clone.BackgroundColor3 = Color3.fromRGB(255, 191, 0)
+    Clone.BackgroundTransparency = .3
     Clone.Parent = Container
-    Clone.Visible = true;
+    Clone.Visible = true
     
     local Tween = TweenService:Create(Clone, PulseInfo, {
         BackgroundTransparency = 1,
@@ -57,7 +57,7 @@ function PulseStyle:KnitStart()
     end)
 
     for _,v in pairs(CollectionService:GetTagged("PulseStyle")) do
-        self:StyleFrame(v);
+        self:StyleFrame(v)
     end
 
     RunService.RenderStepped:Connect(function()

@@ -35,41 +35,41 @@ local selectedIconImage = selectedRecipeFrame:WaitForChild("IconImage")
 
 local selectButton = recipeSection:WaitForChild("SelectButton")
 
-local notSelectedColors = {Color3.fromRGB(199, 77, 47), Color3.fromRGB(129, 48, 30)}; -- button, button.parent or button, shadow
-local selectedColors = {Color3.fromRGB(255, 170, 0), Color3.fromRGB(125, 83, 0)};
-local completedColors = {Color3.fromRGB(0, 184, 0),Color3.fromRGB(0, 80, 0)};
-local notCompletedColors = {Color3.fromRGB(223, 190, 149),Color3.fromRGB(124, 94, 69)};
+local notSelectedColors = {Color3.fromRGB(199, 77, 47), Color3.fromRGB(129, 48, 30)} -- button, button.parent or button, shadow
+local selectedColors = {Color3.fromRGB(255, 170, 0), Color3.fromRGB(125, 83, 0)}
+local completedColors = {Color3.fromRGB(0, 184, 0),Color3.fromRGB(0, 80, 0)}
+local notCompletedColors = {Color3.fromRGB(223, 190, 149),Color3.fromRGB(124, 94, 69)}
 
-local recipeSelected = nil;
-local allIngredientsFound = false;
+local recipeSelected = nil
+local allIngredientsFound = false
 
 local RecipeModule = require(ReplicatedAssets.Recipes)
 local IngredientModule = require(ReplicatedAssets.Ingredients)
 
-local myReplicatedIngredients = {};
-local highlightedItems = {};
-local currentPansInUse = {};
-local unlockedRecipes = {};
+local myReplicatedIngredients = {}
+local highlightedItems = {}
+local currentPansInUse = {}
+local unlockedRecipes = {}
 
 local ShortDistanceObject
-local CookDebounce = false;
+local CookDebounce = false
 
 local prevFoodName = nil
-local prevIngredientTab = nil;
-local prevConnection = nil;
-local prevIngredientButton = nil;
+local prevIngredientTab = nil
+local prevConnection = nil
+local prevIngredientButton = nil
 
-local pageRecipeSound = "rbxassetid://552900451";
+local pageRecipeSound = "rbxassetid://552900451"
 
-local ZoneAPI = require(ReplicatedModules:FindFirstChild("Zone"));
-local panZone = ZoneAPI.new(CollectionService:GetTagged("Pan"));
+local ZoneAPI = require(ReplicatedModules:FindFirstChild("Zone"))
+local panZone = ZoneAPI.new(CollectionService:GetTagged("Pan"))
 
 -- setup
 
 local function playLocalSound(soundId, volume)
     local sound = Instance.new("Sound")
-    sound.SoundId = soundId;
-    sound.Volume = volume;
+    sound.SoundId = soundId
+    sound.Volume = volume
     SoundService:PlayLocalSound(sound)
     sound.Ended:Wait()
     sound:Destroy()
@@ -78,10 +78,10 @@ end
 local function tablefind(tab,el) 
 	for index, value in pairs(tab) do
 		if value == el then
-			return index;
+			return index
 		end
 	end
-	return nil;
+	return nil
 end
 
 -- Define the sorting function
@@ -128,7 +128,7 @@ end
 function highlightItems(itemsData)
 	for i = 1,#highlightedItems do
 		CollectionService:RemoveTag(highlightedItems[i], "Marker")
-		--highlightedItems[i]:Destroy();
+		--highlightedItems[i]:Destroy()
 	end
 
 	local MarkerTemplate = BillboardUI:WaitForChild("MarkerUI")
@@ -140,7 +140,7 @@ function highlightItems(itemsData)
 	for _, itemName in pairs(itemsData) do
 		local originalVal = itemName
 		local foundIngredient = IngredientModule[originalVal]
-		local foundBlendedIngredient, replaced = string.gsub(originalVal, "%[", "");
+		local foundBlendedIngredient, replaced = string.gsub(originalVal, "%[", "")
 			foundBlendedIngredient = string.gsub(foundBlendedIngredient, "%]", "")
 			foundBlendedIngredient = string.gsub(foundBlendedIngredient, "-", "")
 			foundBlendedIngredient = string.gsub(foundBlendedIngredient, "Blended", "")
@@ -151,7 +151,7 @@ function highlightItems(itemsData)
 
 		if not foundIngredient then
 			foundIngredient = {
-				Name = "~Not An Item~";
+				Name = "~Not An Item~"
 			}
 		end
 
@@ -176,7 +176,7 @@ function highlightItems(itemsData)
 			return closestPart --, closestPartMagnitude
 		end
 
-		local itemsList = {};
+		local itemsList = {}
 
 		for _, item in pairs(workspace:WaitForChild("IngredientAvailable"):GetChildren()) do
 			local owner = item:IsA("Model") and item.PrimaryPart and item.PrimaryPart:GetAttribute("Owner") or item:GetAttribute("Owner")
@@ -194,10 +194,10 @@ function highlightItems(itemsData)
 
 		local item = (Character ~= nil and Character.PrimaryPart ~= nil and findClosestIngredient(itemsList, Character.PrimaryPart.Position)) or workspace:WaitForChild("IngredientAvailable"):FindFirstChild(foundIngredient.Name)
 		if not item then continue end
-		--local markerClone = MarkerTemplate:Clone();
+		--local markerClone = MarkerTemplate:Clone()
 		CollectionService:AddTag(item, "Marker")
 		highlightedItems[#highlightedItems +  1] = item--markerClone
-		--markerClone.Parent = item;
+		--markerClone.Parent = item
 	end
 end
 
@@ -211,7 +211,7 @@ function recipePageCreated(PageNumber,PageData)
 	Page.Name = tostring(PageNumber)
 	Page.Parent = recipeList
 
-	local difficultyTable = {};
+	local difficultyTable = {}
 
 	if PageData then
 		for key, value in next, PageData do
@@ -219,8 +219,8 @@ function recipePageCreated(PageNumber,PageData)
 				if type(value) == "table" then
 					table.insert(difficultyTable, {Key = key, Difficulty = value.Difficulty})
 				end
-			end;
-		end;
+			end
+		end
 	end
 
 	table.sort(difficultyTable, sortByName)
@@ -230,8 +230,8 @@ function recipePageCreated(PageNumber,PageData)
 
 	for _, itemData in ipairs(difficultyTable) do
 		recipeCount += 1
-		local key, value = itemData.Key, PageData[itemData.Key];
-		local unlocked = false
+		local key, value = itemData.Key, PageData[itemData.Key]
+		local unlocked = true -- FALSSE
 		if unlockedRecipes[key] then unlocked = true end
 		if recipeCount < PageLimit then
 			local ClonedFoodTemplate = FoodTemplate:Clone()
@@ -352,7 +352,7 @@ function updateRecipeList()
 			for _, recipe in pairs(page:GetChildren()) do
 				if recipe:IsA("Frame") then
 					print(unlockedRecipes[recipe.Name])
-					recipe:SetAttribute("Unlocked", (unlockedRecipes[recipe.Name] and true) or false)
+					recipe:SetAttribute("Unlocked", true) -- (unlockedRecipes[recipe.Name] and true) or false
 				end
 			end
 		end
@@ -362,7 +362,7 @@ end
 local function displayIngredients(clearItems)
 	if clearItems then
 		foodNameDisplayed.Text = ""
-		allIngredientsFound = false;
+		allIngredientsFound = false
 		highlightItems()
 		return
 	end
@@ -372,32 +372,32 @@ local function displayIngredients(clearItems)
 	prevIngredientTab = recipeSelected
 	if prevConnection then
 		prevConnection:Disconnect()
-		prevConnection = nil;
+		prevConnection = nil
 	end
 	for _, frame in pairs(IngredientsTab:GetChildren()) do
 		if frame:IsA("Frame") then
 			frame:Destroy()
 		end
-	end;
+	end
 
 	if recipeSelected == nil then
 		foodNameDisplayed.Text = ""
-		allIngredientsFound = false;
+		allIngredientsFound = false
 		highlightItems()
 		return
 	end
 
 	foodNameDisplayed.Text = recipeSelected
 
-	local greenIngredients = {};
-	allIngredientsFound = false;
+	local greenIngredients = {}
+	allIngredientsFound = false
 
 	highlightItems(RecipeModule[recipeSelected]["Ingredients"])
 
 	for _,ingredient in pairs(RecipeModule[recipeSelected]["Ingredients"]) do
 		local originalVal = ingredient
 		local foundIngredient = IngredientModule[originalVal]
-		local foundBlendedIngredient, replaced = string.gsub(originalVal, "%[", "");
+		local foundBlendedIngredient, replaced = string.gsub(originalVal, "%[", "")
 			foundBlendedIngredient = string.gsub(foundBlendedIngredient, "%]", "")
 			foundBlendedIngredient = string.gsub(foundBlendedIngredient, "-", "")
 			foundBlendedIngredient = string.gsub(foundBlendedIngredient, "Blended", "")
@@ -437,7 +437,7 @@ local function displayIngredients(clearItems)
 				for _,v in pairs(myReplicatedIngredients) do
 					if clonedIngredientFrame.Name == tostring(v) then
 						changeIFrameColors(completedColors[1], completedColors[2])
-						break;
+						break
 					else
 						changeIFrameColors(notCompletedColors[1], notCompletedColors[2])
 					end
@@ -445,32 +445,32 @@ local function displayIngredients(clearItems)
 			end
 		end
 		table.insert(greenIngredients, clonedIngredientFrame)
-		clonedIngredientFrame.Parent = IngredientsTab;
-		clonedIngredientFrame:TweenSize(UDim2.fromScale(0.081,1), Enum.EasingDirection.Out, Enum.EasingStyle.Elastic);
+		clonedIngredientFrame.Parent = IngredientsTab
+		clonedIngredientFrame:TweenSize(UDim2.fromScale(0.081,1), Enum.EasingDirection.Out, Enum.EasingStyle.Elastic)
 		--task.wait(0.01)
 	end
 
-	local checkIfAllGreen = true;
+	local checkIfAllGreen = true
 	for _, v in pairs(greenIngredients) do
 		if v.BackgroundColor3 ~= completedColors[2] then
 			checkIfAllGreen = false
-			break;
+			break
 		end
 	end
 	--print('checkIfAllGreen', checkIfAllGreen)
 	if checkIfAllGreen == true then
-		allIngredientsFound = true;
+		allIngredientsFound = true
 		for _, pan in pairs(CollectionService:GetTagged("Pan")) do
-			if pan:FindFirstChild("CookHeadUI") then continue end;
+			if pan:FindFirstChild("CookHeadUI") then continue end
 			print("tryee")
-			pan.ProximityPrompt.Enabled = true;
+			pan.ProximityPrompt.Enabled = true
 		end
 	else
-		allIngredientsFound = false;
+		allIngredientsFound = false
 		for _, pan in pairs(CollectionService:GetTagged("Pan")) do
-			if tablefind(currentPansInUse, pan) then continue end;
+			if tablefind(currentPansInUse, pan) then continue end
 			print("not truurueuee")
-			pan.ProximityPrompt.Enabled = false;
+			pan.ProximityPrompt.Enabled = false
 		end
 	end
 
@@ -483,7 +483,7 @@ local function displayIngredients(clearItems)
 	end
 	
 	prevConnection = CookingService.SendIngredients:Connect(function(args)
-		greenIngredients = {};
+		greenIngredients = {}
 		--print(args)
 		if args then
 			myReplicatedIngredients = args
@@ -500,7 +500,7 @@ local function displayIngredients(clearItems)
 						if frame:IsA("Frame") then
 							if frame.Name == tostring(v) then
 								changeFrameColors(frame, completedColors[1], completedColors[2])
-								break;
+								break
 							else
 								changeFrameColors(frame, notCompletedColors[1], notCompletedColors[2])
 							end
@@ -510,27 +510,27 @@ local function displayIngredients(clearItems)
 				end
 			end
 
-			checkIfAllGreen = true;
+			checkIfAllGreen = true
 			for _, v in pairs(greenIngredients) do
 				if v.BackgroundColor3 ~= completedColors[2] then
 					checkIfAllGreen = false
-					break;
+					break
 				end
 			end
 			--print('checkIfAllGreen', checkIfAllGreen)
 			if checkIfAllGreen == true then
-				allIngredientsFound = true;
+				allIngredientsFound = true
 				for _, pan in pairs(CollectionService:GetTagged("Pan")) do
-					if pan:FindFirstChild("CookHeadUI") then continue end;
+					if pan:FindFirstChild("CookHeadUI") then continue end
 					print("asdasdas")
-					pan.ProximityPrompt.Enabled = true;
+					pan.ProximityPrompt.Enabled = true
 				end
 			else
-				allIngredientsFound = false;
+				allIngredientsFound = false
 				for _, pan in pairs(CollectionService:GetTagged("Pan")) do
-					if tablefind(currentPansInUse, pan) then continue end;
+					if tablefind(currentPansInUse, pan) then continue end
 					print("falsese asdasdas")
-					pan.ProximityPrompt.Enabled = false;
+					pan.ProximityPrompt.Enabled = false
 				end
 			end
 		end
@@ -563,7 +563,7 @@ function setupRecipeButtons()
 			
 			for _, frame in pairs(ingredientList:GetChildren()) do
 				if frame:IsA("Frame") then
-					frame:Destroy();
+					frame:Destroy()
 				end
 			end
 			
@@ -572,7 +572,7 @@ function setupRecipeButtons()
 				local originalVal = value
 				local foundIngredient = IngredientModule[originalVal]
 
-				local foundBlendedIngredient, replaced = string.gsub(originalVal, "%[", "");
+				local foundBlendedIngredient, replaced = string.gsub(originalVal, "%[", "")
 				foundBlendedIngredient = string.gsub(foundBlendedIngredient, "%]", "")
 				foundBlendedIngredient = string.gsub(foundBlendedIngredient, "-", "")
 				foundBlendedIngredient = string.gsub(foundBlendedIngredient, "Blended", "")
@@ -605,7 +605,7 @@ function setupRecipeButtons()
 			else
 				changeButtonColors(notSelectedColors[1], notSelectedColors[2])
 				selectButton.Text = "Select Recipe"
-			end;
+			end
 		end
 	end
 	
@@ -616,10 +616,10 @@ function setupRecipeButtons()
 					frame.Button.MouseButton1Click:Connect(function()
 						if frame:GetAttribute("Unlocked") == false then return end
 						if prevIngredientButton ~= nil then
-							prevIngredientButton.FoodTitle.SelectedStroke.Enabled = false;
+							prevIngredientButton.FoodTitle.SelectedStroke.Enabled = false
 						end
-						prevIngredientButton = frame;
-						frame.FoodTitle.SelectedStroke.Enabled = true;
+						prevIngredientButton = frame
+						frame.FoodTitle.SelectedStroke.Enabled = true
 						task.spawn(playLocalSound, pageRecipeSound, 0.2)
 						setupIngredients(frame.Name)
 					end)
@@ -628,11 +628,11 @@ function setupRecipeButtons()
 		end
 	end
 
-	local debounce = false;
+	local debounce = false
 
 	selectButton.MouseButton1Click:Connect(function()
 		if debounce == false then
-			debounce = true;
+			debounce = true
 			if prevFoodName then
 				if recipeSelected == nil or recipeSelected ~= prevFoodName then
 					changeButtonColors(selectedColors[1], selectedColors[2])
@@ -642,28 +642,28 @@ function setupRecipeButtons()
 					changeButtonColors(notSelectedColors[1], notSelectedColors[2])
 					selectButton.Text = "Select Recipe"
 					recipeSelected = nil
-					allIngredientsFound = false;
+					allIngredientsFound = false
 				end
 				displayIngredients()
 			end
 			task.wait(1)
-			debounce = false;
-		end;
+			debounce = false
+		end
 	end)
 end
 
 function RecipesView:GetRecipeIngredients(recipeName)
 	recipeSelected = recipeName
 	if prevIngredientButton ~= nil then
-		prevIngredientButton.FoodTitle.SelectedStroke.Enabled = false;
+		prevIngredientButton.FoodTitle.SelectedStroke.Enabled = false
 	end
 	for _,page in pairs(recipeList:GetChildren()) do
 		if page:IsA("Frame") then
 			for _, frame in pairs(page:GetChildren()) do
 				if frame:IsA("Frame") then
 					if frame.Name == recipeName then
-						prevIngredientButton = frame;
-						frame.FoodTitle.SelectedStroke.Enabled = true;
+						prevIngredientButton = frame
+						frame.FoodTitle.SelectedStroke.Enabled = true
 					end
 				end
 			end
@@ -691,130 +691,130 @@ local getRadius = function(part)
 	return (part.Size.Z<part.Size.Y and part.Size.Z or part.Size.Y)/2
 	--[[In the above we are returning the smallest, first we check if Z is smaller
 	than Y, if so then we return Z or else we return Y.]]
-end;
+end
 
 local function checkPans(panHitbox) -- checks if any object is on the pans
-	local panArray = {};
+	local panArray = {}
 	local radiusOfPanZone = getRadius(panHitbox)
 
 	local overlapParams = OverlapParams.new()
-	overlapParams.FilterDescendantsInstances = CollectionService:GetTagged("IgnoreParts");
-	overlapParams.FilterType = Enum.RaycastFilterType.Blacklist;
+	overlapParams.FilterDescendantsInstances = CollectionService:GetTagged("IgnoreParts")
+	overlapParams.FilterType = Enum.RaycastFilterType.Blacklist
 
 	local objectsInPanZone = workspace:GetPartBoundsInRadius(panHitbox.Position, radiusOfPanZone, overlapParams)
 	for _, object in pairs(objectsInPanZone) do
-		local touchedType, touchedOwner, touchedObject;
+		local touchedType, touchedOwner, touchedObject
 
-		local tObject = nil;
+		local tObject = nil
 		if object then
 			if object.Parent then
 				if object.Parent:IsA("Model") then
 					if object.Parent.PrimaryPart then
-						tObject = object.Parent.PrimaryPart;
-						touchedObject = tObject.Parent;
+						tObject = object.Parent.PrimaryPart
+						touchedObject = tObject.Parent
 					end
 				else
-					tObject = object;
-					touchedObject = object;
+					tObject = object
+					touchedObject = object
 				end
 			end
 		end
 		
-		if tObject == nil then continue end;
+		if tObject == nil then continue end
 
-		touchedType = tObject:GetAttribute("Type");
-		touchedOwner = tObject:GetAttribute("Owner");
+		touchedType = tObject:GetAttribute("Type")
+		touchedOwner = tObject:GetAttribute("Owner")
 
 		if touchedObject and touchedType and touchedOwner then
 			table.insert(panArray, object)
 		end
 	end
 
-	return panArray;
+	return panArray
 end
 
 function RecipesView:KnitStart()
     
     setupRecipes()
 
-	local CookingService = Knit.GetService("CookingService");
+	local CookingService = Knit.GetService("CookingService")
 	CookingService.UpdatePans:Connect(function(currentPans)
 		currentPansInUse = currentPans
 		for _, pan in pairs(CollectionService:GetTagged("Pan")) do
 			if tablefind(currentPansInUse, pan) then
 				--print("xxxxxxxxxx")
-				pan.ProximityPrompt.Enabled = true;
+				pan.ProximityPrompt.Enabled = true
 			end
 		end
 	end)
 
-	local OrderService = Knit.GetService("OrderService");
+	local OrderService = Knit.GetService("OrderService")
 	OrderService.RecipesUpdate:Connect(function(RecipesUnlocked)
 		unlockedRecipes = RecipesUnlocked
 		updateRecipeList()
 	end)
 
-	OrderService:GetUnlockedRecipes():andThen(function(recipesUnlocked)
-        if (recipesUnlocked) then
-			unlockedRecipes = recipesUnlocked
-            updateRecipeList()
-        end
-    end)
+	local recipesUnlocked = OrderService:GetUnlockedRecipes()
+	
+	if (recipesUnlocked) then
+		unlockedRecipes = recipesUnlocked
+		updateRecipeList()
+	end
 
 	local ProximityService = Knit.GetService("ProximityService")
 	local PlayerController = Knit.GetController("PlayerController")
 
 	ProximityService.TrackItem:Connect(function(tracking, itemObj)
 		if tracking == true then
-			local currentItem = nil;
-			local Character = LocalPlayer.Character;
+			local currentItem = nil
+			local Character = LocalPlayer.Character
 			if Character and Character.PrimaryPart then
 				if recipeSelected then
-					local ingredients = RecipeModule[recipeSelected]["Ingredients"];
+					local ingredients = RecipeModule[recipeSelected]["Ingredients"]
 					
 					for _, ingredient in pairs(ingredients) do
 						local originalVal = ingredient
-						local foundBlendedIngredient, replaced = string.gsub(originalVal, "%[", "");
+						local foundBlendedIngredient, replaced = string.gsub(originalVal, "%[", "")
 							foundBlendedIngredient = string.gsub(foundBlendedIngredient, "%]", "")
 							foundBlendedIngredient = string.gsub(foundBlendedIngredient, "-", "")
 							foundBlendedIngredient = string.gsub(foundBlendedIngredient, "Blended", "")
 						
 						if tostring(ingredient) == tostring(itemObj) then
-							currentItem = getNearestPan(Character.PrimaryPart.Position);
+							currentItem = getNearestPan(Character.PrimaryPart.Position)
 						elseif tostring(foundBlendedIngredient) == tostring(itemObj) then
 							currentItem = getNearestBlender(Character.PrimaryPart.Position)
 						end
 					end
 					if RecipeModule[tostring(itemObj)] then
-						currentItem = getNearestDelivery(Character.PrimaryPart.Position);
+						currentItem = getNearestDelivery(Character.PrimaryPart.Position)
 					end
 					if not currentItem then
-						currentItem = getNearestPan(Character.PrimaryPart.Position);
+						currentItem = getNearestPan(Character.PrimaryPart.Position)
 					end
 				else
 					if RecipeModule[tostring(itemObj)] then
-						currentItem = getNearestDelivery(Character.PrimaryPart.Position);
+						currentItem = getNearestDelivery(Character.PrimaryPart.Position)
 					end
 					if not currentItem then
-						currentItem = getNearestPan(Character.PrimaryPart.Position);
+						currentItem = getNearestPan(Character.PrimaryPart.Position)
 					end
 				end
 			end
 			if currentItem then
-				PlayerController:TrackItem(currentItem);
+				PlayerController:TrackItem(currentItem)
 			end
 		else
-			PlayerController:UnTrackItem();
+			PlayerController:UnTrackItem()
 		end
 	end)
 
-	local debounce = false;
+	local debounce = false
 
 	for _, pan in pairs(CollectionService:GetTagged("Pan")) do
 		pan.ProximityPrompt.TriggerEnded:Connect(function(plr)
 			if not tablefind(currentPansInUse, pan) then
 				if debounce == false then
-					debounce = true;
+					debounce = true
 					local ProximityPrompts = PlayerGui:FindFirstChild("ProximityPrompts")
 					if ProximityPrompts then
 						local BigPrompt = ProximityPrompts:FindFirstChild("BigPrompt")
@@ -822,15 +822,15 @@ function RecipesView:KnitStart()
 							BigPrompt.Frame.TitleFrame.TitleText.Text = "Grab"
 						end
 					end
-					self:Cook(pan);
-					pan.ProximityPrompt.Enabled = false;
+					self:Cook(pan)
+					pan.ProximityPrompt.Enabled = false
 					task.wait(0.5)
-					pan.ProximityPrompt.Enabled = true;
-					debounce = false;
+					pan.ProximityPrompt.Enabled = true
+					debounce = false
 				end
 			else
 				if debounce == false then
-					debounce = true;
+					debounce = true
 					local ProximityPrompts = PlayerGui:FindFirstChild("ProximityPrompts")
 					if ProximityPrompts then
 						local BigPrompt = ProximityPrompts:FindFirstChild("BigPrompt")
@@ -838,12 +838,12 @@ function RecipesView:KnitStart()
 							BigPrompt.Frame.TitleFrame.TitleText.Text = ""
 						end
 					end
-					self:Cook(pan);
+					self:Cook(pan)
 					task.wait(0.5)
-					debounce = false;
+					debounce = false
 				end
 			end
-		end);
+		end)
 	end
 
     game:GetService("RunService").RenderStepped:Connect(function()
@@ -853,34 +853,34 @@ function RecipesView:KnitStart()
 
 			if #specificPanArray > 0 then
 				for _, touchedPart in ipairs(specificPanArray) do
-					local tTouchedPart;
+					local tTouchedPart
 	
 					if touchedPart.Parent:IsA("Model") and touchedPart.Parent.PrimaryPart then
-						tTouchedPart = touchedPart.Parent.PrimaryPart;
+						tTouchedPart = touchedPart.Parent.PrimaryPart
 					else
 						tTouchedPart = touchedPart
 					end
 	
-					local touchedType = tTouchedPart:GetAttribute("Type");
-					local touchedOwner = tTouchedPart:GetAttribute("Owner");
+					local touchedType = tTouchedPart:GetAttribute("Type")
+					local touchedOwner = tTouchedPart:GetAttribute("Owner")
 	
 					if touchedType and touchedType == "Food" and panZone:findPart(touchedPart) == true then
-						panHitbox.ProximityPrompt.Enabled = true;
+						panHitbox.ProximityPrompt.Enabled = true
 					else
-						if allIngredientsFound == true or tablefind(currentPansInUse, panHitbox) then continue end;
+						if allIngredientsFound == true or tablefind(currentPansInUse, panHitbox) then continue end
 						--print("falsese")
-						panHitbox.ProximityPrompt.Enabled = false;
-					end;
+						panHitbox.ProximityPrompt.Enabled = false
+					end
 				end
 			else
-				if allIngredientsFound == true or tablefind(currentPansInUse, panHitbox) then continue end;
+				if allIngredientsFound == true or tablefind(currentPansInUse, panHitbox) then continue end
 				if panHitbox.ProximityPrompt.Enabled ~= false then
 					--print("falsese  22" ) 
-					panHitbox.ProximityPrompt.Enabled = false;
+					panHitbox.ProximityPrompt.Enabled = false
 				end
 			end
         end
-    end);
+    end)
 end
 
 

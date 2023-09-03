@@ -1,26 +1,46 @@
---[[
+--[=[
+	@interface Middleware
+	.Inbound ServerMiddleware?
+	.Outbound ServerMiddleware?
+	@within KnitServer
+]=]
+type Middleware = {
+	Inbound: ServerMiddleware?,
+	Outbound: ServerMiddleware?,
+}
 
-	Knit.CreateService(service): Service
-	Knit.CreateSignal(): SIGNAL_MARKER
-	Knit.AddServices(folder): Service[]
-	Knit.AddServicesDeep(folder): Service[]
-	Knit.Start(): Promise<void>
-	Knit.OnStart(): Promise<void>
+--[=[
+	@type ServerMiddlewareFn (player: Player, args: {any}) -> (shouldContinue: boolean, ...: any)
+	@within KnitServer
 
---]]
+	For more info, see [ServerComm](https://sleitnick.github.io/RbxUtil/api/ServerComm/) documentation.
+]=]
+type ServerMiddlewareFn = (player: Player, args: {any}) -> (boolean, ...any)
 
+--[=[
+	@type ServerMiddleware {ServerMiddlewareFn}
+	@within KnitServer
+	An array of server middleware functions.
+]=]
+type ServerMiddleware = {ServerMiddlewareFn}
 
 --[=[
 	@interface ServiceDef
 	.Name string
 	.Client table?
+	.Middleware Middleware?
 	.[any] any
 	@within KnitServer
 	Used to define a service when creating it in `CreateService`.
+
+	The middleware tables provided will be used instead of the Knit-level
+	middleware (if any). This allows fine-tuning each service's middleware.
+	These can also be left out or `nil` to not include middleware.
 ]=]
 type ServiceDef = {
 	Name: string,
 	Client: {[any]: any}?,
+	Middleware: Middleware?,
 	[any]: any,
 }
 
@@ -50,6 +70,23 @@ type ServiceClient = {
 	[any]: any,
 }
 
+--[=[
+	@interface KnitOptions
+	.Middleware Middleware?
+	@within KnitServer
+
+	- Middleware will apply to all services _except_ ones that define
+	their own middleware.
+]=]
+type KnitOptions = {
+	Middleware: Middleware?,
+}
+
+local defaultOptions: KnitOptions = {
+	Middleware = nil,
+}
+
+local selectedOptions = nil
 
 --[=[
 	@class KnitServer
@@ -87,6 +124,11 @@ getmetatable(SIGNAL_MARKER).__tostring = function()
 	return "SIGNAL_MARKER"
 end
 
+local PROPERTY_MARKER = newproxy(true)
+getmetatable(PROPERTY_MARKER).__tostring = function()
+	return "PROPERTY_MARKER"
+end
+
 local knitRepServiceFolder = Instance.new("Folder")
 knitRepServiceFolder.Name = "Services"
 
@@ -100,14 +142,6 @@ local startedComplete = false
 local onStartedComplete = Instance.new("BindableEvent")
 
 
-local function CreateRepFolder(serviceName: string): Instance
-	local folder = Instance.new("Folder")
-	folder.Name = serviceName
-	folder.Parent = knitRepServiceFolder
-	return folder
-end
-
-
 local function DoesServiceExist(serviceName: string): boolean
 	local service: Service? = services[serviceName]
 	return service ~= nil
@@ -115,8 +149,6 @@ end
 
 
 --[=[
-	@param serviceDefinition ServiceDef
-	@return Service
 	Constructs a new service.
 
 	:::caution
@@ -125,8 +157,8 @@ end
 	```lua
 	-- Create a service
 	local MyService = Knit.CreateService {
-		Name = "MyService";
-		Client = {};
+		Name = "MyService",
+		Client = {},
 	}
 
 	-- Expose a ToAllCaps remote function to the clients
@@ -151,17 +183,12 @@ function KnitServer.CreateService(serviceDef: ServiceDef): Service
 	assert(#serviceDef.Name > 0, "Service.Name must be a non-empty string")
 	assert(not DoesServiceExist(serviceDef.Name), "Service \"" .. serviceDef.Name .. "\" already exists")
 	local service = serviceDef
-	service.KnitComm = ServerComm.new(CreateRepFolder(serviceDef.Name))
+	service.KnitComm = ServerComm.new(knitRepServiceFolder, serviceDef.Name)
 	if type(service.Client) ~= "table" then
 		service.Client = {Server = service}
 	else
 		if service.Client.Server ~= service then
 			service.Client.Server = service
-		end
-		for k,v in pairs(service.Client) do
-			if v == SIGNAL_MARKER then
-				service.Client[k] = service.KnitComm:CreateSignal(k)
-			end
 		end
 	end
 	services[service.Name] = service
@@ -170,8 +197,6 @@ end
 
 
 --[=[
-	@param parent Instance
-	@return services: {Service}
 	Requires all the modules that are children of the given parent. This is an easy
 	way to quickly load all services that might be in a folder.
 	```lua
@@ -189,8 +214,6 @@ end
 
 
 --[=[
-	@param parent Instance
-	@return services: {Service}
 	Requires all the modules that are descendants of the given parent.
 ]=]
 function KnitServer.AddServicesDeep(parent: Instance): {Service}
@@ -204,11 +227,10 @@ end
 
 
 --[=[
-	@param serviceName string
-	@return Service
 	Gets the service by name. Throws an error if the service is not found.
 ]=]
 function KnitServer.GetService(serviceName: string): Service
+	assert(started, "Cannot call GetService until Knit has been started")
 	assert(type(serviceName) == "string", "ServiceName must be a string; got " .. type(serviceName))
 	return assert(services[serviceName], "Could not find service \"" .. serviceName .. "\"") :: Service
 end
@@ -224,14 +246,18 @@ end
 	documentation for more info.
 	```lua
 	local MyService = Knit.CreateService {
-		Name = "MyService";
+		Name = "MyService",
 		Client = {
-			MySignal = Knit.CreateSignal(); -- Create the signal marker
-		}
+			-- Create the signal marker, which will turn into a
+			-- RemoteSignal when Knit.Start() is called:
+			MySignal = Knit.CreateSignal(),
+		},
 	}
 
-	-- Connect to the signal:
-	MyService.Client.MySignal:Connect(function(player, ...) end)
+	function MyService:KnitInit()
+		-- Connect to the signal:
+		self.Client.MySignal:Connect(function(player, ...) end)
+	end
 	```
 ]=]
 function KnitServer.CreateSignal()
@@ -240,11 +266,49 @@ end
 
 
 --[=[
+	@return PROPERTY_MARKER
+	Returns a marker that will transform the current key into
+	a RemoteProperty once the service is created. Should only
+	be called within the Client table of a service. An initial
+	value can be passed along as well.
+
+	RemoteProperties are great for replicating data to all of
+	the clients. Different data can also be set per client.
+
+	See [RemoteProperty](https://sleitnick.github.io/RbxUtil/api/RemoteProperty)
+	documentation for more info.
+
+	```lua
+	local MyService = Knit.CreateService {
+		Name = "MyService",
+		Client = {
+			-- Create the property marker, which will turn into a
+			-- RemoteProperty when Knit.Start() is called:
+			MyProperty = Knit.CreateProperty("HelloWorld"),
+		},
+	}
+
+	function MyService:KnitInit()
+		-- Change the value of the property:
+		self.Client.MyProperty:Set("HelloWorldAgain")
+	end
+	```
+]=]
+function KnitServer.CreateProperty(initialValue: any)
+	return {PROPERTY_MARKER, initialValue}
+end
+
+
+--[=[
 	@return Promise
 	Starts Knit. Should only be called once.
 
+	Optionally, `KnitOptions` can be passed in order to set
+	Knit's custom configurations.
+
 	:::caution
-	Be sure that all services have been created _before_ calling `Start`. Services cannot be added later.
+	Be sure that all services have been created _before_
+	calling `Start`. Services cannot be added later.
 	:::
 
 	```lua
@@ -252,8 +316,24 @@ end
 		print("Knit started!")
 	end):catch(warn)
 	```
+	
+	Example of Knit started with options:
+	```lua
+	Knit.Start({
+		Middleware = {
+			Inbound = {
+				function(player, args)
+					print("Player is giving following args to server:", args)
+					return true
+				end
+			},
+		},
+	}):andThen(function()
+		print("Knit started!")
+	end):catch(warn)
+	```
 ]=]
-function KnitServer.Start()
+function KnitServer.Start(options: KnitOptions?)
 
 	if started then
 		return Promise.reject("Knit already started")
@@ -261,15 +341,35 @@ function KnitServer.Start()
 
 	started = true
 
+	if options == nil then
+		selectedOptions = defaultOptions
+	else
+		assert(typeof(options) == "table", "KnitOptions should be a table or nil; got " .. typeof(options))
+		selectedOptions = options
+		for k,v in pairs(defaultOptions) do
+			if selectedOptions[k] == nil then
+				selectedOptions[k] = v
+			end
+		end
+	end
+
 	return Promise.new(function(resolve)
+
+		local knitMiddleware = selectedOptions.Middleware or {}
 
 		-- Bind remotes:
 		for _,service in pairs(services) do
+			local middleware = service.Middleware or {}
+			local inbound = middleware.Inbound or knitMiddleware.Inbound
+			local outbound = middleware.Outbound or knitMiddleware.Outbound
+			service.Middleware = nil
 			for k,v in pairs(service.Client) do
 				if type(v) == "function" then
-					service.KnitComm:WrapMethod(service.Client, k)
+					service.KnitComm:WrapMethod(service.Client, k, inbound, outbound)
 				elseif v == SIGNAL_MARKER then
-					service.Client[k] = service.KnitComm:CreateSignal(k)
+					service.Client[k] = service.KnitComm:CreateSignal(k, inbound, outbound)
+				elseif type(v) == "table" and v[1] == PROPERTY_MARKER then
+					service.Client[k] = service.KnitComm:CreateProperty(k, v[2], inbound, outbound)
 				end
 			end
 		end
@@ -279,6 +379,7 @@ function KnitServer.Start()
 		for _,service in pairs(services) do
 			if type(service.KnitInit) == "function" then
 				table.insert(promisesInitServices, Promise.new(function(r)
+					debug.setmemorycategory(service.Name)
 					service:KnitInit()
 					r()
 				end))
@@ -292,7 +393,10 @@ function KnitServer.Start()
 		-- Start:
 		for _,service in pairs(services) do
 			if type(service.KnitStart) == "function" then
-				task.spawn(service.KnitStart, service)
+				task.spawn(function()
+					debug.setmemorycategory(service.Name)
+					service:KnitStart()
+				end)
 			end
 		end
 

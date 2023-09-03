@@ -145,7 +145,33 @@ function PlayerController:KnitStart()
 end
 
 function PlayerController:KnitInit()
-    
+    local NotificationService = Knit.GetService("NotificationService")
+    local NotificationUI = Knit.GetController("NotificationUI")
+    local PlayerController = Knit.GetController("PlayerController")
+
+    NotificationService.NotifyMessage:Connect(function(messageText, typeWriterEffect)
+        --print("BOROSADA", messageText, typeWriterEffect)
+        NotificationUI:Message(messageText, typeWriterEffect)
+    end)
+
+    NotificationService.NotifyLargeMessage:Connect(function(messageText, typeWriterEffect)
+        NotificationUI:LargeMessage(messageText, typeWriterEffect)
+    end)
+
+    NotificationService.Alert:Connect(function()
+        PlayerController:WarnExclaim()
+    end)
+
+    NotificationService.Notification:Connect(function(title, desc, buttonName)
+        NotificationUI:OpenView(title, desc, buttonName)
+    end)
+
+    local DeathEffectService = Knit.GetService("DeathEffectService")
+
+    DeathEffectService.ClientDeath:Connect(function(Character)
+        PlayerController:DeathEffect(Character)
+    end)
+
 end
 
 

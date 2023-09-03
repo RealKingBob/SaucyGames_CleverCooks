@@ -9,9 +9,9 @@ local Players = game:GetService("Players")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local localPlayer = Players.LocalPlayer
-local currAnimName = {};
+local currAnimName = {}
 local currentAnimKeyframeHandler = {}
-local currentAnimSpeed = {}; --0.58
+local currentAnimSpeed = {} --0.58
 
 local AnimationController = Knit.CreateController { Name = "AnimationController" }
 
@@ -109,17 +109,9 @@ end
 function AnimationController:KnitStart()
     local ProximityService = Knit.GetService("ProximityService")
     ProximityService.SetAnimations:Connect(function(Animations)
-        self:SetAnimations(Animations);
+        self:SetAnimations(Animations)
     end)
 
-    local NpcService = Knit.GetService("NpcService")
-    NpcService.PlayAnimation:Connect(function(Controller, Animation, AnimationName, Agent, byPass)
-        self:Animate(Controller, Animation, AnimationName, Agent, byPass);
-    end)
-
-    NpcService.SetupNPC:Connect(function(Character)
-        --self:SetupNPC(Character);
-    end)
 end
 
 

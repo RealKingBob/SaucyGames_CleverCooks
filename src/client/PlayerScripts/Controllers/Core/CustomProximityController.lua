@@ -7,25 +7,25 @@ local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GameLibrary = ReplicatedStorage:FindFirstChild("GameLibrary")
-local ReplicatedModules = Knit.ReplicatedModules
+local ReplicatedModules = Knit.Shared.Modules
 local ReplicatedAssets = Knit.ReplicatedAssets
 local ReplicatedBillboard = GameLibrary:FindFirstChild("BillboardUI")
 
 local localPlayer = Players.LocalPlayer
 
 local Status = {
-	PickUp = "Pickup";
-	Drop = "Drop";
-	Cook = "Cook";
-	Talk = "Talk";
-	Deliver = "Deliver";
-	Click = "Click";
-	IngredientsTable = "IngredientsTable";
+	PickUp = "Pickup",
+	Drop = "Drop",
+	Cook = "Cook",
+	Talk = "Talk",
+	Deliver = "Deliver",
+	Click = "Click",
+	IngredientsTable = "IngredientsTable",
 }
 
-local currentPansInUse = {};
+local currentPansInUse = {}
 
-local currentStatus = Status.PickUp;
+local currentStatus = Status.PickUp
 
 local playerGui = localPlayer:WaitForChild("PlayerGui")
 local customPrompt = ReplicatedBillboard:WaitForChild("Prompt")
@@ -35,21 +35,21 @@ local customBigPrompt = ReplicatedBillboard:WaitForChild("BigPrompt")
 local customCookHeadUI = ReplicatedBillboard:WaitForChild("CookHeadUI")
 local customDeliverHeadUI = ReplicatedBillboard:WaitForChild("DeliverHeadUI")
 
-local customTableHeadUI = ReplicatedBillboard:WaitForChild("TableHeadUI");
+local customTableHeadUI = ReplicatedBillboard:WaitForChild("TableHeadUI")
 
-local KeyMapping = require(ReplicatedModules.KeyCodeImages);
-local IngredientModule = require(ReplicatedAssets.Ingredients);
-local RecipeModule = require(ReplicatedAssets.Recipes);
+local KeyMapping = require(Knit.Shared.Modules.KeyCodeImages)
+local IngredientModule = require(Knit.Shared.Assets.Ingredients)
+local RecipeModule = require(Knit.Shared.Assets.Recipes)
 
 local CustomProximityController = Knit.CreateController { Name = "CustomProximityController" }
 
 local function tablefind(tab,el) 
 	for index, value in pairs(tab) do
 		if value == el then
-			return index;
+			return index
 		end
 	end
-	return nil;
+	return nil
 end
 
 local function getScreenGui()
@@ -61,11 +61,11 @@ local function getScreenGui()
 		screenGui.Parent = playerGui
 	end
 	return screenGui
-end;
+end
 
 function CustomProximityController:createPrompt(prompt, inputType, gui, customStatus)
-	local promptUI;
-    local headUI;
+	local promptUI
+    local headUI
 	if customStatus == Status.Cook then
 		promptUI = customBigPrompt:Clone()
     	headUI = customCookHeadUI:Clone()
@@ -89,37 +89,37 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 	local buttonImage = inputFrame:WaitForChild("ButtonImage")
 	local buttonText = inputFrame:WaitForChild("ButtonText")
 
-    local headFrame, itemsFrame;
-	local itemImage, itemImage2, itemImage3, itemImage4, itemImage5;
+    local headFrame, itemsFrame
+	local itemImage, itemImage2, itemImage3, itemImage4, itemImage5
 	if customStatus == Status.IngredientsTable then
-		headFrame = headUI:WaitForChild("Frame");
-		itemsFrame = headUI:WaitForChild("ItemsFrame");
-		itemImage = itemsFrame:WaitForChild("ItemImage1");
-		itemImage2 = itemsFrame:WaitForChild("ItemImage2");
-		itemImage3 = itemsFrame:WaitForChild("ItemImage3");
-		itemImage4 = itemsFrame:WaitForChild("ItemImage4");
-		itemImage5 = itemsFrame:WaitForChild("ItemImage5");
+		headFrame = headUI:WaitForChild("Frame")
+		itemsFrame = headUI:WaitForChild("ItemsFrame")
+		itemImage = itemsFrame:WaitForChild("ItemImage1")
+		itemImage2 = itemsFrame:WaitForChild("ItemImage2")
+		itemImage3 = itemsFrame:WaitForChild("ItemImage3")
+		itemImage4 = itemsFrame:WaitForChild("ItemImage4")
+		itemImage5 = itemsFrame:WaitForChild("ItemImage5")
 	else
 		headFrame = headUI:WaitForChild("Frame")
-		itemImage = headFrame:WaitForChild("ItemImage");
+		itemImage = headFrame:WaitForChild("ItemImage")
 	end
 
 	if currentStatus == Status.Drop then
-		promptUI.StudsOffsetWorldSpace = Vector3.new(0, 0, -1.5);
-		headUI.StudsOffsetWorldSpace = Vector3.new(0, 0, -1.5);
+		promptUI.StudsOffsetWorldSpace = Vector3.new(0, 0, -1.5)
+		headUI.StudsOffsetWorldSpace = Vector3.new(0, 0, -1.5)
 	end
 
 	local function getAmountOfItemImages()
-		local itemImages = {itemImage, itemImage2, itemImage3, itemImage4, itemImage5};
-		local itemCount = 0;
+		local itemImages = {itemImage, itemImage2, itemImage3, itemImage4, itemImage5}
+		local itemCount = 0
 
 		for index, item in itemImages do
 			if item.Image ~= "" then
-				itemCount += 1;
+				itemCount += 1
 			end
 		end
 
-		return itemCount;
+		return itemCount
 	end
 
 	-- Updates the cloned prompt to match the information in the ProximityPrompt in workspace
@@ -130,15 +130,15 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 			if KeyMapping.GamepadButtonImage[prompt.GamepadKeyCode] then
 				buttonImage.Image = KeyMapping.GamepadButtonImage[prompt.GamepadKeyCode]
 				buttonText.Text = ""
-                buttonImage.Visible = true;
+                buttonImage.Visible = true
 			end
 		elseif inputType == Enum.ProximityPromptInputType.Touch then
 			buttonImage.Image = "rbxasset://textures/ui/Controls/TouchTapIcon.png"
 			buttonText.Text = ""
-            buttonImage.Visible = true;
+            buttonImage.Visible = true
 		else
-			buttonImage.Image = "";
-            buttonImage.Visible = false;
+			buttonImage.Image = ""
+            buttonImage.Visible = false
 			local buttonTextString = UserInputService:GetStringForKeyCode(prompt.KeyboardKeyCode)
 
 			-- Set buttonTextImage to an image if the KeyboardKeyCode is not representable with a character
@@ -226,13 +226,13 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 	table.insert(tweensForFadeIn, TweenService:Create(promptFrame, tweenInfoFast, { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 0, Visible = true }))
 
     -- Head Frame Tweens
-	local iSizeX, iSizeY;
+	local iSizeX, iSizeY
 
 	if customStatus == Status.IngredientsTable then
 		--print(getAmountOfItemImages(), (0.20 * getAmountOfItemImages()))
-		iSizeX = (0.20 * getAmountOfItemImages()) + 0.05;
+		iSizeX = (0.20 * getAmountOfItemImages()) + 0.05
 	else
-		iSizeX = 1;
+		iSizeX = 1
 	end
 
 	if customStatus == Status.Cook then
@@ -256,15 +256,15 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 	table.insert(tweensForClickIn, TweenService:Create(roundFrame, tweenInfoFast, { BackgroundColor3 = Color3.fromRGB(179, 179, 179) }))
 
 	if customStatus == Status.IngredientsTable then
-		titleText.Text = "Pickup blended food";
+		titleText.Text = "Pickup blended food"
 	elseif customStatus == Status.Cook then
 		if tablefind(currentPansInUse, prompt.Parent) then
-			titleText.Text = "Grab";
+			titleText.Text = "Grab"
 		else
-			titleText.Text = customStatus;
+			titleText.Text = customStatus
 		end
 	else
-		titleText.Text = customStatus;
+		titleText.Text = customStatus
 	end
 	
 	
@@ -304,14 +304,14 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 
 	-- Connect to events to play tweens when Triggered/Ended
 	triggeredConnection = prompt.Triggered:Connect(function()
-		roundFrame.BackgroundColor3 = Color3.fromRGB(179, 179, 179);
+		roundFrame.BackgroundColor3 = Color3.fromRGB(179, 179, 179)
 		--[[for _, tween in ipairs(tweensForClickOut) do
 			tween:Play()
 		end]]
 	end)
 
 	triggerEndedConnection = prompt.TriggerEnded:Connect(function()
-		roundFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
+		roundFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		--[[for _, tween in ipairs(tweensForClickIn) do
 			tween:Play()
 		end]]
@@ -350,7 +350,7 @@ end
 function CustomProximityController:KnitStart()
 	--print("CUSTOM")
 
-	local CookingService = Knit.GetService("CookingService");
+	local CookingService = Knit.GetService("CookingService")
 	CookingService.UpdatePans:Connect(function(currentPans)
 		currentPansInUse = currentPans
 	end)
@@ -368,99 +368,99 @@ function CustomProximityController:KnitStart()
 				and not CollectionService:HasTag(prompt.Parent, "Delivering") 
 				and not CollectionService:HasTag(prompt.Parent, "IngredientsTable") 
 				then
-					return;
+					return
 				end
 			end
 		end
 		
-        local gui = getScreenGui();
+        local gui = getScreenGui()
 
-		local Character = game.Players:GetPlayerFromCharacter(prompt.Parent.Parent);
+		local Character = game.Players:GetPlayerFromCharacter(prompt.Parent.Parent)
 
 		local objItem = (prompt.Parent.Parent:IsA("Model") and prompt.Parent.Parent.PrimaryPart ~= nil and prompt.Parent.Parent) or prompt.Parent
 		
 		if objItem:FindFirstChild("MarkerUI") then
-			objItem:FindFirstChild("MarkerUI").Enabled = false;
+			objItem:FindFirstChild("MarkerUI").Enabled = false
 		end
 
 		if CollectionService:HasTag(prompt.Parent, "ButtonClick") then
-			currentStatus = Status.Click;
-			local cleanupFunction;
+			currentStatus = Status.Click
+			local cleanupFunction
 
 			if prompt.Parent:GetAttribute("Enabled") then
 				if prompt.Parent:GetAttribute("Enabled") == true then
-					cleanupFunction = self:createPrompt(prompt, inputType, gui, "Turn Off");
+					cleanupFunction = self:createPrompt(prompt, inputType, gui, "Turn Off")
 				else
-					cleanupFunction = self:createPrompt(prompt, inputType, gui, "Turn On");
+					cleanupFunction = self:createPrompt(prompt, inputType, gui, "Turn On")
 				end
 			else
-				cleanupFunction = self:createPrompt(prompt, inputType, gui, prompt.ActionText);
+				cleanupFunction = self:createPrompt(prompt, inputType, gui, prompt.ActionText)
 			end
 
-			prompt.PromptHidden:Wait();
+			prompt.PromptHidden:Wait()
 		
-        	cleanupFunction();
+        	cleanupFunction()
 		elseif CollectionService:HasTag(prompt.Parent, "Pan") then
-			currentStatus = Status.Cook;
-			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "Cook");
+			currentStatus = Status.Cook
+			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "Cook")
 
-			prompt.PromptHidden:Wait();
+			prompt.PromptHidden:Wait()
 		
-        	cleanupFunction();
+        	cleanupFunction()
 		elseif CollectionService:HasTag(prompt.Parent, "DialogNpc") then
-			currentStatus = Status.Talk;
-			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "Talk");
+			currentStatus = Status.Talk
+			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "Talk")
 
-			prompt.PromptHidden:Wait();
+			prompt.PromptHidden:Wait()
 		
-			cleanupFunction();
+			cleanupFunction()
 		elseif CollectionService:HasTag(prompt.Parent, "Delivering") then
-			currentStatus = Status.Deliver;
-			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "Deliver");
+			currentStatus = Status.Deliver
+			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "Deliver")
 
-			prompt.PromptHidden:Wait();
+			prompt.PromptHidden:Wait()
 		
-			cleanupFunction();
+			cleanupFunction()
 		elseif CollectionService:HasTag(prompt.Parent, "IngredientsTable") then
-			currentStatus = Status.IngredientsTable;
-			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "IngredientsTable");
+			currentStatus = Status.IngredientsTable
+			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "IngredientsTable")
 
-			prompt.PromptHidden:Wait();
+			prompt.PromptHidden:Wait()
 		
-			cleanupFunction();
+			cleanupFunction()
 		elseif Character then
-			currentStatus = Status.Drop;
-			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "Drop");
+			currentStatus = Status.Drop
+			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "Drop")
 
-			prompt.PromptHidden:Wait();
+			prompt.PromptHidden:Wait()
 		
-        	cleanupFunction();
+        	cleanupFunction()
 		else
-			currentStatus = Status.PickUp;
-			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "Pickup");
+			currentStatus = Status.PickUp
+			local cleanupFunction = self:createPrompt(prompt, inputType, gui, "Pickup")
 
-			prompt.PromptHidden:Wait();
+			prompt.PromptHidden:Wait()
 		
-        	cleanupFunction();
+        	cleanupFunction()
 		end
 		--[[if prompt.Parent.Parent ~= nil then
 			if game.Players:GetPlayerFromCharacter(prompt.Parent.Parent) then
-				currentStatus = Status.Drop;
-				cleanupFunction = self:createPrompt(prompt, inputType, gui, "Drop");
+				currentStatus = Status.Drop
+				cleanupFunction = self:createPrompt(prompt, inputType, gui, "Drop")
 			elseif CollectionService:HasTag(prompt.Parent, "Pan") then
-				currentStatus = Status.Cook;
-				cleanupFunction = self:createPrompt(prompt, inputType, gui, "Cook");
+				currentStatus = Status.Cook
+				cleanupFunction = self:createPrompt(prompt, inputType, gui, "Cook")
 			else
-				currentStatus = Status.PickUp;
-				cleanupFunction = self:createPrompt(prompt, inputType, gui, "Pickup");
+				currentStatus = Status.PickUp
+				cleanupFunction = self:createPrompt(prompt, inputType, gui, "Pickup")
 			end
 		else
 			if CollectionService:HasTag(prompt.Parent, "Pan") then
-				currentStatus = Status.Cook;
-				cleanupFunction = self:createPrompt(prompt, inputType, gui, "Cook");
+				currentStatus = Status.Cook
+				cleanupFunction = self:createPrompt(prompt, inputType, gui, "Cook")
 			else
-				currentStatus = Status.PickUp;
-				cleanupFunction = self:createPrompt(prompt, inputType, gui, "Pickup");
+				currentStatus = Status.PickUp
+				cleanupFunction = self:createPrompt(prompt, inputType, gui, "Pickup")
 			end
 		end]]
 		

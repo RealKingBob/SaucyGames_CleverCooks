@@ -5,7 +5,7 @@
     Description: Handles client-sided effects on the blending machine objects
 ]]
 
-local TweenService = game:GetService("TweenService");
+local TweenService = game:GetService("TweenService")
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local BlenderController = Knit.CreateController { Name = "BlenderController" }
@@ -58,15 +58,15 @@ function BlenderController:BlenderText(blender, text)
 end
 
 function BlenderController:KnitStart()
-    local CookingService = Knit.GetService("CookingService");
+    local CookingService = Knit.GetService("CookingService")
 
     CookingService.ChangeClientBlender:Connect(function(blenderObject, command, data)
         if command == "fluidPercentage" then
-            self:BlenderText(blenderObject, data.FluidText);
-            self:FluidChange(blenderObject, data.FluidPercentage, data.FluidColor);
+            self:BlenderText(blenderObject, data.FluidText)
+            self:FluidChange(blenderObject, data.FluidPercentage, data.FluidColor)
         elseif command == "itemPoof" then
-            local PlayerController = Knit.GetController("PlayerController");
-            PlayerController:Poof(data.Position, data.Color);
+            local PlayerController = Knit.GetController("PlayerController")
+            PlayerController:Poof(data.Position, data.Color)
         end
     end)
 end

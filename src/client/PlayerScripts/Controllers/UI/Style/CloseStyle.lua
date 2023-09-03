@@ -9,7 +9,7 @@ function CloseStyle:StyleButton(Container)
         if Container.Parent.Parent:IsA("ScreenGui") or Container.Parent.Parent:IsA("Frame") then
             local CurrentController = tostring(Container.Parent.Parent.Name .. "UI")
             --print(CurrentController)
-            Knit.GetController(CurrentController):CloseView(nil, true);
+            Knit.GetController(CurrentController):CloseView(nil, true)
         end
     end)
 end
@@ -20,7 +20,7 @@ function CloseStyle:KnitStart()
     end)
 
     for _,v in pairs(CollectionService:GetTagged("CloseStyle")) do
-        self:StyleButton(v);
+        self:StyleButton(v)
     end
 end
 

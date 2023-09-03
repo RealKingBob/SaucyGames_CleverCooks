@@ -1,39 +1,39 @@
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 
 local CurrencySessionService = Knit.CreateService {
-    Name = "CurrencySessionService";
+    Name = "CurrencySessionService",
     Client = {
-        DropCurrency = Knit.CreateSignal();
-        CurrencyCollected = Knit.CreateSignal();
-    };
+        DropCurrency = Knit.CreateSignal(),
+        CurrencyCollected = Knit.CreateSignal(),
+    }
 }
 
 --// Services
 local Players = game:GetService("Players")
 
 --// Tables
-local SessionStorage = {};
+local SessionStorage = {}
 
 --// Variables
-local MaxCheeseStorage = 150;
+local MaxCheeseStorage = 150
 
 --// Modules
-local PositionFinder = require(Knit.ReplicatedModules.PositionFinder);
+local PositionFinder = require(Knit.Shared.Modules.PositionFinder)
 
 local function PlayerAdded(player)
     SessionStorage[player] = {
-        Cheese = {};
-    };
-end;
+        Cheese = {}
+    }
+end
 
 local function PlayerRemoving(player)
-    SessionStorage[player] = nil;
-end;
+    SessionStorage[player] = nil
+end
 
 local function Length(Table)
-	local counter = 0;
+	local counter = 0
 	for _, v in pairs(Table) do
-		counter += 1;
+		counter += 1
 	end
 	return counter
 end
@@ -54,26 +54,26 @@ local function visualizePosition(Position : Vector3)
 end
 
 function CurrencySessionService:DropCheese(oCFrame, player, amount, value)
-    if not oCFrame or not player or not amount or not value then return end;
-    local localSessionStorage = {};
-    local CheeseObj = game.ReplicatedStorage.Spawnables.Cheese;
+    if not oCFrame or not player or not amount or not value then return end
+    local localSessionStorage = {}
+    local CheeseObj = game.ReplicatedStorage.Spawnables.Cheese
 
-    local PartyService = Knit.GetService("PartyService");
-	local PartyMembers = {};
-	local PartyOwner = player;
+    local PartyService = Knit.GetService("PartyService")
+	local PartyMembers = {}
+	local PartyOwner = player
 
-	local PartyInfo = PartyService:FindPartyFromPlayer(player);
+	local PartyInfo = PartyService:FindPartyFromPlayer(player)
     if not PartyInfo then return end
 	PartyOwner = Players:GetPlayerByUserId(PartyInfo.OwnerId)
 	for _, memberInParty in pairs(PartyInfo.Members) do
-		local memberIdToPlayer = memberInParty.Player;
+		local memberIdToPlayer = memberInParty.Player
 		table.insert(PartyMembers, memberIdToPlayer)
 	end
 
     for _, playerInMembers in pairs(PartyMembers) do
-        if not SessionStorage[playerInMembers] then continue end;
+        if not SessionStorage[playerInMembers] then continue end
         for i= 0, amount do
-            local currentTime = tick();
+            local currentTime = tick()
     
             local randomX = {math.random(-10, -4), math.random(4,10)}
             local randomZ = {math.random(-10, -4), math.random(4,10)}
@@ -87,19 +87,19 @@ function CurrencySessionService:DropCheese(oCFrame, player, amount, value)
             if Length(SessionStorage[playerInMembers].Cheese) > MaxCheeseStorage then continue end
             
             SessionStorage[playerInMembers].Cheese["Cheese"..tostring(currentTime)] = {
-                ObjectId = "Cheese"..tostring(currentTime);
-                UserId = playerInMembers.UserId;
-                Amount = value;
-                Position = finalPosition;
-                timestamp = tick();
+                ObjectId = "Cheese"..tostring(currentTime),
+                UserId = playerInMembers.UserId,
+                Amount = value,
+                Position = finalPosition,
+                timestamp = tick(),
             }
     
             table.insert(localSessionStorage, {
-                ObjectId = "Cheese"..tostring(currentTime);
-                OriginalCFrame = oCFrame;
-                Type = "Cheese";
-                Object = CheeseObj;
-                InitialVelocity = initialVelocity;
+                ObjectId = "Cheese"..tostring(currentTime),
+                OriginalCFrame = oCFrame,
+                Type = "Cheese",
+                Object = CheeseObj,
+                InitialVelocity = initialVelocity,
             })
         end
         
@@ -112,16 +112,16 @@ end
 function CurrencySessionService:CollectedCurrency(player, objectId, objectType, rootCframe)
     if not player or not objectId or not objectType or not rootCframe then return end
     if objectType == "Cheese" then
-        if not player and SessionStorage[player] then return end;
+        if not player and SessionStorage[player] then return end
         if SessionStorage[player].Cheese[objectId] then
-            local magnitude = (SessionStorage[player].Cheese[objectId].Position - rootCframe.Position).Magnitude;
+            local magnitude = (SessionStorage[player].Cheese[objectId].Position - rootCframe.Position).Magnitude
             if magnitude < 64 then -- checks if within range
-                local DropAmount = SessionStorage[player].Cheese[objectId].Amount;
+                local DropAmount = SessionStorage[player].Cheese[objectId].Amount
                 local DataService = Knit.GetService("DataService")
                 DataService:GiveCurrency(player, tonumber(DropAmount))
                 self.Client.CurrencyCollected:Fire(player, rootCframe, DropAmount)
             end
-            SessionStorage[player].Cheese[objectId] = nil;
+            SessionStorage[player].Cheese[objectId] = nil
         end
     end
 end
@@ -134,11 +134,11 @@ end
 function CurrencySessionService:KnitInit()
     --// In case Players have joined the server earlier than this script ran:
     for _, player in ipairs(Players:GetPlayers()) do
-        coroutine.wrap(PlayerAdded)(player);
+        coroutine.wrap(PlayerAdded)(player)
     end
 
-    Players.PlayerAdded:Connect(PlayerAdded);
-    Players.PlayerRemoving:Connect(PlayerRemoving);
+    Players.PlayerAdded:Connect(PlayerAdded)
+    Players.PlayerRemoving:Connect(PlayerRemoving)
 
     self.Client.CurrencyCollected:Connect(function(player, objectId, objectType, rootCFrame)
         self:CollectedCurrency(player, objectId, objectType, rootCFrame)

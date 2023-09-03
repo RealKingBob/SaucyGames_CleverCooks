@@ -11,6 +11,7 @@ local ServerStorage = game:GetService("ServerStorage");
 local Knit = require(ReplicatedStorage.Packages.Knit)
 local Maid = require(Knit.Util.Maid)
 local Signal = require(Knit.Util.Signal)
+local Config = require(Knit.Shared.Modules.Config)
 
 local Intermission = {}
 Intermission.__index = Intermission
@@ -37,8 +38,8 @@ function Intermission.new(length, tournamentEnabled)
     task.wait(1)
     --// NOTE: Play music and sound effects for map
 
-    if ((#Players:GetPlayers()) >= Knit.Config.MINIMUM_PLAYERS) or RunService:IsStudio() then
-        GameService:SetState(Knit.Config.GAME_STATES.INTERMISSION, "Intermission Started")
+    if ((#Players:GetPlayers()) >= Config.MINIMUM_PLAYERS) or RunService:IsStudio() then
+        GameService:SetState(Config.GAME_STATES.INTERMISSION, "Intermission Started")
         
         -- Start repeating function calls
         self.TimeLeft = length;
@@ -47,9 +48,9 @@ function Intermission.new(length, tournamentEnabled)
         self:Update();
     else
         warn("[GameService]: Not enough players")
-        GameService:SetState(Knit.Config.GAME_STATES.NOT_ENOUGH_PLAYERS, "Not Enough Players")
+        GameService:SetState(Config.GAME_STATES.NOT_ENOUGH_PLAYERS, "Not Enough Players")
         GameService.Client.NotEnoughPlayersSignal:FireAll()
-        repeat task.wait(1) until (#Players:GetPlayers() >= Knit.Config.MINIMUM_PLAYERS)
+        repeat task.wait(1) until (#Players:GetPlayers() >= Config.MINIMUM_PLAYERS)
         return self.new(length)
     end
 
@@ -60,7 +61,7 @@ function Intermission:Update()
     local GameService = Knit.GetService("GameService")
     
     for timeLeft = self.TimeLeft, 0, -1 do
-        if ((#Players:GetPlayers()) < Knit.Config.MINIMUM_PLAYERS) then
+        if ((#Players:GetPlayers()) < Config.MINIMUM_PLAYERS) then
             self.InProgress = false
         end
         GameService.Client.TimeLeftSignal:FireAll(timeLeft)
