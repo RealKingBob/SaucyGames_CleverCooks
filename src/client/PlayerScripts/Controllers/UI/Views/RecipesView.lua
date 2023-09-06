@@ -18,12 +18,13 @@ local ReplicatedModules = Shared:WaitForChild("Modules")
 
 local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 
+local ingredientsUI = PlayerGui:WaitForChild("Ingredients")
 local viewsUI = PlayerGui:WaitForChild("Main"):WaitForChild("Views")
 
 local RecipesGui = viewsUI:WaitForChild("Recipes")
 
 local BottomFrame = PlayerGui:WaitForChild("Main"):WaitForChild("BottomFrame")
-local IngredientsTab = BottomFrame:WaitForChild("IngredientsTab")
+local IngredientsTab = ingredientsUI:WaitForChild("OrderSteps")
 local foodNameDisplayed = BottomFrame:FindFirstChild("FoodName")
 
 local recipeSection = RecipesGui:WaitForChild("RecipeFrame")
@@ -38,7 +39,7 @@ local selectButton = recipeSection:WaitForChild("SelectButton")
 local notSelectedColors = {Color3.fromRGB(199, 77, 47), Color3.fromRGB(129, 48, 30)} -- button, button.parent or button, shadow
 local selectedColors = {Color3.fromRGB(255, 170, 0), Color3.fromRGB(125, 83, 0)}
 local completedColors = {Color3.fromRGB(0, 184, 0),Color3.fromRGB(0, 80, 0)}
-local notCompletedColors = {Color3.fromRGB(223, 190, 149),Color3.fromRGB(124, 94, 69)}
+local notCompletedColors = {Color3.fromRGB(0, 0, 0),Color3.fromRGB(0, 0, 0)}
 
 local recipeSelected = nil
 local allIngredientsFound = false
@@ -179,10 +180,7 @@ function highlightItems(itemsData)
 		local itemsList = {}
 
 		for _, item in pairs(workspace:WaitForChild("IngredientAvailable"):GetChildren()) do
-			local owner = item:IsA("Model") and item.PrimaryPart and item.PrimaryPart:GetAttribute("Owner") or item:GetAttribute("Owner")
-
-			if item.Name == foundIngredient.Name 
-			and (owner == LocalPlayer.Name or owner == "Default") then
+			if item.Name == foundIngredient.Name then
 				if LocalPlayer.Character then
 					if LocalPlayer.Character:FindFirstChild(item.Name) then continue end
 				end
@@ -359,24 +357,32 @@ function updateRecipeList()
 	end
 end
 
-local function displayIngredients(clearItems)
+function RecipesView:DisplayIngredients(clearItems)
+	ingredientsUI.Enabled = false
+
+	local sameRecipe = false
 	if clearItems then
 		foodNameDisplayed.Text = ""
 		allIngredientsFound = false
 		highlightItems()
 		return
 	end
+
 	if prevIngredientTab == recipeSelected then
-		return
+		sameRecipe = true
 	end
+
 	prevIngredientTab = recipeSelected
 	if prevConnection then
 		prevConnection:Disconnect()
 		prevConnection = nil
 	end
-	for _, frame in pairs(IngredientsTab:GetChildren()) do
-		if frame:IsA("Frame") then
-			frame:Destroy()
+
+	if not sameRecipe then
+		for _, frame in pairs(IngredientsTab:GetChildren()) do
+			if frame:IsA("Frame") then
+				frame:Destroy()
+			end
 		end
 	end
 
@@ -392,63 +398,69 @@ local function displayIngredients(clearItems)
 	local greenIngredients = {}
 	allIngredientsFound = false
 
+	ingredientsUI.Enabled = true
+
 	highlightItems(RecipeModule[recipeSelected]["Ingredients"])
 
-	for _,ingredient in pairs(RecipeModule[recipeSelected]["Ingredients"]) do
-		local originalVal = ingredient
-		local foundIngredient = IngredientModule[originalVal]
-		local foundBlendedIngredient, replaced = string.gsub(originalVal, "%[", "")
-			foundBlendedIngredient = string.gsub(foundBlendedIngredient, "%]", "")
-			foundBlendedIngredient = string.gsub(foundBlendedIngredient, "-", "")
-			foundBlendedIngredient = string.gsub(foundBlendedIngredient, "Blended", "")
-
-		--print(foundIngredient, tostring(ingredient):find("[Blended]"), foundBlendedIngredient, IngredientModule[originalVal] , IngredientModule[foundBlendedIngredient])
-
-		if IngredientModule[originalVal] == nil then
-			foundIngredient = IngredientModule[foundBlendedIngredient]
-		end
-
-		local Prefabs = LocalPlayer.PlayerGui:WaitForChild("Prefabs")
-		local HoverIngredientTemplate = Prefabs:WaitForChild("HoverIngredientTemplate")
-		local clonedIngredientFrame = HoverIngredientTemplate:Clone()
-		clonedIngredientFrame.Size = UDim2.fromScale(0,0)
-		clonedIngredientFrame.Name = tostring(originalVal)
-		if tostring(ingredient):match("Blended") then
-			clonedIngredientFrame.Icon.IconImage.Image = foundIngredient["BlendedImage"]
-			clonedIngredientFrame.Icon.IconImageShadow.Image = foundIngredient["BlendedImage"]
-		elseif foundIngredient then
-			clonedIngredientFrame.Icon.IconImage.Image = foundIngredient["Image"]
-			clonedIngredientFrame.Icon.IconImageShadow.Image = foundIngredient["Image"]
-		else
-			clonedIngredientFrame.Icon.IconImage.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
-			clonedIngredientFrame.Icon.IconImageShadow.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
-		end
-
-		local function changeIFrameColors(color1, color2)
-			clonedIngredientFrame.UIStroke.Color = color2
-			clonedIngredientFrame.BackgroundColor3 = color2
-			clonedIngredientFrame.Icon.BackgroundColor3 = color1
-		end
-		
-		if myReplicatedIngredients then
-			if #myReplicatedIngredients == 0 then
-				changeIFrameColors(notCompletedColors[1], notCompletedColors[2])
+	if not sameRecipe then
+		for _,ingredient in pairs(RecipeModule[recipeSelected]["Ingredients"]) do
+			local originalVal = ingredient
+			local foundIngredient = IngredientModule[originalVal]
+			local foundBlendedIngredient, replaced = string.gsub(originalVal, "%[", "")
+				foundBlendedIngredient = string.gsub(foundBlendedIngredient, "%]", "")
+				foundBlendedIngredient = string.gsub(foundBlendedIngredient, "-", "")
+				foundBlendedIngredient = string.gsub(foundBlendedIngredient, "Blended", "")
+	
+			--print(foundIngredient, tostring(ingredient):find("[Blended]"), foundBlendedIngredient, IngredientModule[originalVal] , IngredientModule[foundBlendedIngredient])
+	
+			if IngredientModule[originalVal] == nil then
+				foundIngredient = IngredientModule[foundBlendedIngredient]
+			end
+	
+			local Prefabs = LocalPlayer.PlayerGui:WaitForChild("Prefabs")
+			local OrderStepTemplate = Prefabs:WaitForChild("OrderStep")
+			local clonedIngredientFrame = OrderStepTemplate:Clone()
+			clonedIngredientFrame.Name = tostring(originalVal)
+			print("foundIngredient", foundIngredient)
+			if tostring(ingredient):match("Blended") then
+				clonedIngredientFrame.TextLabel.Text = "Blend 1 "..foundIngredient["Name"]
+				clonedIngredientFrame.Icon.IconImage.Image = foundIngredient["BlendedImage"]
+				clonedIngredientFrame.Icon.IconImageShadow.Image = foundIngredient["BlendedImage"]
+			elseif foundIngredient then
+				clonedIngredientFrame.TextLabel.Text = "Grab 1 "..foundIngredient["Name"]
+				clonedIngredientFrame.Icon.IconImage.Image = foundIngredient["Image"]
+				clonedIngredientFrame.Icon.IconImageShadow.Image = foundIngredient["Image"]
 			else
-				for _,v in pairs(myReplicatedIngredients) do
-					if clonedIngredientFrame.Name == tostring(v) then
-						changeIFrameColors(completedColors[1], completedColors[2])
-						break
-					else
-						changeIFrameColors(notCompletedColors[1], notCompletedColors[2])
+				clonedIngredientFrame.Icon.IconImage.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
+				clonedIngredientFrame.Icon.IconImageShadow.Image = "http://www.roblox.com/asset/?id=4509163032" -- ???
+			end
+	
+			local function changeIFrameColors(color1, color2)
+				clonedIngredientFrame.UIStroke.Color = color2
+				clonedIngredientFrame.BackgroundColor3 = color2
+				clonedIngredientFrame.Icon.BackgroundColor3 = color1
+			end
+			
+			if myReplicatedIngredients then
+				if #myReplicatedIngredients == 0 then
+					changeIFrameColors(notCompletedColors[1], notCompletedColors[2])
+				else
+					for _,v in pairs(myReplicatedIngredients) do
+						if clonedIngredientFrame.Name == tostring(v) then
+							changeIFrameColors(completedColors[1], completedColors[2])
+							break
+						else
+							changeIFrameColors(notCompletedColors[1], notCompletedColors[2])
+						end
 					end
 				end
 			end
+			table.insert(greenIngredients, clonedIngredientFrame)
+			clonedIngredientFrame.Parent = IngredientsTab
+			--task.wait(0.01)
 		end
-		table.insert(greenIngredients, clonedIngredientFrame)
-		clonedIngredientFrame.Parent = IngredientsTab
-		clonedIngredientFrame:TweenSize(UDim2.fromScale(0.081,1), Enum.EasingDirection.Out, Enum.EasingStyle.Elastic)
-		--task.wait(0.01)
 	end
+	
 
 	local checkIfAllGreen = true
 	for _, v in pairs(greenIngredients) do
@@ -484,7 +496,7 @@ local function displayIngredients(clearItems)
 	
 	prevConnection = CookingService.SendIngredients:Connect(function(args)
 		greenIngredients = {}
-		--print(args)
+		print("args", args)
 		if args then
 			myReplicatedIngredients = args
 			if #myReplicatedIngredients == 0 then
@@ -644,7 +656,7 @@ function setupRecipeButtons()
 					recipeSelected = nil
 					allIngredientsFound = false
 				end
-				displayIngredients()
+				Knit.GetController("RecipesView"):DisplayIngredients()
 			end
 			task.wait(1)
 			debounce = false
@@ -669,7 +681,7 @@ function RecipesView:GetRecipeIngredients(recipeName)
 			end
 		end
 	end
-	displayIngredients()
+	Knit.GetController("RecipesView"):DisplayIngredients()
 end
 
 function RecipesView:ViewRecipe(recipeName)
@@ -723,9 +735,8 @@ local function checkPans(panHitbox) -- checks if any object is on the pans
 		if tObject == nil then continue end
 
 		touchedType = tObject:GetAttribute("Type")
-		touchedOwner = tObject:GetAttribute("Owner")
 
-		if touchedObject and touchedType and touchedOwner then
+		if touchedObject and touchedType then
 			table.insert(panArray, object)
 		end
 	end
@@ -760,6 +771,10 @@ function RecipesView:KnitStart()
 		unlockedRecipes = recipesUnlocked
 		updateRecipeList()
 	end
+
+	ingredientsUI.OrderSteps.OrderCancel.MouseButton1Click:Connect(function()
+		Knit.GetController("RecipesView"):DisplayIngredients(true)
+	end)
 
 	local ProximityService = Knit.GetService("ProximityService")
 	local PlayerController = Knit.GetController("PlayerController")
@@ -864,7 +879,7 @@ function RecipesView:KnitStart()
 					local touchedType = tTouchedPart:GetAttribute("Type")
 					local touchedOwner = tTouchedPart:GetAttribute("Owner")
 	
-					if touchedType and touchedType == "Food" and panZone:findPart(touchedPart) == true then
+					if (touchedType and touchedType == "Food" and panZone:findPart(touchedPart) == true) or panHitbox.Parent:GetAttribute("Enabled") == true then
 						panHitbox.ProximityPrompt.Enabled = true
 					else
 						if allIngredientsFound == true or tablefind(currentPansInUse, panHitbox) then continue end
@@ -872,8 +887,8 @@ function RecipesView:KnitStart()
 						panHitbox.ProximityPrompt.Enabled = false
 					end
 				end
-			else
-				if allIngredientsFound == true or tablefind(currentPansInUse, panHitbox) then continue end
+			else	
+				if allIngredientsFound == true or tablefind(currentPansInUse, panHitbox) or panHitbox.Parent:GetAttribute("Enabled") == true then continue end
 				if panHitbox.ProximityPrompt.Enabled ~= false then
 					--print("falsese  22" ) 
 					panHitbox.ProximityPrompt.Enabled = false

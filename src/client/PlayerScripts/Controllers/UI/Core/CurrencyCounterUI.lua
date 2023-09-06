@@ -17,11 +17,11 @@ local PlayerGui = plr:WaitForChild("PlayerGui")
 local CheeseContainer = PlayerGui:WaitForChild("CurrencyCollectorGui")
 local CheesePrefab = PlayerGui:WaitForChild("Prefabs"):WaitForChild("CheeseImage")
 
-local LeftBar = PlayerGui:WaitForChild("LeftBar")
-local CheeseCounter =  LeftBar:WaitForChild("MainContainer"):WaitForChild("Cheese")
-local CheeseLabel = CheeseCounter:WaitForChild("Main"):WaitForChild("Main"):WaitForChild("TextLabel")
-local AmountLabel = CheeseCounter:WaitForChild("Amount")
-local AddButton = LeftBar.MainContainer.Cheese:WaitForChild("Add"):WaitForChild("TextButton")
+local CurrencyUI = PlayerGui:WaitForChild("Currency")
+local MainFrame =  CurrencyUI:WaitForChild("Frame")
+local CheeseLabel = MainFrame:WaitForChild("TextLabel")
+local AmountLabel = MainFrame:WaitForChild("Amount")
+local AddButton = MainFrame:WaitForChild("Add")
 
 local PopUpTweenInfo = TweenInfo.new(.75, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 local DisapearInfo = TweenInfo.new(1, Enum.EasingStyle.Back, Enum.EasingDirection.In)
@@ -116,7 +116,7 @@ function CurrencyCounterUI:SpawnDrop(DropCb)
 
 		local CurrentPos = Clone.Position
 		local CurrentSize = Clone.Size
-		local TargetVector2 = CheeseCounter.AbsolutePosition + (CheeseCounter.AbsoluteSize / 2)
+		local TargetVector2 = MainFrame.AbsolutePosition + (MainFrame.AbsoluteSize / 2)
 		local TargetPos = UDim2.fromOffset(TargetVector2.X, TargetVector2.Y)
 
 		local FadeOut = TweenModule.new(DisapearInfo, function(Alpha)
@@ -153,7 +153,7 @@ function CurrencyCounterUI:SpawnDrop(DropCb)
 end
 
 function CurrencyCounterUI:Expand()
-    local Container = CheeseCounter
+    local Container = MainFrame
 	local OriginalSize = Container:GetAttribute("OriginalSize") or Container.Size
 	local ExpandTween = TweenService:Create(Container, ExpandInfo, { Size = OriginalSize + UDim2.fromScale(.25, .25) })
 	
@@ -203,7 +203,7 @@ function CurrencyCounterUI:KnitInit()
 
 	task.spawn(function()
 		task.wait(5)
-		local Coins = DataService:GetCurrency(workspace:GetAttribute("ThemeData"))
+		local Coins = DataService:GetCurrency(workspace:GetAttribute("Theme"))
 		CurrencyCounterUI:Update(Coins)
 	end)
 

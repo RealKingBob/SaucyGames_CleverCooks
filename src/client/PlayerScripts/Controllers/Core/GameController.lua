@@ -25,17 +25,6 @@ function TableFind(tab,el) -- table,value
 	end
 end
 
-function GameController:ChangePartyOwner(PartyData)
-	--print(PartyData.OwnerId, PartyData)
-	local ownerPlayer = Players:GetPlayerByUserId(PartyData.OwnerId)
-	partyOwner = ownerPlayer
-	local CookingUI = Knit.GetController("CookingUI")
-	for _, pan in pairs(CollectionService:GetTagged("Pan")) do
-		CookingUI:DestroyUI(pan)
-		--pan.ProximityPrompt.Enabled = false
-	end
-end
-
 function GameController:ForIngredient(Ingredient)
 	if not Ingredient then return end
 	table.insert(CollectedItems,Ingredient)
@@ -190,80 +179,27 @@ end
 function GameController:KnitInit()
 
 	local function checkObject(object)
-		local owner = object:IsA("Model") and object.PrimaryPart and object.PrimaryPart:GetAttribute("Owner") or object:GetAttribute("Owner")
 		local typeObject = object:IsA("Model") and object.PrimaryPart and object.PrimaryPart:GetAttribute("Type") or object:GetAttribute("Type")
-		
-		if owner and owner == "None" then
-			print("desotriy")
-			object:Destroy()
-			return
-		end
 
-		if owner and owner ~= "Default" and owner ~= partyOwner.Name then
-			--object.Parent = HiddenObjects
-			if typeObject == "Food" then
-				object.Parent = FoodAvailable
-			elseif typeObject == "Ingredient" then
-				--object.Parent = IngredientAvailable
-				if object:IsA("Model") and object.PrimaryPart then
-					for _,b in pairs(object:GetChildren()) do
-						if b:IsA("BasePart") then b.Transparency = 1 end
-						for _, t in pairs(object:GetChildren()) do
-							if t:IsA("Texture") then t.Transparency = 1 end
-						end
-					end
-				else
-					object.Transparency = 1
+		if typeObject == "Food" then
+			object.Parent = FoodAvailable
+		elseif typeObject == "Ingredient" then
+			--object.Parent = IngredientAvailable
+			if object:IsA("Model") and object.PrimaryPart then
+				for _,b in pairs(object:GetChildren()) do
+					if b:IsA("BasePart") then b.Transparency = (b:GetAttribute("CustomTransparency") ~= nil and b:GetAttribute("CustomTransparency")) or 0 end
 					for _, t in pairs(object:GetChildren()) do
-						if t:IsA("Texture") then t.Transparency = 1 end
+						if t:IsA("Texture") then t.Transparency = (object.PrimaryPart:GetAttribute("ExtraTexture") ~= nil and object.PrimaryPart:GetAttribute("ExtraTexture")) or 0 end
 					end
 				end
-			end
-		elseif owner and owner ~= "Default" and owner == partyOwner.Name then
-			if typeObject == "Food" then
-				object.Parent = FoodAvailable
-			elseif typeObject == "Ingredient" then
-				--object.Parent = IngredientAvailable
-				if object:IsA("Model") and object.PrimaryPart then
-					for _,b in pairs(object:GetChildren()) do
-						if b:IsA("BasePart") then b.Transparency = (b:GetAttribute("CustomTransparency") ~= nil and b:GetAttribute("CustomTransparency")) or 0 end
-						for _, t in pairs(object:GetChildren()) do
-							if t:IsA("Texture") then t.Transparency = (object.PrimaryPart:GetAttribute("ExtraTexture") ~= nil and object.PrimaryPart:GetAttribute("ExtraTexture")) or 0 end
-						end
-					end
-				else
-					object.Transparency = (object:GetAttribute("CustomTransparency") ~= nil and object:GetAttribute("CustomTransparency")) or 0
-					for _, t in pairs(object:GetChildren()) do
-						if t:IsA("Texture") then t.Transparency = (object:GetAttribute("ExtraTexture") ~= nil and object:GetAttribute("ExtraTexture")) or 0 end
-					end
+			else
+				object.Transparency = (object:GetAttribute("CustomTransparency") ~= nil and object:GetAttribute("CustomTransparency")) or 0
+				for _, t in pairs(object:GetChildren()) do
+					if t:IsA("Texture") then t.Transparency = (object:GetAttribute("ExtraTexture") ~= nil and object:GetAttribute("ExtraTexture")) or 0 end
 				end
 			end
-			--object:Destroy()
 		end
 	end
-
-	--[[local function checkObject(object)
-		if object:IsA("Model") then
-			if object.PrimaryPart == nil 
-			or object.PrimaryPart:GetAttribute("Owner") == "Default" 
-			or object.PrimaryPart:GetAttribute("Owner") == nil 
-			or object.PrimaryPart:GetAttribute("Owner") == Players.LocalPlayer.Name then else
-				--print(object.PrimaryPart:GetAttribute("Owner"))
-				--print(object,"is getting destroyed in workspace")
-				object:Destroy()
-				--object.PrimaryPart.CanCollide = false
-			end
-		elseif object:IsA("MeshPart") then
-			if object:GetAttribute("Owner") == "Default" 
-			or object:GetAttribute("Owner") == nil 
-			or object:GetAttribute("Owner") == Players.LocalPlayer.Name then else
-				--print(object:GetAttribute("Owner"))
-				--print(object,"is getting destroyed in workspace")
-				object:Destroy()
-				--object.CanCollide = false
-			end
-		end
-	end]]
 
     game:GetService("RunService").RenderStepped:Connect(function()
 

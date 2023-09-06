@@ -30,26 +30,17 @@ local playerCollisionGroupName = "Players"
 PhysicsService:CollisionGroupSetCollidable(playerCollisionGroupName, playerCollisionGroupName, false)
 
 local previousCollisionGroups = {}
-local playerProfiles = {} -- [player] = profile
 local deathCooldown = {}
 
 local isFalling = {}
 local fallingDebounce = {}
 
-local playerDoubleJumped = {}
-local playerTripleJumped = {}
 
 local canJump = {}
 local currentJump = {}
 local newHeight = {}
 
 local maxJumpAmounts = {}
-
-local CHECK_DELAY_IN_SECONDS = 0.2
-
-local Whitelist = true -- if true then only whitelisted players can play
-local Profiles = {} -- [player] = profile
-local WhitelistedPlayers = {52624453, 21831137, 1464956079, 51714312, 131997771, 47330208, 1154275938, 2283059942, 475945078, 418172096, 259288924, 933996022, 121998890, 76172952}
 
 local ThemeData = workspace:GetAttribute("Theme")
 
@@ -368,6 +359,7 @@ local function CharacterAdded(Player)
         end)
 
         humanoid.Died:Connect(function()
+            Knit.GetService("CookingService"):DropDown(Player,Character)
             if deathCooldown[Player.UserId] == nil then
                 deathCooldown[Player.UserId] = true
                 if CollectionService:HasTag(Player, Config.CHEF_TAG) == false or Character:FindFirstChild("HumanoidRootPart") ~= nil then

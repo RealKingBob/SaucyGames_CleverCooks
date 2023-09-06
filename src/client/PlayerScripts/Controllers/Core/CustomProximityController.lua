@@ -258,7 +258,7 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 	if customStatus == Status.IngredientsTable then
 		titleText.Text = "Pickup blended food"
 	elseif customStatus == Status.Cook then
-		if tablefind(currentPansInUse, prompt.Parent) then
+		if tablefind(currentPansInUse, prompt) or prompt.Parent.Parent:GetAttribute("Enabled") == true then
 			titleText.Text = "Grab"
 		else
 			titleText.Text = customStatus
@@ -361,9 +361,10 @@ function CustomProximityController:KnitStart()
             return
         end
 
-		if prompt.Parent ~= nil then
+		if prompt.Parent then
 			if not prompt.Parent:IsA("Model") then
 				if prompt.Parent.Transparency == 1 
+				and not CollectionService:HasTag(prompt.Parent, "ButtonClick") 
 				and not CollectionService:HasTag(prompt.Parent, "Pan") 
 				and not CollectionService:HasTag(prompt.Parent, "Delivering") 
 				and not CollectionService:HasTag(prompt.Parent, "IngredientsTable") 

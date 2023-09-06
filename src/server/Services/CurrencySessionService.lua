@@ -58,20 +58,8 @@ function CurrencySessionService:DropCheese(oCFrame, player, amount, value)
     local localSessionStorage = {}
     local CheeseObj = game.ReplicatedStorage.Spawnables.Cheese
 
-    local PartyService = Knit.GetService("PartyService")
-	local PartyMembers = {}
-	local PartyOwner = player
-
-	local PartyInfo = PartyService:FindPartyFromPlayer(player)
-    if not PartyInfo then return end
-	PartyOwner = Players:GetPlayerByUserId(PartyInfo.OwnerId)
-	for _, memberInParty in pairs(PartyInfo.Members) do
-		local memberIdToPlayer = memberInParty.Player
-		table.insert(PartyMembers, memberIdToPlayer)
-	end
-
-    for _, playerInMembers in pairs(PartyMembers) do
-        if not SessionStorage[playerInMembers] then continue end
+    for _, plr : Player in Players:GetPlayers() do
+        if not SessionStorage[plr] then continue end
         for i= 0, amount do
             local currentTime = tick()
     
@@ -84,11 +72,11 @@ function CurrencySessionService:DropCheese(oCFrame, player, amount, value)
     
             --visualizePosition(finalPosition)
     
-            if Length(SessionStorage[playerInMembers].Cheese) > MaxCheeseStorage then continue end
+            if Length(SessionStorage[plr].Cheese) > MaxCheeseStorage then continue end
             
-            SessionStorage[playerInMembers].Cheese["Cheese"..tostring(currentTime)] = {
+            SessionStorage[plr].Cheese["Cheese"..tostring(currentTime)] = {
                 ObjectId = "Cheese"..tostring(currentTime),
-                UserId = playerInMembers.UserId,
+                UserId = plr.UserId,
                 Amount = value,
                 Position = finalPosition,
                 timestamp = tick(),
@@ -103,9 +91,9 @@ function CurrencySessionService:DropCheese(oCFrame, player, amount, value)
             })
         end
         
-        if not playerInMembers then continue end
-        print("playerInMembers SessionStorage", SessionStorage[playerInMembers].Cheese)
-        self.Client.DropCurrency:Fire(playerInMembers, "Cheese", localSessionStorage)
+        if not plr then continue end
+        print("playerInMembers SessionStorage", SessionStorage[plr].Cheese)
+        self.Client.DropCurrency:Fire(plr, "Cheese", localSessionStorage)
     end
 end
 
