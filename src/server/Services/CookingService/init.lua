@@ -296,14 +296,14 @@ function CookingService:KnitInit()
 						if object.Parent:IsA("Model") then
 							blendedIngredient = object.Parent.PrimaryPart:GetAttribute("i"..tostring(i))
 							table.insert(tempData,{PlayerName,{Ingredient = blendedIngredient.."-[Blended]", Source = object.Parent}})
-							table.insert(tCurrentIngredientObjects[PlayerName], {Ingredient = blendedIngredient.."-[Blended]", Source = object.Parent})
+							table.insert(tCurrentIngredientObjects, {Ingredient = blendedIngredient.."-[Blended]", Source = object.Parent})
 						else
 							blendedIngredient = object:GetAttribute("i"..tostring(i))
 							table.insert(tempData,{PlayerName,{Ingredient = blendedIngredient.."-[Blended]", Source = object}})
-							table.insert(tCurrentIngredientObjects[PlayerName], {Ingredient = blendedIngredient.."-[Blended]", Source = object})
+							table.insert(tCurrentIngredientObjects, {Ingredient = blendedIngredient.."-[Blended]", Source = object})
 						end
 						if blendedIngredient ~= "" and blendedIngredient ~= nil then
-							table.insert(tCurrentIngredients[PlayerName],blendedIngredient.."-[Blended]")
+							table.insert(tCurrentIngredients, blendedIngredient.."-[Blended]")
 						end
 					end
 				end
