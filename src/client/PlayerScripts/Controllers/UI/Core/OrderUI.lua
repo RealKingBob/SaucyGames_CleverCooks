@@ -35,6 +35,7 @@ function OrderUI:AddOrder(orderData)
 
     local StickyNotePrefab = PlayerGui:WaitForChild("Prefabs"):WaitForChild("StickyNote")
     for _, orderFrame in pairs(CollectionService:GetTagged("OrderFrames")) do
+        if not orderFrame:IsDescendantOf(PlayerGui) then continue end
         local ItemClone = StickyNotePrefab:Clone() do
             local MainFrame = ItemClone:WaitForChild("MainFrame")
             ItemClone.Name = "OrderItem_"..tostring(name)
@@ -46,6 +47,12 @@ function OrderUI:AddOrder(orderData)
             ItemClone:SetAttribute("maxTimer", timer)
             ItemClone:SetAttribute("timer", timer)
             MainFrame.Position = UDim2.new(10, 0, 0, 0)
+
+            local CompletedFrame = MainFrame:FindFirstChild("Completed")
+            if CompletedFrame then
+                CompletedFrame.Visible = false
+            end
+
             ItemClone.Parent = orderFrame
     
             self:AnimateEnterOrder(ItemClone)
@@ -163,21 +170,23 @@ end
 
 function OrderUI:CompleteOrder(orderId)
     for _, orderFrame in pairs(CollectionService:GetTagged("OrderFrames")) do
+        if not orderFrame:IsDescendantOf(PlayerGui) then continue end
         for index, frame in pairs(orderFrame:GetChildren()) do
             if frame:IsA("ImageLabel") then
                 if frame:GetAttribute("orderId") == orderId then
                     if frame:FindFirstChild("MainFrame") then
-                        if frame:FindFirstChild("MainFrame"):FindFirstChild("Completed") then
-                            frame:FindFirstChild("MainFrame"):FindFirstChild("Completed").Visible = true
+                        local CompletedFrame = frame:FindFirstChild("MainFrame"):FindFirstChild("Completed")
+                        if CompletedFrame then
+                            CompletedFrame.Visible = true
                         end
-                        task.spawn(playLocalSound, itemCompleteSound, 0.2)
                     end
-                    task.wait(1)
-                    self:RemoveOrder(orderId)
                 end
             end
         end
     end
+    task.spawn(playLocalSound, itemCompleteSound, 0.2)
+    task.wait(1)
+    self:RemoveOrder(orderId)
 end
 
 function OrderUI:ChangeTime(orderId, newTime)
@@ -198,7 +207,6 @@ function OrderUI:ChangeTime(orderId, newTime)
             end
         end
     end
-   
 end
 
 function OrderUI:RemoveOrder(orderId)

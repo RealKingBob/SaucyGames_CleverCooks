@@ -18,6 +18,19 @@ return {
         FREEPLAY = 4;
     }; --// GAMESTATES FOR THE GAME
 
+    DIFFICULTY = {
+        [1] = {Easy = 15, Medium = 0, Hard = 0, Extra = "Easy"},
+        [2] = {Easy = 0, Medium = 0, Hard = 0, Extra = "Easy"},
+        [3] = {Easy = 0, Medium = 0, Hard = 0, Extra = "Easy"},
+        [4] = {Easy = 0, Medium = 0, Hard = 0, Extra = "Easy"},
+        [5] = {Easy = 0, Medium = 0, Hard = 0, Extra = "Medium"},
+        [6] = {Easy = 0, Medium = 0, Hard = 0, Extra = "Medium"},
+        [7] = {Easy = 0, Medium = 0, Hard = 0, Extra = "Medium"},
+        [8] = {Easy = 0, Medium = 0, Hard = 0, Extra = "Hard"},
+        [9] = {Easy = 0, Medium = 0, Hard = 0, Extra = "Hard"},
+        [10] = {Easy = 0, Medium = 0, Hard = 0, Extra = "Hard"},
+    };
+
     WHITELIST = true; --// ALLOWS ONLY QA TEAM WHITELIST TO THE GAME
 
     SINGLE_PLAYER = false; --// ALLOWS YOU TO BE THE HUNTER AS A SINGLE PLAYER [STUDIO TESTING ONLY]

@@ -52,51 +52,11 @@ return function (food)
 		--print("cookingPansQueue", cookingPansQueue[player.UserId])
 
 		for _, plr : Player in Players:GetPlayers() do
+			print("firewiriweirwirw")
 			CookingService.Client.Deliver:Fire(plr, tostring(food), food, deliverTime)
 		end
 		
-		local cheeserew
-
-		task.spawn(function()
-			local waitTime = 2
-			local numOfDrops = deliverTime / waitTime
-			local cheeseDrop = RecipeModule:GetRecipeRewards(RecipeModule[tostring(food)].Difficulty)
-			local rCheeseDropReward = math.random(
-				(cheeseDrop[1] - (cheeseDrop[1] * .15)),
-				(cheeseDrop[2] - (cheeseDrop[2] * .15)))
-
-			cheeserew = rCheeseDropReward
-
-			local cheeseValuePerDrop = rCheeseDropReward / numOfDrops
-			local cheeseObjectPerDrop = 6
-			-- oCFrame, obj, amount, value
-
-			print("deliver drop", RecipeModule[tostring(food)], numOfDrops, cheeseDrop, rCheeseDropReward, cheeseValuePerDrop)
-
-			local foodObj
-
-			if food:IsA("Model") then
-				foodObj = food.PrimaryPart
-			else
-				foodObj = food
-			end
-
-			local CurrencySessionService = Knit.GetService("CurrencySessionService")
-			
-			--[[for i = 1, numOfDrops do
-				CurrencySessionService:DropCheese(
-					foodObj.CFrame, 
-					player, 
-					cheeseObjectPerDrop, 
-					math.floor((cheeseValuePerDrop / cheeseObjectPerDrop))
-				)
-				task.wait(waitTime)
-			end]]
-
-			food:Destroy()
-		end)
-
-		--Knit.GetService("OrderService"):completeRecipe(player, tostring(food), cheeserew, cookingPercentage)
+		Knit.GetService("OrderService"):completeRecipe(tostring(food), cookingPercentage)
 		--RewardService:GiveReward(profile, {EXP = MathAPI:Find_Closest_Divisible_Integer(RawCalculatedEXP, 2)})
 
 		print("food delivered:", food)

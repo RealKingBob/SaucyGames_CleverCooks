@@ -215,7 +215,6 @@ function CookingUI:SpawnCookedParticles(food)
 end
 
 function CookingUI:DestroyUI(Pan)
-    print("DestroyUI", Pan, PanUIs[Pan])
     if PanUIs[Pan] == nil then return end
     local cookBillUI = PanUIs[Pan].cookBillUI
     --local fireEffect = PanUIs[Pan].fireEffect
@@ -279,7 +278,7 @@ end
 
 function CookingUI:StartDelivering(RecipeName, DeliverZone, DeliverTime)
     local deliverBillUI = game:GetService("ReplicatedStorage").GameLibrary.BillboardUI.DeliverHeadUI:Clone()
-    local recipeAssets = require(Knit.ReplicatedAssets.Recipes)
+    local recipeAssets = require(Knit.Shared.Assets.Recipes)
 
     local currentRecipeImage = recipeAssets[RecipeName].Image
 
@@ -363,12 +362,38 @@ function CookingUI:StartCooking(RecipeName, Pan, CookingTime)
 end
 
 function CookingUI:KnitStart()
-    --[[while task.wait(3) do
-        CookingUI:Update({
-            CurrentLevel = math.random(1, 200),
-            Alpha = math.random(),
-        })
-    end]]
+    
+    local CookingService = Knit.GetService("CookingService")
+    CookingService.Cook:Connect(function(Status, RecipeName, Pan, CookingPercentages)
+        --print("CLIENT COOK", Status, RecipeName, Pan, CookingPercentages)
+        if Status == "Initialize" then
+            self:StartCooking(RecipeName, Pan)
+        elseif Status == "CookUpdate" then
+            self:UpdatePanCook(Pan, CookingPercentages)
+        elseif Status == "Destroy" then
+            self:DestroyUI(Pan)
+        end
+    end)
+
+    CookingService.Deliver:Connect(function(RecipeName, DeliveryZone, DeliverTime)
+        self:StartDelivering(RecipeName, DeliveryZone, DeliverTime)
+    end)
+
+    CookingService.PickUp:Connect(function(foodInfo)
+        --print("FOOOD",food)
+        if foodInfo.Type == "DestroyFood" then
+            if foodInfo.Data then foodInfo.Data:Destroy() end
+        end
+    end)
+
+    CookingService.ParticlesSpawn:Connect(function(food, particleName)
+
+        if particleName == "CookedParticle" then
+            self:SpawnCookedParticles(food)
+        end
+        
+    end)
+
 end
 
 

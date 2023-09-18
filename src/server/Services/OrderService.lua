@@ -27,11 +27,11 @@ local OrderService = Knit.CreateService {
     -- Example usage: add 3 copies of each of 3 random recipes to player 1's dictionary
     addRandomRecipes(player, serverAvailableRecipes, 3)
 
-    print("playerRecipes:",playerRecipes[player])
+    print("serverRecipes:",serverRecipes[player])
 
-    shuffle(playerRecipes[player])
+    shuffle(serverRecipes[player])
     
-    print("playerRecipes:",playerRecipes[player])
+    print("serverRecipes:",serverRecipes[player])
     
     -- Mark the first recipe as completed for player 1
     completeRecipe(player, "Recipe 1")
@@ -50,7 +50,10 @@ local RecipeModule = require(ReplicatedAssets:WaitForChild("Recipes"))
 
 ----- Variables -----
 -- Create an empty table to store the recipes for each player
-local playerRecipes = {}
+local serverRecipes = {
+    storage = {}, -- player storage
+    timer = 30, -- 3 minute timer
+}
 
 -- Create an empty table to store the recipes for each player
 local serverAvailableRecipes = RecipeModule:GetAllRecipeNames()
@@ -109,12 +112,12 @@ end
 
 -- Function to check how many orders are in the player storage
 function OrderService:orderCount()
-    if not playerRecipes then return end
+    if not serverRecipes then return end
     -- Counts the amount of times it sees the recipe
     local count = 0
 
     -- Find the recipe in the player's list and count it
-    for _, r in ipairs(playerRecipes.storage) do
+    for _, r in ipairs(serverRecipes.storage) do
         if r and r.id then
             count += 1
         end
@@ -141,12 +144,12 @@ end
 -- Function to check how many of the same recipe is in the player storage
 function OrderService:recipeCount(recipe)
     if not recipe then return end
-    if not playerRecipes then return end
+    if not serverRecipes then return end
     -- Counts the amount of times it sees the recipe
     local count = 0
 
     -- Find the recipe in the player's list and count it
-    for _, r in ipairs(playerRecipes.storage) do
+    for _, r in ipairs(serverRecipes.storage) do
         if r.name == recipe then
             count += 1
         end
@@ -160,15 +163,15 @@ function OrderService:addRecipe(recipe, value)
 
     if pauseOrders == true then return end
     -- Check if the player already has a list of recipes
-    if playerRecipes == nil then
+    if serverRecipes == nil then
         -- If not, create a new list for the player
-        playerRecipes = {
+        serverRecipes = {
             storage = {}, -- player storage
             timer = playerTimer, -- 3 minute timer
         }
     end
 
-    warn("self:orderCount(PartyOwner)", playerRecipes, self:orderCount())
+    warn("self:orderCount(PartyOwner)", serverRecipes, self:orderCount())
 
     if self:orderCount() >= 5 then
         return
@@ -187,9 +190,9 @@ function OrderService:addRecipe(recipe, value)
         completed = false
     }
     if pauseOrders == true then return end
-    table.insert(playerRecipes.storage, recipeData)
+    table.insert(serverRecipes.storage, recipeData)
 
-    warn("playerRecipes", playerRecipes)
+    warn("serverRecipes", serverRecipes)
 
     for _, player : Player in Players:GetPlayers() do
         self.Client.AddOrder:Fire(player, recipeData)
@@ -198,10 +201,9 @@ function OrderService:addRecipe(recipe, value)
 end
 
 -- Function to add a random recipe to a player's list
-function OrderService:addRandomRecipe(recipes)
+function OrderService:addRandomRecipe(recipes, difficulty)
     if not recipes then return end
     -- Choose a random recipe from the list
-    --local recipe = recipes[math.random(1, #recipes)]
     local recipe = nil
 
     local function getRecipe() -- gets random recipe
@@ -209,6 +211,8 @@ function OrderService:addRandomRecipe(recipes)
         local cumulativeProbabilities = {}
         local probabilitySum = 0
         for _, item in ipairs(recipes) do
+            if difficulty and item.difficulty ~= difficulty then continue end
+            
             if item.difficulty == "Easy" then
                 probabilitySum = probabilitySum + 100
             elseif item.difficulty == "Medium" then
@@ -238,11 +242,12 @@ function OrderService:addRandomRecipe(recipes)
     self:addRecipe(recipe.name, recipe.value)
 end
 
+
 -- Function to remove a recipe from a player's list
 function OrderService:removeAllRecipes()
-    if not playerRecipes then return end
+    if not serverRecipes then return end
     -- Find the recipe in the player's list and remove it
-    playerRecipes.storage = {}
+    serverRecipes.storage = {}
 
     countId = 0
     
@@ -254,16 +259,18 @@ end
 -- Function to remove a recipe from a player's list
 function OrderService:removeRecipe(recipeId)
     if not recipeId then return end
-    if not playerRecipes then return end
+    if not serverRecipes then return end
 
-    for i, r in ipairs(playerRecipes.storage) do
+    print("removeRecipe", recipeId)
+
+    for i, r in ipairs(serverRecipes.storage) do
         --print(r.id, recipeId, r.id == recipeId)
         if r.id == recipeId then
             for _, player : Player in Players:GetPlayers() do
                 self.Client.RemoveOrder:Fire(player, r.id)
             end
             
-            table.remove(playerRecipes.storage, i) 
+            table.remove(serverRecipes.storage, i) 
             break
         end
     end
@@ -273,16 +280,16 @@ end
 function OrderService:getRecipe(recipeId)
     if not recipeId then return end
     -- Check if the player already has a list of recipes
-    if playerRecipes == nil then
+    if serverRecipes == nil then
         -- If not, create a new list for the player
-        playerRecipes = {
+        serverRecipes = {
             storage = {}, -- player storage
             timer = playerTimer, -- 3 minute timer
         }
     end
     
     -- Find the recipe in the player's list and remove it
-    for i, r in ipairs(playerRecipes.storage) do
+    for i, r in ipairs(serverRecipes.storage) do
         --print(r.id, recipeId, r.id == recipeId)
         if r.id == recipeId then
             return r
@@ -292,10 +299,10 @@ end
 
 -- Function to remove expired recipes from a player's table
 function OrderService:removeExpiredRecipes()
-    if not playerRecipes then return end
+    if not serverRecipes then return end
     if pauseOrders == true then return end
     -- Iterate through the player's recipes
-    for i, recipe in ipairs(playerRecipes.storage) do
+    for i, recipe in ipairs(serverRecipes.storage) do
         -- pause orders if paused
         if pauseOrders == true then continue end
 
@@ -304,8 +311,8 @@ function OrderService:removeExpiredRecipes()
 
         -- If the timer has expired, remove the recipe from the table
         if recipe.timer <= 0 then
-            -- --print("timer expired for", recipe.name, playerRecipes[player])
-            --table.remove(playerRecipes[player].storage, i)
+            -- --print("timer expired for", recipe.name, serverRecipes[player])
+            --table.remove(serverRecipes[player].storage, i)
 
             self:removeRecipe(recipe.id)
         end
@@ -313,17 +320,15 @@ function OrderService:removeExpiredRecipes()
 end
 
 -- Function to mark a recipe as completed for a player
-function OrderService:completeRecipe(recipe, reward, percentage)
-    if not recipe or not reward or not percentage then return end
-    if not playerRecipes then return end
+function OrderService:completeRecipe(recipe, percentage)
+    warn("completeRecipe", recipe, percentage)
 
     -- Find the recipe in the player's list and mark it as completed
-    for _, r in ipairs(playerRecipes.storage) do
+    for _, r in ipairs(serverRecipes.storage) do
+        print(r.name, recipe, r.name == recipe, r.completed == false)
         if r.name == recipe and r.completed == false then
-            --print("COMPLETE RECIPE:", player, recipe)
+            print("COMPLETE RECIPE:", recipe)
             r.completed = true
-
-            local bonusReward = (reward * 0.3) -- 30%
 
             --print("uh", percentage, (percentage >= cookedRange.min and percentage <= cookedRange.max))
 
@@ -356,14 +361,11 @@ function OrderService:completeRecipe(recipe, reward, percentage)
                 end]]
             end
 
-            --[[for _, player : Player in Players:GetPlayers() do
-                local profile = Knit.GetService("DataService"):GetProfile(player)
-                if not profile.Data.RecipesCooked[recipe] then
-                    Knit.GetService("NotificationService"):Message(false, player, "MUST BE COOKED PERFECTLY TO UNLOCK RECIPE!", {Effect = false, Color = Color3.fromRGB(229, 129, 6)})
-                end
+            for _, player : Player in Players:GetPlayers() do
                 self.Client.CompleteOrder:Fire(player, r.id)
-            end]]
+            end
             
+            task.wait(1)
             self:removeRecipe(r.id)
             break
         end
@@ -387,16 +389,16 @@ end
 
 -- Function to update the recipes for a player
 function OrderService:updatePlayerRecipes()
-    if playerRecipes then
-        --print("timer:", playerRecipes[player].timer)
-        if playerRecipes.timer <= 0 and pauseOrders == false then
+    if serverRecipes then
+        --print("timer:", serverRecipes[player].timer)
+        if serverRecipes.timer <= 0 and pauseOrders == false then
             -- Add a random recipe to the player's table
-            self:addRandomRecipe(serverAvailableRecipes)
+            self:addRandomRecipe(serverAvailableRecipes, "Hard")
 
-            local CalculatedTime = playerTimer --180 + ((#playerRecipes[player].storage * 60) - 90)
+            local CalculatedTime = playerTimer --180 + ((#serverRecipes[player].storage * 60) - 90)
 
-            playerRecipes.timer = CalculatedTime -- reset to 3 minutes
-            -- --print("add recipe:", playerRecipes[player], "| adjusted CalculatedTime:", CalculatedTime)
+            serverRecipes.timer = CalculatedTime -- reset to 3 minutes
+            -- --print("add recipe:", serverRecipes[player], "| adjusted CalculatedTime:", CalculatedTime)
         end
 
         -- Remove any expired recipes from the player's table
@@ -440,8 +442,8 @@ function OrderService:KnitStart()
     while true do
 
         if pauseOrders == false then 
-            print(playerRecipes)
-            playerRecipes.timer -= 1
+            print(serverRecipes)
+            serverRecipes.timer -= 1
             self:updatePlayerRecipes()
         end
 
@@ -456,7 +458,7 @@ function OrderService:KnitInit()
     -- Set the callback this can only be done once by one script on the server!
     MarketplaceService.ProcessReceipt = processReceipt
 
-    playerRecipes = {
+    serverRecipes = {
         storage = {}, -- player storage
         timer = math.random(10,30), -- 10-30 seconds to automatically give one recipe
     }

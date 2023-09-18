@@ -38,39 +38,6 @@ end
 
 function CookingController:KnitInit()
     
-    local CookingService = Knit.GetService("CookingService")
-    local CookingUI = Knit.GetController("CookingUI")
-
-    CookingService.Cook:Connect(function(Status, RecipeName, Pan, CookingPercentages)
-        --print("CLIENT COOK", Status, RecipeName, Pan, CookingPercentages)
-        if Status == "Initialize" then
-            CookingUI:StartCooking(RecipeName, Pan)
-        elseif Status == "CookUpdate" then
-            CookingUI:UpdatePanCook(Pan, CookingPercentages)
-        elseif Status == "Destroy" then
-            CookingUI:DestroyUI(Pan)
-        end
-    end)
-
-    CookingService.Deliver:Connect(function(RecipeName, DeliveryZone, DeliverTime)
-        --print("CLIENT DELIVER", RecipeName, DeliveryZone, DeliverTime)
-        CookingUI:StartDelivering(RecipeName, DeliveryZone, DeliverTime)
-    end)
-
-    CookingService.PickUp:Connect(function(foodInfo)
-        --print("FOOOD",food)
-        if foodInfo.Type == "DestroyFood" then
-            if foodInfo.Data then foodInfo.Data:Destroy() end
-        end
-    end)
-
-    CookingService.ParticlesSpawn:Connect(function(food, particleName)
-
-        if particleName == "CookedParticle" then
-            CookingUI:SpawnCookedParticles(food)
-        end
-        
-    end)
 end
 
 
