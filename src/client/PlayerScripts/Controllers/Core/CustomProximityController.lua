@@ -105,8 +105,8 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 	end
 
 	if currentStatus == Status.Drop then
-		promptUI.StudsOffsetWorldSpace = Vector3.new(0, 0, -1.5)
-		headUI.StudsOffsetWorldSpace = Vector3.new(0, 0, -1.5)
+		--promptUI.StudsOffsetWorldSpace = Vector3.new(0, 0, -1.5)
+		--headUI.StudsOffsetWorldSpace = Vector3.new(0, 0, -1.5)
 	end
 
 	local function getAmountOfItemImages()
@@ -318,6 +318,7 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 	end)
 	
 	-- Make the Prompt actually show up on screen
+	print(prompt.Parent.Name)
 	promptUI.Adornee = prompt.Parent
 	promptUI.Parent = gui
 
