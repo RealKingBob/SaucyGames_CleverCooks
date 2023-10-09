@@ -223,6 +223,7 @@ function StaminaUI:SetupStamina(Character)
 
             repeat
                 task.wait(ReductionDelay)
+                BarsFrame.Visible = true
                 Stamina.Value = Stamina.Value - ReductionRate
                 PlayerGui:WaitForChild("Main"):WaitForChild("BottomFrame"):WaitForChild("BarsFrame"):WaitForChild("Stamina"):WaitForChild("Bar"):TweenSize(UDim2.new(Stamina.Value / MaxStamina.Value, 0, 1, 0), 'Out', 'Quint', .1, true)
                 if (sprinting == true) then
@@ -339,8 +340,11 @@ function StaminaUI:KnitStart()
             local BarsFrame = MainUI:WaitForChild("BottomFrame"):WaitForChild("BarsFrame")
             local StaminaFrame = BarsFrame:WaitForChild("Stamina")
             local StaminaBar = StaminaFrame:WaitForChild("Bar")
+            BarsFrame.Visible = true
             StaminaBar.Size = UDim2.new(1,0,1,0)
             print(Stamina.Value, MaxStamina.Value)
+            task.wait(1)
+            BarsFrame.Visible = false
         end
     end)
 end
@@ -393,6 +397,7 @@ function StaminaUI:KnitInit()
                 cooldownStamina = false
                 local MainUI = PlayerGui:WaitForChild("Main")
                 local BarsFrame = MainUI:WaitForChild("BottomFrame"):WaitForChild("BarsFrame")
+                BarsFrame.Visible = true
                 local StaminaFrame = BarsFrame:WaitForChild("Stamina")
                 local StaminaBar = StaminaFrame:WaitForChild("Bar")
                 StaminaBar.BackgroundColor3 = regularStaminaColor
@@ -410,6 +415,9 @@ function StaminaUI:KnitInit()
                     StaminaBar.BackgroundColor3 = regularStaminaColor
                 end
                 StaminaTitle.Text = math.floor(Stamina.Value).. '/' ..(MaxStamina.Value)
+                if Stamina.Value >= MaxStamina.Value then
+                    BarsFrame.Visible = false
+                end
             end
         end
     end)
