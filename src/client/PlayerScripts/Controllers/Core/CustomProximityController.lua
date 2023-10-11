@@ -7,8 +7,6 @@ local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GameLibrary = ReplicatedStorage:FindFirstChild("GameLibrary")
-local ReplicatedModules = Knit.Shared.Modules
-local ReplicatedAssets = Knit.ReplicatedAssets
 local ReplicatedBillboard = GameLibrary:FindFirstChild("BillboardUI")
 
 local localPlayer = Players.LocalPlayer
@@ -318,7 +316,7 @@ function CustomProximityController:createPrompt(prompt, inputType, gui, customSt
 	end)
 	
 	-- Make the Prompt actually show up on screen
-	print(prompt.Parent.Name)
+	warn("SHOW UI", prompt.Parent.Name)
 	promptUI.Adornee = prompt.Parent
 	promptUI.Parent = gui
 
@@ -364,7 +362,7 @@ function CustomProximityController:KnitStart()
 
 		if prompt.Parent then
 			if not prompt.Parent:IsA("Model") then
-				if prompt.Parent.Transparency == 1 
+				if (prompt.Parent.Transparency == 1 and prompt.Parent.Name ~= "HumanoidRootPart")
 				and not CollectionService:HasTag(prompt.Parent, "ButtonClick") 
 				and not CollectionService:HasTag(prompt.Parent, "Pan") 
 				and not CollectionService:HasTag(prompt.Parent, "Delivering") 

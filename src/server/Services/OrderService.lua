@@ -442,7 +442,7 @@ function OrderService:KnitStart()
     while true do
 
         if pauseOrders == false then 
-            print(serverRecipes)
+            --print(serverRecipes)
             serverRecipes.timer -= 1
             self:updatePlayerRecipes()
         end

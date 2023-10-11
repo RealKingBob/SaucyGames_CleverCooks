@@ -40,23 +40,24 @@ ProxFunctions["DropDown"] = function(bool)
 			dropConnection:Disconnect()
 		end
 
+		print("1")
 		local HumRoot = localPlayer.Character:FindFirstChild("HumanoidRootPart")
 
 		if not HumRoot then return end
-
+		print("2")
 		local proxim = HumRoot:FindFirstChild("ProximityPrompt")
 
 		if not proxim then return end
-
+		print("3")
 		local Ingredient = localPlayer.Character:FindFirstChild("Ingredient")
 
 		if not Ingredient then return end
-
+		print("4")
 		if Ingredient.Value ~= nil then
 			proxim.Enabled = true
 
 			dropConnection = proxim.TriggerEnded:Connect(function(plr)
-				--print("drop down YUP")
+				print("drop down YUP")
 				DropDown()
 			end)
 		end
@@ -85,7 +86,7 @@ function ProximityUI:KnitStart()
     local CookingService = Knit.GetService("CookingService")
 
     CookingService.ProximitySignal:Connect(function(action, bool)
-        --print(action, bool)
+        warn(action, bool)
 
 		pcall(ProxFunctions[action], bool)
 	end)

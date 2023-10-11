@@ -112,7 +112,6 @@ function SandboxMode:StartMode()
         local startTime = os.time()
         for i = 0, GAMEPLAY_TIME do
             local currentTime = dayShiftHours((i / GAMEPLAY_TIME))
-            print("sasa")
             GameService.Client.AdjustTimeSignal:FireAll({
                 Day = self.numOfDays,
                 Time = currentTime, 

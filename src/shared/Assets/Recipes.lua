@@ -27,80 +27,6 @@ local RecipeRewards = {
 }
 
 local Recipes = {
-	["Baguette"] = {
-		Name = "Baguette",
-		Image = "rbxassetid://12226470654",
-		Ingredients = {
-			"Wheat Bag-[Blended]",
-		},
-		Origin = "French",
-		Difficulty = "Easy"
-	},
-
-	["Onion Soup"] = {
-		Name = "Onion Soup",
-		Image = "rbxassetid://12226432172",
-		Ingredients = {
-			"Onion",
-			"Pepper",
-		},
-		Origin = "French",
-		Difficulty = "Easy"
-	},
-
-	["Cooked Chicken Leg"] = {
-		Name = "Cooked Chicken Leg",
-		Image = "rbxassetid://8019447096",
-		Ingredients = {
-			"Raw Chicken Leg",
-		},
-		Origin = "French",
-		Difficulty = "Easy"	
-	},
-
-	["Cooked Lamb Shank"] = {
-		Name = "Cooked Lamb Shank",
-		Image = "rbxassetid://12226439149",
-		Ingredients = {
-			"Raw Lamb Shank",
-			"Salt"
-		},
-		Origin = "French",
-		Difficulty = "Easy"	
-	},
-
-	["Fried Egg"] = {
-		Name = "Fried Egg",
-		Image = "rbxassetid://8019447405",
-		Ingredients = {
-			"Egg",
-		},
-		Origin = "French",
-		Difficulty = "Easy"
-	},
-
-	["Cooked Steak"] = {
-		Name = "Cooked Steak",
-		Image = "rbxassetid://8019446800",
-		Ingredients = {
-			"Raw Steak",
-			"Butter"
-		},
-		Origin = "French",
-		Difficulty = "Easy"
-	},
-
-	["French Toast"] = {
-		Name = "French Toast",
-		Image = "rbxassetid://12226432346",
-		Ingredients = {
-			"Bread",
-			"Sugar Bag-[Blended]",
-		},
-		Origin = "French",
-		Difficulty = "Easy"
-	},
-
 	["Creme Brulee"] = {
 		Name = "Creme Brulee",
 		Image = "rbxassetid://12226438788",
@@ -123,41 +49,27 @@ local Recipes = {
 		Difficulty = "Easy"
 	},
 
-	["Chocolate Mousse"] = {	
-		Name = "Chocolate Mousse",
-		Image = "rbxassetid://8019447207",
+	["Baguette"] = {
+		Name = "Baguette",
+		Image = "rbxassetid://12226470654",
 		Ingredients = {
-			"Chocolate-[Blended]",
+			"Wheat Bag-[Blended]",
+		},
+		Origin = "French",
+		Difficulty = "Easy"
+	},
+
+	["Macaron"] = {
+		Name = "Macaron",
+		Image = "rbxassetid://8019675976",
+		Ingredients = {
 			"Sugar Bag-[Blended]",
-			"Milk-[Blended]"
+			"Egg-[Blended]",
+			"Lemon",
+			"Wheat Bag-[Blended]"
 		},
 		Origin = "French",
 		Difficulty = "Medium"	
-	},
-
-	["Tarte Tatin"] = {
-		Name = "Tarte Tatin",
-		Image = "rbxassetid://12226431693",
-		Ingredients = {
-			"Apple",
-			"Wheat Bag-[Blended]",
-			"Sugar Bag-[Blended]",
-			"Butter",
-		},
-		Origin = "French",
-		Difficulty = "Medium"
-	},
-
-	["Cooked Lobster"] = {
-		Name = "Cooked Lobster",
-		Image = "rbxassetid://12226439007",
-		Ingredients = {
-			"Raw Lobster",
-			"Salt",
-			"Pepper",
-		},
-		Origin = "French",
-		Difficulty = "Medium"
 	},
 
 	["Madeleine"] = {	
@@ -187,17 +99,17 @@ local Recipes = {
 		Difficulty = "Medium"
 	},
 
-	["French Crepes"] = {
-		Name = "French Crepes",
-		Image = "rbxassetid://12226434184",
+	["Canele"] = {
+		Name = "Canele",
+		Image = "rbxassetid://12226470151",
 		Ingredients = {
 			"Wheat Bag-[Blended]",
-			"Milk",
-			"Raspberries",
-			"Blueberries"
+			"Egg",
+			"Olive Oil",
+			"Sugar Bag",
 		},
 		Origin = "French",
-		Difficulty = "Medium"
+		Difficulty = "Hard"
 	},
 
 	["Croissant"] = {
@@ -214,7 +126,7 @@ local Recipes = {
 		Difficulty = "Hard"	
 	},
 
-	["Ratatouille"] = {	
+	--[[["Ratatouille"] = {	
 		Name = "Ratatouille",
 		Image = "rbxassetid://8019445605",
 		Ingredients = {
@@ -228,86 +140,7 @@ local Recipes = {
 		},
 		Origin = "French",
 		Difficulty = "Hard"	
-	},
-	["Macaron"] = {
-		Name = "Macaron",
-		Image = "rbxassetid://8019675976",
-		Ingredients = {
-			"Sugar Bag-[Blended]",
-			"Egg-[Blended]",
-			"Lemon",
-			"Salt",
-			"Wheat Bag-[Blended]"
-		},
-		Origin = "French",
-		Difficulty = "Hard"	
-	},
-
-	["Canele"] = {
-		Name = "Canele",
-		Image = "rbxassetid://12226470151",
-		Ingredients = {
-			"Wheat Bag-[Blended]",
-			"Egg",
-			"Olive Oil",
-			"Sugar Bag",
-		},
-		Origin = "French",
-		Difficulty = "Hard"
-	},
-
-	["Bavarois Mousse"] = {
-		Name = "Bavarois Mousse",
-		Image = "rbxassetid://12226470417",
-		Ingredients = {
-			"Wheat Bag-[Blended]",
-			"Milk",
-			"Butter",
-			"Mint",
-			"Banana",
-		},
-		Origin = "French",
-		Difficulty = "Hard"
-	},
-
-	["Daube"] = {
-		Name = "Daube",
-		Image = "rbxassetid://12226434480",
-		Ingredients = {
-			"Raw Steak",
-			"Tomato",
-			"Olive Oil",
-			"Pepper",
-			"Mint",
-		},
-		Origin = "French",
-		Difficulty = "Hard"
-	},
-
-	--[[["Samosa"] = {
-		Name = "Samosa",
-		Image = "rbxassetid://12226431948",
-		Ingredients = {
-			"Wheat Bag",
-			"Milk",
-			"Pepper",
-			"Raw Chicken Leg",
-		},
-		Origin = "India",
-		Difficulty = "Medium"
-	},
-	
-	["Cupcake"] = {
-		Name = "Cupcake",
-		Image = "rbxassetid://12226434726",
-		Ingredients = {
-			"Wheat Bag",
-			"Egg",
-		},
-		Origin = "United States",
-		Difficulty = "Easy"
-	},
-	]]
+	},]]
 
 };
 

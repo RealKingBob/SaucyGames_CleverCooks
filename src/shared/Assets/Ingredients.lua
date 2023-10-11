@@ -29,7 +29,7 @@ local Ingredients = {
 		Image = "rbxassetid://8019444739",
 		BlendedImage = "rbxassetid://11874607059",
 	},
-	["Red Onion"] = {
+	--[[["Red Onion"] = {
 		Name = "Red Onion",
 		Image = "rbxassetid://8019445197",
 		BlendedImage = "rbxassetid://11874607573",
@@ -73,7 +73,7 @@ local Ingredients = {
 		Name = "Chocolate",
 		Image = "rbxassetid://8019447273",
 		BlendedImage = "rbxassetid://11874609309",
-	},
+	},]]
 	["Milk"] = {
 		Name = "Milk",
 		Image = "rbxassetid://8019445758",
@@ -84,7 +84,7 @@ local Ingredients = {
 		Image = "rbxassetid://8019447341",
 		BlendedImage = "rbxassetid://11874609535",
 	},
-	["Raw Steak"] = {
+	--[[["Raw Steak"] = {
 		Name = "Raw Steak",
 		Image = "rbxassetid://8019445378",
 		BlendedImage = "rbxassetid://11874607492",
@@ -133,7 +133,7 @@ local Ingredients = {
 		Name = "Raw Lobster",
 		Image = "rbxassetid://12206656087",
 		BlendedImage = "rbxassetid://12232716352",
-	},
+	},]]
 	["Mint"] = {
 		Name = "Mint",
 		Image = "rbxassetid://12206655880",
@@ -144,7 +144,7 @@ local Ingredients = {
 		Image = "rbxassetid://12206655750",
 		BlendedImage = "rbxassetid://12232994846",
 	},
-	["Potato"] = {
+	--[[["Potato"] = {
 		Name = "Potato",
 		Image = "rbxassetid://12206655645",
 		BlendedImage = "rbxassetid://12232715953",
@@ -153,7 +153,7 @@ local Ingredients = {
 		Name = "Raspberries",
 		Image = "rbxassetid://12206655554",
 		BlendedImage = "rbxassetid://12232715732",
-	},
+	},]]
 }
 
 return Ingredients;

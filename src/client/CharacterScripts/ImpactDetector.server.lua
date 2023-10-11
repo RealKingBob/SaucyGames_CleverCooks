@@ -35,7 +35,7 @@ Humanoid.FreeFalling:Connect(function(falling)
 		end
 		local fallHeight = maxHeight - humRoot.Position.y
 		--print(Character.Name.. " fell " .. math.floor(fallHeight + 0.5) .. " studs")
-		--print("Damage:", fallHeight)
+		print("Damage:", fallHeight)
 		if fallHeight >= lowestFallHeight then
 			createJumpParticle()
 		end

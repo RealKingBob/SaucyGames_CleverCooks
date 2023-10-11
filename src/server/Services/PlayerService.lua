@@ -351,7 +351,8 @@ local function CharacterAdded(Player)
                 --warn("Damage:", fallHeight, humanoid:GetState())
                 if fallHeight >= Config.LOWEST_FALL_HEIGHT 
                 and humanoid:GetState() ~= Enum.HumanoidStateType.Jumping then
-                    humanoid:TakeDamage(fallHeight)
+                    -- FALL DAMAGE HERE
+                    --humanoid:TakeDamage(fallHeight)
                 end
                 currentJump[Player] = 0
                 fallingDebounce[Player] = nil
